@@ -31,7 +31,9 @@ bool AquireDataWin::Init()
 
 void AquireDataWin::DoGetHisData()
 {
-    //int ret = HqWrapperApi_Init();
+    int ret = HqWrapperApi_Init();
+
+    HqWrapperApi_GetAllHisKBars("SCL9", true, MARKET_SH_FUTURES, KTYPE_PERIOD_HOUR);
 }
 
 void AquireDataWin::closeEvent(QCloseEvent * event)

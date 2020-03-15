@@ -95,6 +95,7 @@
     <ClCompile Include="hq_wrapper_api.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="aquire_data_win.cpp" />
+    <ClCompile Include="write_log.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="aquire_data_win.h">
@@ -127,6 +128,7 @@
     <ClInclude Include="exch_calendar.h" />
     <ClInclude Include="GeneratedFiles\ui_tlsaquiredata.h" />
     <ClInclude Include="hq_wrapper_api.h" />
+    <ClInclude Include="write_log.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="tlsaquiredata.qrc">

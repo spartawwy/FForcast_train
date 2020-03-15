@@ -1,6 +1,9 @@
 #ifndef HQ_WRAPPER_API_
 #define HQ_WRAPPER_API_
 
+#include <mutex>
+#include <vector>
+
 #include "tls_common.h"
   
 
@@ -19,6 +22,7 @@ struct T_KbarData
 
 #define  IMEXPORT
 
+
 //#ifdef __cplusplus
 //extern "C" {
 //#endif
@@ -32,9 +36,40 @@ int HqWrapperApi_GetHisKBars(const char* code, bool is_index, int nmarket, int k
                  , int end_date, int end_time
                  , T_KbarData *items, unsigned int item_max_size);
 
+int HqWrapperApi_GetAllHisKBars(const char* code, bool is_index, int nmarket, int kbar_type);
 
 //#ifdef __cplusplus
 //}
 //#endif
+
+class HqWrapperConcrete
+{
+public:
+
+    HqWrapperConcrete();
+    ~HqWrapperConcrete();
+
+    bool Init();
+    bool ConnectServer();
+    void DisConnect();
+    bool ReconnectServer();
+
+    bool IsConnhandleValid();
+
+    bool GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, int start, short count
+                   , std::vector<T_KbarData> &items);
+
+private:
+
+    int _ConnectServer();
+
+    // items date is from small to big; // get data from start index to left(oldest date):     <---len---0 
+    bool __GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, std::vector<T_KbarData> &items);
+    
+    int conn_handle_;
+
+    std::mutex conn_handle_mutext_;
+
+};
 
 #endif

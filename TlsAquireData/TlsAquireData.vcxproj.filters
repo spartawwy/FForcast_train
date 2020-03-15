@@ -39,6 +39,9 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;cxx;c;def</Extensions>
     </Filter>
+    <Filter Include="win">
+      <UniqueIdentifier>{6793f355-1bc5-4c0b-8928-95e1f381e58c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -59,14 +62,17 @@
     <ClCompile Include="aquire_data_app.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="aquire_data_win.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_aquire_data_win.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Release\moc_aquire_data_win.cpp">
       <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="write_log.cpp">
+      <Filter>moudle</Filter>
+    </ClCompile>
+    <ClCompile Include="aquire_data_win.cpp">
+      <Filter>win</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -77,7 +83,7 @@
       <Filter>Resource Files</Filter>
     </CustomBuild>
     <CustomBuild Include="aquire_data_win.h">
-      <Filter>src</Filter>
+      <Filter>win</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -98,6 +104,9 @@
     </ClInclude>
     <ClInclude Include="aquire_data_app.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="write_log.h">
+      <Filter>moudle</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

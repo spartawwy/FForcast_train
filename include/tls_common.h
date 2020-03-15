@@ -26,4 +26,8 @@ enum TlsTypePeriod
     PERIOD_YEAR,
 };
 
+#define MARKET_SH_FUTURES  30
+
+#define  MAX_K_COUNT 500 
+
 #endif //TLS_CMOMMON_H_DSF23DSFDS_
