@@ -31,7 +31,7 @@ void WriteLog(const char *fmt, ...)
 	//char *p_buf = new char[cst_buf_len+256]; 
 	//memset(p_buf, 0, cst_buf_len+256);
 	
-	fprintf( fp, "[%4d-%02d-%02d %02d:%02d:%02d] %s \r\n", \
+	fprintf( fp, "[%4d-%02d-%02d %02d:%02d:%02d] %s \n", \
 		1900+timeinfo->tm_year,1+timeinfo->tm_mon,timeinfo->tm_mday,timeinfo->tm_hour,timeinfo->tm_min,timeinfo->tm_sec,
 		szContent ); 
 	fclose(fp); 

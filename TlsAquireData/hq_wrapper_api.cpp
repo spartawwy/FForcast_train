@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iostream>
 #include <regex>
+
+#include <thread>
 #include <QDebug>
 
 #include "ExHqApi.h"
@@ -16,6 +18,14 @@
 #define FIX_TTY_BUG
 
 ExchangeCalendar exchange_calendar;
+
+
+
+//void test()
+//{
+//    std::list<int> a;
+//    
+//}
 
 HqWrapperConcrete *GetInstance()
 {
@@ -42,22 +52,31 @@ int HqWrapperApi_GetHisKBars(const char* code, bool is_index, int nmarket, int k
     return 0;
 }
 
-int HqWrapperApi_GetAllHisKBars(const char* code, bool is_index, int nmarket, int kbar_type)
-{
-    std::vector<T_KbarData>  items;
-    int index = 0;
-    for( int i = 0; i < 10000; i += items.size() )
-    {
-        GetInstance()->GetHisKBars(code, is_index, nmarket,kbar_type, i, 400, items);
 
-    }
-    for( int i=0; i < items.size(); ++i )
-        WriteLog("%d %d %.2f", items.at(i).date, items.at(i).hhmmss, items.at(i).close);
-    return items.size();
+void little_sleep(int ms) 
+{
+  auto start = std::chrono::high_resolution_clock::now();
+  auto end = start + std::chrono::milliseconds(ms);
+  do 
+  {
+    std::this_thread::yield();
+  } while (std::chrono::high_resolution_clock::now() < end);
+}
+ 
+
+int HqWrapperApi_GetAllHisKBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type)
+{
+
+    GetInstance()->GetAllHisBars(para_code, para_is_index, para_nmarket, para_kbar_type);
+         
+   // return items.size();
+    return 1;
 }
 
 
 HqWrapperConcrete::HqWrapperConcrete()
+    : is_geting_data_(false)
+    , conn_handle_(-1)
 {
 
 }
@@ -105,9 +124,52 @@ bool HqWrapperConcrete::IsConnhandleValid()
     return conn_handle_ > -1;
 }
 
-bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, int para_start, short count
-                                   , std::vector<T_KbarData> &items)
+bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type)
 {
+    if( is_geting_data_ )
+        return false;
+    std::thread  thread_get_data([para_code, para_is_index, para_nmarket, para_kbar_type, this]()
+    {
+        std::lock_guard<std::mutex>  locker(data_get_mutext_);
+
+        this->is_geting_data_= true;
+        std::list<T_KbarData>  items;
+        char code[64] = {'\0'};
+        strcpy(code, para_code);
+        bool is_index = para_is_index;
+        int  nmarket = para_nmarket;
+        int  kbar_type = para_kbar_type;
+
+        short start = 0;
+        const short max_count = 400;
+        short count = max_count; 
+        int ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, items);
+        while( ret >= max_count )
+        {
+           little_sleep(1);
+           start += ret;
+           count = max_count; 
+           std::list<T_KbarData>  items_hlp;
+           ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, items_hlp);
+           items.splice(items.begin(), items_hlp);
+        }
+        std::for_each(std::begin(items), std::end(items), [](T_KbarData& entery)
+        {
+            WriteLog("%d %d %.2f", entery.date, entery.hhmmss, entery.close);
+        });
+
+        this->is_geting_data_= false;
+    });
+    
+
+    thread_get_data.detach();
+    return true;
+}
+
+bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, int para_start, short count
+                                   , std::list<T_KbarData> &items)
+{
+#if 1
     //const short max_count = MAX_K_COUNT;
     short start = para_start; //std::get<0>(tuple_index_len);  // back forward : <---
     //const short count = std::get<1>(tuple_index_len);
@@ -121,10 +183,14 @@ bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket
     for( int i = count / MAX_K_COUNT ; i > 0; --i )
     {
         local_count = MAX_K_COUNT;
-        // tdx api get data from startindex to left(oldest date):     <---len---0 
-        __GetHisKBars(code, is_index, nmarket, kbar_type, start, local_count, items);
-        if( i > 1 )
-            start -= local_count;
+        // get data from (start + count)index to right(newest date):     ---start + count--->start----0|
+        int ret_count = __GetHisKBars(code, is_index, nmarket, kbar_type, start, local_count, items);
+        if( ret_count > 0 )
+        {
+            if( i > 1 )
+                start -= local_count;
+        }else
+            --start;
         total_get += local_count;
     } 
     if( count % MAX_K_COUNT > 0 )
@@ -134,7 +200,9 @@ bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket
         __GetHisKBars(code, is_index, nmarket, kbar_type, start, local_count, items);
         total_get += local_count;
     }
+#else
 
+#endif
     /*local_logger_.LogLocal(TSystem::utility::FormatStr("GetHisKBars %d | %d %d | %d %d | %d %d", kbar_type, start_date, end_date, std::get<0>(tuple_index_len), count
         , (items.empty() ? 0 : items.back().date)
         , (items.empty() ? 0 : items.back().hhmmss)));*/
@@ -142,11 +210,11 @@ bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket
     return total_get > 0;
 }
 
-// items date is from small to big; // get data from start index to left(oldest date):     <---len---0 
-bool HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, std::vector<T_KbarData> &items)
+// items date is from small to big; // get data from (start + count)index to right(newest date):     ---start + count--->start----0|
+int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, std::list<T_KbarData> &items)
 {
     //pFuncGetInstrumentBars = &TdxExHq_GetInstrumentBars;
-    bool result = false;
+    int result_count = 0;
     //std::vector<T_K_Data> resut;
     const int cst_result_len = 1024 * 1024;
     const int cst_err_len = 1024; 
@@ -222,11 +290,12 @@ bool HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmark
             } else
                 break;
         }
-        if( strlen(m_szResult) < 1 )
+        if( count == 0 || strlen(m_szResult) < 1 )
         {
             std::cout << " result empty !" << std::endl;
             break;
         }
+        result_count = count;
         qDebug() << m_szResult << "\n";
 
         const bool has_time = ( ktype < 4 || ktype == 7 || ktype == 8 ) ? true : false;
@@ -261,8 +330,7 @@ bool HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmark
             while( *p != '\0' && *p != '\n')++p;
             *p = '\0';
             ++p;
-            std::string src_str = p_line_beg;
-
+            std::string src_str = p_line_beg; 
             std::smatch  match_result;
             if( std::regex_match(src_str.cbegin(), src_str.cend(), match_result, regex_obj) )
             {
@@ -270,8 +338,7 @@ bool HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmark
                 T_KbarData  k_data;
                 try
                 {
-                    //std::cout << match_result[index] << " "; // date
-
+                    //std::cout << match_result[index] << " "; // date 
                     if( has_time )
                     { 
                         int year = boost::lexical_cast<int>(match_result[index]);
@@ -382,15 +449,14 @@ bool HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmark
 #endif
             }
         }
-        //std::cout << m_szResult << std::endl;
-        result = true; 
+        //std::cout << m_szResult << std::endl; 
 
     } while (0);
 
     delete []m_szResult;
     delete []m_szErrInfo;
 
-    return result;
+    return result_count;
 }
 
 

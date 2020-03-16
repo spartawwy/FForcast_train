@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <vector>
+#include <list>
 
 #include "tls_common.h"
   
@@ -57,18 +58,25 @@ public:
     bool IsConnhandleValid();
 
     bool GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, int start, short count
-                   , std::vector<T_KbarData> &items);
+                   , std::list<T_KbarData> &items);
+
+    bool GetAllHisBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type);
+
+    // items date is from small to big; // get data from start index to left(oldest date):     <---len---0 
+    int __GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, std::list<T_KbarData> &items);
+    
 
 private:
 
     int _ConnectServer();
 
-    // items date is from small to big; // get data from start index to left(oldest date):     <---len---0 
-    bool __GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, std::vector<T_KbarData> &items);
     
     int conn_handle_;
 
     std::mutex conn_handle_mutext_;
+    std::mutex data_get_mutext_;
+
+    bool is_geting_data_;
 
 };
 
