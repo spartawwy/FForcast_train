@@ -26,7 +26,7 @@
 //};
 
 typedef std::list<T_KbarData>  T_KbarDataContainer;
-
+typedef std::list<std::shared_ptr<T_KbarDataContainer> >  T_KbarDataBufContainer;
 namespace SQLite
 {
     class SQLiteConnection;
@@ -53,7 +53,6 @@ public:
 
     //void GetStockCode(const std::string &code, std::vector<T_StockCodeName>& ret);
 
-    void HandleSaveKbarData(std::shared_ptr<T_KbarDataContainer> &kbar_datas , TlsTypePeriod type);
     void SaveKbarData(std::shared_ptr<T_KbarDataContainer> &kbar_datas , TlsTypePeriod type);
 
     void TriggerProcessSave();
@@ -65,6 +64,7 @@ private:
     DataBase& operator = (DataBase&);
 
     void Open(std::shared_ptr<SQLite::SQLiteConnection>& db_conn);
+    void HandleSaveKbarData(std::shared_ptr<T_KbarDataContainer> &kbar_datas , TlsTypePeriod type);
 
     //TSystem::LocalLogger *local_logger_;
     AquireDataApp *app_;
@@ -81,11 +81,29 @@ private:
     SQLite::SQLiteStatement                    kdata_5m_stm_;
     SQLite::SQLiteStatement                    kdata_1m_stm_;
 
-    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_mon_waitting_buffer_;
-    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_mon_process_buffer_;
+    T_KbarDataBufContainer        kdata_mon_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_mon_process_buffer_;
 
-    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_5m_waitting_buffer_;
-    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_5m_process_buffer_;
+    T_KbarDataBufContainer        kdata_week_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_week_process_buffer_;
+
+    T_KbarDataBufContainer        kdata_day_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_day_process_buffer_;
+
+    T_KbarDataBufContainer        kdata_hour_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_hour_process_buffer_;
+
+    T_KbarDataBufContainer        kdata_30m_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_30m_process_buffer_;
+
+    T_KbarDataBufContainer        kdata_15m_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_15m_process_buffer_;
+
+    T_KbarDataBufContainer        kdata_5m_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_5m_process_buffer_;
+
+    T_KbarDataBufContainer        kdata_1m_waitting_buffer_;
+    T_KbarDataBufContainer        kdata_1m_process_buffer_;
 
     typedef boost::shared_mutex            WRMutex;  
     typedef boost::unique_lock<WRMutex>    WriteLock;  

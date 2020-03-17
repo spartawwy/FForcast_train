@@ -10,7 +10,7 @@
 #include <TLib/core/tsystem_communication_common.h>
 #include <TLib/core/tsystem_serialization.h>
 
-//#include "stock_data_man.h"
+#include "tls_common.h"
 
 //class QTimer;
 class ExchangeCalendar;
@@ -27,6 +27,8 @@ public:
 
     bool Init();
     void Stop();
+
+    void SaveKbarDatas(int kbar_type, T_KbarData *data_ret[], unsigned int size);
 
 protected:
 

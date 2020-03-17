@@ -39,3 +39,13 @@ void AquireDataApp::Stop()
     Shutdown();
     this->quit();
 }
+
+void AquireDataApp::SaveKbarDatas(int kbar_type, T_KbarData *data_ret[], unsigned int size)
+{
+    auto data_container = std::make_shared<T_KbarDataContainer>();
+    for( int i = 0; i < size; ++i )
+    {
+        data_container->push_front(*data_ret[i]);
+    }
+    data_base_->SaveKbarData(data_container , TlsTypePeriod(kbar_type));
+}

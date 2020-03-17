@@ -14,6 +14,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QHeaderView>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QWidget>
 
@@ -23,6 +24,7 @@ class Ui_TlsAquireDataClass
 {
 public:
     QPushButton *btnGetHisData;
+    QLabel *lab_information;
 
     void setupUi(QWidget *TlsAquireDataClass)
     {
@@ -32,6 +34,12 @@ public:
         btnGetHisData = new QPushButton(TlsAquireDataClass);
         btnGetHisData->setObjectName(QStringLiteral("btnGetHisData"));
         btnGetHisData->setGeometry(QRect(430, 60, 75, 23));
+        lab_information = new QLabel(TlsAquireDataClass);
+        lab_information->setObjectName(QStringLiteral("lab_information"));
+        lab_information->setGeometry(QRect(80, 200, 381, 71));
+        QFont font;
+        font.setPointSize(17);
+        lab_information->setFont(font);
 
         retranslateUi(TlsAquireDataClass);
 
@@ -42,6 +50,7 @@ public:
     {
         TlsAquireDataClass->setWindowTitle(QApplication::translate("TlsAquireDataClass", "TlsAquireData", 0));
         btnGetHisData->setText(QApplication::translate("TlsAquireDataClass", "GetHisData", 0));
+        lab_information->setText(QApplication::translate("TlsAquireDataClass", "TextLabel", 0));
     } // retranslateUi
 
 };

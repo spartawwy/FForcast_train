@@ -8,6 +8,12 @@
 
 #include "hq_wrapper_api.h"
 
+int SaveKbarDataCallback(void *para, int kbar_type, T_KbarData *data_ret[], unsigned int size)
+{
+    AquireDataApp *app = (AquireDataApp*)para;
+    app->SaveKbarDatas(kbar_type, data_ret, size);
+    return 0;
+}
 
 AquireDataWin::AquireDataWin(AquireDataApp *app, QWidget *parent)
     : app_(app)
@@ -36,9 +42,12 @@ bool AquireDataWin::Init()
 
 void AquireDataWin::DoGetHisData()
 { 
-    bool result = HqWrapperApi_GetAllHisKBars("SCL9", true, MARKET_SH_FUTURES, KTYPE_PERIOD_5M);
+    bool result = HqWrapperApi_GetAllHisKBars("SCL9", true, MARKET_SH_FUTURES, KTYPE_PERIOD_1M, SaveKbarDataCallback, app_);
     if( result )
+    {
+        ui.lab_information->setText("Geting Data!");
         timer_->start(500);
+    }
 }
 
 void AquireDataWin::closeEvent(QCloseEvent * event)
@@ -54,8 +63,9 @@ void AquireDataWin::closeEvent(QCloseEvent * event)
 void AquireDataWin::DoTimeOut()
 {
     if( HqWrapperApi_IsFinishGettingData() )
-    {
+    {   
         timer_->stop();
+        ui.lab_information->setText("Geting Data has Finished!");
         QMessageBox::information(nullptr, "information", "finish!");
     }
 }

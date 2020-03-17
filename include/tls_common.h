@@ -40,9 +40,12 @@ struct T_KbarData
     double low;
     double vol;
     T_KbarData() : date(0), hhmmss(0), open(0.0), close(0.0), high(0.0), low(0.0), vol(0.0){}
+    T_KbarData(const T_KbarData&lh) : date(lh.date), hhmmss(lh.hhmmss), open(lh.open)
+        , close(lh.close), high(lh.high), low(lh.low), vol(lh.vol){}
+
 };
 
-
+typedef int T_GetDataCallBack(void *para, int k_type, T_KbarData *data_ret[], unsigned int size);
 
 
 

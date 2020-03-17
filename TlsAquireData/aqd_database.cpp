@@ -254,15 +254,33 @@ void DataBase::HandleSaveKbarData(std::shared_ptr<T_KbarDataContainer>  &kbar_da
 {
     switch(type)
     {
-        case TlsTypePeriod::PERIOD_5M:
-            kdata_5m_waitting_buffer_.push_back(kbar_datas);
-            break;
-         case TlsTypePeriod::PERIOD_MON:
-            kdata_mon_waitting_buffer_.push_back(kbar_datas);
-            break;
-        default: 
-            assert(false);
-            break;
+    case TlsTypePeriod::PERIOD_MON:
+        kdata_mon_waitting_buffer_.push_back(kbar_datas);
+        break;
+    case TlsTypePeriod::PERIOD_WEEK:
+        kdata_week_waitting_buffer_.push_back(kbar_datas);
+        break;
+    case TlsTypePeriod::PERIOD_DAY:
+        kdata_day_waitting_buffer_.push_back(kbar_datas);
+        break;
+    case TlsTypePeriod::PERIOD_HOUR:
+        kdata_hour_waitting_buffer_.push_back(kbar_datas);
+        break;
+    case TlsTypePeriod::PERIOD_30M:
+        kdata_30m_waitting_buffer_.push_back(kbar_datas);
+        break;
+    case TlsTypePeriod::PERIOD_15M:
+        kdata_15m_waitting_buffer_.push_back(kbar_datas);
+        break;
+    case TlsTypePeriod::PERIOD_5M:
+        kdata_5m_waitting_buffer_.push_back(kbar_datas);
+        break;
+    case TlsTypePeriod::PERIOD_1M:
+        kdata_1m_waitting_buffer_.push_back(kbar_datas);
+        break;
+    default: 
+        assert(false);
+        break;
     }
     if( process_flag_ )
         return;
@@ -272,12 +290,26 @@ void DataBase::HandleSaveKbarData(std::shared_ptr<T_KbarDataContainer>  &kbar_da
 
 void DataBase::TriggerProcessSave()
 {
-    if( kdata_5m_waitting_buffer_.size() || kdata_mon_waitting_buffer_.size() )
+    if( kdata_mon_waitting_buffer_.size() 
+        || kdata_week_waitting_buffer_.size() 
+        || kdata_day_waitting_buffer_.size() 
+        || kdata_hour_waitting_buffer_.size() 
+        || kdata_30m_waitting_buffer_.size() 
+        || kdata_15m_waitting_buffer_.size() 
+        || kdata_5m_waitting_buffer_.size() 
+        || kdata_1m_waitting_buffer_.size() 
+        )
     {
         process_flag_ = true;
 
-        kdata_5m_process_buffer_.swap(kdata_5m_waitting_buffer_);
         kdata_mon_process_buffer_.swap(kdata_mon_waitting_buffer_);
+        kdata_week_process_buffer_.swap(kdata_week_waitting_buffer_);
+        kdata_day_process_buffer_.swap(kdata_day_waitting_buffer_);
+        kdata_hour_process_buffer_.swap(kdata_hour_waitting_buffer_);
+        kdata_30m_process_buffer_.swap(kdata_30m_waitting_buffer_);
+        kdata_15m_process_buffer_.swap(kdata_15m_waitting_buffer_);
+        kdata_5m_process_buffer_.swap(kdata_5m_waitting_buffer_);
+        kdata_1m_process_buffer_.swap(kdata_1m_waitting_buffer_);
 
         strand_->GetTaskPool().PostTask( std::bind(&DataBase::ProcessSave, this) );
     }else
@@ -289,6 +321,16 @@ void DataBase::TriggerProcessSave()
 
 void DataBase::ProcessSave()
 {
+    T_KbarDataBufContainer* p_containers[] = {&kdata_mon_process_buffer_, &kdata_week_process_buffer_
+        , &kdata_day_process_buffer_, &kdata_hour_process_buffer_
+        , &kdata_30m_process_buffer_, &kdata_15m_process_buffer_
+        , &kdata_5m_process_buffer_, &kdata_1m_process_buffer_
+    };
+    SQLite::SQLiteStatement* p_sql_states[] = {&kdata_mon_stm_, &kdata_week_stm_
+        , &kdata_day_stm_, &kdata_hour_stm_
+        , &kdata_30m_stm_, &kdata_15m_stm_
+        , &kdata_5m_stm_, &kdata_1m_stm_
+    };
     try
     {
         //-------------
@@ -296,22 +338,55 @@ void DataBase::ProcessSave()
 		//-------------
 
 		BeginTransaction(*db_conn_);
-
-        std::for_each( std::begin(kdata_5m_process_buffer_), std::end(kdata_5m_process_buffer_), [this](const std::shared_ptr<T_KbarDataContainer>& entry)
+        
+        for( int i=0; i<sizeof(p_containers)/sizeof(p_containers[0]); ++i )
         {
-            std::for_each( std::begin(*entry), std::end(*entry), [this](const T_KbarData& in)
+            std::for_each( std::begin(*p_containers[i]), std::end(*p_containers[i]), [this, i, &p_sql_states](const std::shared_ptr<T_KbarDataContainer>& entry)
             {
-                this->kdata_5m_stm_.BindParam(1, in.date);
-                this->kdata_5m_stm_.BindParam(2, in.hhmmss);
-                this->kdata_5m_stm_.BindParam(3, in.open);
-                this->kdata_5m_stm_.BindParam(4, in.close);
-                this->kdata_5m_stm_.BindParam(5, in.high);
-                this->kdata_5m_stm_.BindParam(6, in.low);
-                this->kdata_5m_stm_.Evaluate();
-            });
+                std::for_each( std::begin(*entry), std::end(*entry), [this, i, &p_sql_states](const T_KbarData& in)
+                {
+                    p_sql_states[i]->BindParam(1, in.date);
+                    p_sql_states[i]->BindParam(2, in.hhmmss);
+                    p_sql_states[i]->BindParam(3, in.open);
+                    p_sql_states[i]->BindParam(4, in.close);
+                    p_sql_states[i]->BindParam(5, in.high);
+                    p_sql_states[i]->BindParam(6, in.low);
+                    p_sql_states[i]->Evaluate();
+                });
 
-        });
-        // todo
+            });
+        }
+        
+
+        //std::for_each( std::begin(kdata_5m_process_buffer_), std::end(kdata_5m_process_buffer_), [this](const std::shared_ptr<T_KbarDataContainer>& entry)
+        //{
+        //    std::for_each( std::begin(*entry), std::end(*entry), [this](const T_KbarData& in)
+        //    {
+        //        this->kdata_5m_stm_.BindParam(1, in.date);
+        //        this->kdata_5m_stm_.BindParam(2, in.hhmmss);
+        //        this->kdata_5m_stm_.BindParam(3, in.open);
+        //        this->kdata_5m_stm_.BindParam(4, in.close);
+        //        this->kdata_5m_stm_.BindParam(5, in.high);
+        //        this->kdata_5m_stm_.BindParam(6, in.low);
+        //        this->kdata_5m_stm_.Evaluate();
+        //    });
+
+        //});
+        //std::for_each( std::begin(kdata_1m_process_buffer_), std::end(kdata_1m_process_buffer_), [this](const std::shared_ptr<T_KbarDataContainer>& entry)
+        //{
+        //    std::for_each( std::begin(*entry), std::end(*entry), [this](const T_KbarData& in)
+        //    {
+        //        this->kdata_1m_stm_.BindParam(1, in.date);
+        //        this->kdata_1m_stm_.BindParam(2, in.hhmmss);
+        //        this->kdata_1m_stm_.BindParam(3, in.open);
+        //        this->kdata_1m_stm_.BindParam(4, in.close);
+        //        this->kdata_1m_stm_.BindParam(5, in.high);
+        //        this->kdata_1m_stm_.BindParam(6, in.low);
+        //        this->kdata_1m_stm_.Evaluate();
+        //    });
+
+        //});
+        //// todo
 
         EndTransaction(*db_conn_);
     }catch(const SQLiteException& e)
@@ -320,8 +395,18 @@ void DataBase::ProcessSave()
 			, "DataBase::ProcessSave"
 			, FormatThirdPartyError("SQLite", static_cast<int>(e.code()), e.what()));
 	}
+    for( int i=0; i<sizeof(p_containers)/sizeof(p_containers[0]); ++i )
+    {
+        p_containers[i]->clear();
+    }
+    /*kdata_mon_process_buffer_.clear();
+    kdata_week_process_buffer_.clear();
+    kdata_day_process_buffer_.clear();
+    kdata_hour_process_buffer_.clear();
+    kdata_30m_process_buffer_.clear();
+    kdata_15m_process_buffer_.clear();
     kdata_5m_process_buffer_.clear();
-    kdata_mon_process_buffer_.clear();
+    kdata_1m_process_buffer_.clear();*/
     strand_->PostTask(std::bind(&DataBase::TriggerProcessSave, this));
 }
 

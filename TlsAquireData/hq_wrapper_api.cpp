@@ -17,6 +17,7 @@
 
 #define FIX_TTY_BUG
 
+void little_sleep(int ms);
 ExchangeCalendar exchange_calendar;
 
 
@@ -52,21 +53,12 @@ int HqWrapperApi_GetHisKBars(const char* code, bool is_index, int nmarket, int k
     return 0;
 }
 
-
-void little_sleep(int ms) 
-{
-  auto start = std::chrono::high_resolution_clock::now();
-  auto end = start + std::chrono::milliseconds(ms);
-  do 
-  {
-    std::this_thread::yield();
-  } while (std::chrono::high_resolution_clock::now() < end);
-}
  
 // asynchronous 
-bool HqWrapperApi_GetAllHisKBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type)
+bool HqWrapperApi_GetAllHisKBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type
+                                 , T_GetDataCallBack *func, void *func_para)
 {
-    return GetInstance()->GetAllHisBars(para_code, para_is_index, para_nmarket, para_kbar_type);
+    return GetInstance()->GetAllHisBars(para_code, para_is_index, para_nmarket, para_kbar_type, func, func_para);
 }
 
 bool HqWrapperApi_IsFinishGettingData()
@@ -74,9 +66,12 @@ bool HqWrapperApi_IsFinishGettingData()
     return GetInstance()->IsFinishGettingData();
 }
 
+//=====================================================================
 HqWrapperConcrete::HqWrapperConcrete()
     : is_geting_data_(false)
     , conn_handle_(-1)
+    , p_get_data_callback(nullptr)
+    , p_func_para(nullptr)
 {
 
 }
@@ -124,16 +119,26 @@ bool HqWrapperConcrete::IsConnhandleValid()
     return conn_handle_ > -1;
 }
 
-bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type)
-{
-    if( is_geting_data_ )
-        return false;
-    std::thread  thread_get_data([para_code, para_is_index, para_nmarket, para_kbar_type, this]()
-    {
-        std::lock_guard<std::mutex>  locker(data_get_mutext_);
 
-        this->is_geting_data_= true;
-        std::list<T_KbarData>  items;
+bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type
+                                      , T_GetDataCallBack *func, void *func_para)
+{
+    //std::lock_guard<std::mutex>  locker(data_get_mutext_);
+    if( !data_get_mutext_.try_lock() )
+        return false;
+
+    if( is_geting_data_ )
+    {
+        data_get_mutext_.unlock();
+        return false;
+    }
+    is_geting_data_= true;
+
+    p_get_data_callback = func;
+    p_func_para = func_para;
+    std::thread  thread_get_data([this, para_code, para_is_index, para_nmarket, para_kbar_type/*, func, func_para*/]()
+    {
+        auto p_items = new T_KDataContainer;
         char code[64] = {'\0'};
         strcpy(code, para_code);
         bool is_index = para_is_index;
@@ -143,32 +148,40 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
         short start = 0;
         const short max_count = 400;
         short count = max_count; 
-        int ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, items);
+        int ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, *p_items);
         while( ret >= max_count )
         {
            little_sleep(1);
            start += ret;
            count = max_count; 
-           std::list<T_KbarData>  items_hlp;
+           T_KDataContainer  items_hlp;
            ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, items_hlp);
-           std::for_each(std::begin(items_hlp), std::end(items_hlp), [](T_KbarData& entery)
+           if( ret <= 0 )
+           {
+               WriteLog("get %d ret %d break", kbar_type, ret);
+               break;
+           }
+           T_KbarData *p_data_array[MAX_K_COUNT*2]; 
+           int i = 0;
+           std::for_each(std::begin(items_hlp), std::end(items_hlp), [&](T_KDataContainer::reference entery)
             {
-                WriteLog("%d %d %.2f", entery.date, entery.hhmmss, entery.close);
+                //WriteLog("%d %d %.2f", entery->date, entery->hhmmss, entery->close);
+                p_data_array[i++] = entery.get();
             });
-           items.splice(items.begin(), items_hlp);
+           p_get_data_callback(p_func_para, kbar_type, p_data_array, (unsigned int)ret);
+           p_items->splice(p_items->begin(), items_hlp);
         }
-        
-
+        delete p_items;
         this->is_geting_data_= false;
     });
-    
-
     thread_get_data.detach();
+
+    data_get_mutext_.unlock();
     return true;
 }
 
 bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, int para_start, short count
-                                   , std::list<T_KbarData> &items)
+                                   , T_KDataContainer &items)
 {
 #if 1
     //const short max_count = MAX_K_COUNT;
@@ -211,8 +224,9 @@ bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket
     return total_get > 0;
 }
 
+// ret result count
 // items date is from small to big; // get data from (start + count)index to right(newest date):     ---start + count--->start----0|
-int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, std::list<T_KbarData> &items)
+int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, T_KDataContainer &items)
 {
     //pFuncGetInstrumentBars = &TdxExHq_GetInstrumentBars;
     int result_count = 0;
@@ -336,7 +350,7 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
             if( std::regex_match(src_str.cbegin(), src_str.cend(), match_result, regex_obj) )
             {
                 int index = 1;
-                T_KbarData  k_data;
+                auto  k_data = std::unique_ptr<T_KbarData>(new T_KbarData);
                 try
                 {
                     //std::cout << match_result[index] << " "; // date 
@@ -348,35 +362,35 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         ++index;
                         int day = boost::lexical_cast<int>(match_result[index]);
                         ++index;
-                        k_data.date = year * 10000 + mon * 100 + day;
+                        k_data->date = year * 10000 + mon * 100 + day;
                         int hour = boost::lexical_cast<int>(match_result[index]);
                         ++index;  
                         int minute = boost::lexical_cast<int>(match_result[index]);
-                        k_data.hhmmss = hour * 100 + minute;
+                        k_data->hhmmss = hour * 100 + minute;
 #if 1
-                        if( k_data.hhmmss > 2100 )
+                        if( k_data->hhmmss > 2100 )
                         {
                             //k_data.date = exchange_calendar_->PreTradeDate(k_data.date, 1);
                         }
 #endif 
                     }else
                     {
-                        k_data.date = boost::lexical_cast<int>(match_result[index]);
-                        k_data.hhmmss = 0;
+                        k_data->date = boost::lexical_cast<int>(match_result[index]);
+                        k_data->hhmmss = 0;
                     }
 
                     ++index;
-                    k_data.open = boost::lexical_cast<double>(match_result[index]);
+                    k_data->open = boost::lexical_cast<double>(match_result[index]);
                     ++index;
-                    k_data.high = boost::lexical_cast<double>(match_result[index]);
+                    k_data->high = boost::lexical_cast<double>(match_result[index]);
                     ++index;
-                    k_data.low = boost::lexical_cast<double>(match_result[index]);
+                    k_data->low = boost::lexical_cast<double>(match_result[index]);
                     ++index;
-                    k_data.close = boost::lexical_cast<double>(match_result[index]);
+                    k_data->close = boost::lexical_cast<double>(match_result[index]);
                     ++index;
                     int hold = boost::lexical_cast<int>(match_result[index]);
                     ++index;
-                    k_data.vol = boost::lexical_cast<double>(match_result[index]);
+                    k_data->vol = boost::lexical_cast<double>(match_result[index]);
                     ++index;
                     //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
                     items.push_back(std::move(k_data));
@@ -393,7 +407,7 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                 if( std::regex_match(src_str.cbegin(), src_str.cend(), match_result, regex_obj1) )
                 {
                     int index = 1;
-                    T_KbarData  k_data;
+                    auto  k_data = std::unique_ptr<T_KbarData>(new T_KbarData);
                     try
                     { 
                         if( has_time )
@@ -409,33 +423,33 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                             int day = boost::lexical_cast<int>(match_result[index]);
                             day = 48 - day;
                             ++index;
-                            k_data.date = year * 10000 + mon * 100 + day;
+                            k_data->date = year * 10000 + mon * 100 + day;
                             int hour = boost::lexical_cast<int>(match_result[index]);
                             ++index;  
                             int minute = boost::lexical_cast<int>(match_result[index]);
-                            k_data.hhmmss = hour * 100 + minute;
-                            if( k_data.hhmmss > 2100 )
+                            k_data->hhmmss = hour * 100 + minute;
+                            if( k_data->hhmmss > 2100 )
                             {
                                 //k_data.date = exchange_calendar_->PreTradeDate(k_data.date, 1);
                             }
                         }else
                         {
-                            k_data.date = boost::lexical_cast<int>(match_result[index]);
-                            k_data.hhmmss = 0;
+                            k_data->date = boost::lexical_cast<int>(match_result[index]);
+                            k_data->hhmmss = 0;
                         }
 
                         ++index;
-                        k_data.open = boost::lexical_cast<double>(match_result[index]);
+                        k_data->open = boost::lexical_cast<double>(match_result[index]);
                         ++index;
-                        k_data.high = boost::lexical_cast<double>(match_result[index]);
+                        k_data->high = boost::lexical_cast<double>(match_result[index]);
                         ++index;
-                        k_data.low = boost::lexical_cast<double>(match_result[index]);
+                        k_data->low = boost::lexical_cast<double>(match_result[index]);
                         ++index;
-                        k_data.close = boost::lexical_cast<double>(match_result[index]);
+                        k_data->close = boost::lexical_cast<double>(match_result[index]);
                         ++index;
                         int hold = boost::lexical_cast<int>(match_result[index]);
                         ++index;
-                        k_data.vol = boost::lexical_cast<double>(match_result[index]);
+                        k_data->vol = boost::lexical_cast<double>(match_result[index]);
                         ++index;
                         //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
                         items.push_back(std::move(k_data));
@@ -501,4 +515,15 @@ int HqWrapperConcrete::_ConnectServer()
         }
     } 
     return handle;
+}
+
+
+void little_sleep(int ms) 
+{
+    auto start = std::chrono::high_resolution_clock::now();
+    auto end = start + std::chrono::milliseconds(ms);
+    do 
+    {
+        std::this_thread::yield();
+    } while (std::chrono::high_resolution_clock::now() < end);
 }
