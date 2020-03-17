@@ -2,6 +2,8 @@
 #include <QMessageBox>
 //#include <QEvent>
 #include <QtGui/QtEvents>
+#include <qtimer.h>
+
 #include "aquire_data_app.h"
 
 #include "hq_wrapper_api.h"
@@ -10,12 +12,15 @@
 AquireDataWin::AquireDataWin(AquireDataApp *app, QWidget *parent)
     : app_(app)
     , QWidget(parent)
+    , timer_(nullptr)
 {
     ui.setupUi(this);
     bool ret = connect(ui.btnGetHisData, SIGNAL(clicked()), this, SLOT(DoGetHisData()));
 
-    ret = ret;
+    timer_ = new QTimer(this);
+    ret = connect(timer_, SIGNAL(timeout()), this, SLOT(DoTimeOut()));
 
+    ret = ret;
 }
 
 AquireDataWin::~AquireDataWin()
@@ -30,10 +35,10 @@ bool AquireDataWin::Init()
 }
 
 void AquireDataWin::DoGetHisData()
-{
-    int ret = HqWrapperApi_Init();
-
-    HqWrapperApi_GetAllHisKBars("SCL9", true, MARKET_SH_FUTURES, KTYPE_PERIOD_HOUR);
+{ 
+    bool result = HqWrapperApi_GetAllHisKBars("SCL9", true, MARKET_SH_FUTURES, KTYPE_PERIOD_5M);
+    if( result )
+        timer_->start(500);
 }
 
 void AquireDataWin::closeEvent(QCloseEvent * event)
@@ -44,4 +49,13 @@ void AquireDataWin::closeEvent(QCloseEvent * event)
         event->ignore();
     else
         app_->Stop();
+}
+
+void AquireDataWin::DoTimeOut()
+{
+    if( HqWrapperApi_IsFinishGettingData() )
+    {
+        timer_->stop();
+        QMessageBox::information(nullptr, "information", "finish!");
+    }
 }

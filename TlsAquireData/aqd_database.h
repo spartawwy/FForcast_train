@@ -1,13 +1,19 @@
-#ifndef DATA_BASE_SDFS_H_
-#define DATA_BASE_SDFS_H_
+#ifndef AQUIRE_DATA_BASE_SDFS_H_
+#define AQUIRE_DATA_BASE_SDFS_H_
  
 #include <boost/thread.hpp>  
 #include <boost/thread/recursive_mutex.hpp>  
 #include <boost/thread/mutex.hpp>
 
-#include <string>
+//#include <string>
 #include <atomic>
 #include <unordered_map>
+#include <list>
+
+#include <SQLite/SQLite.h>
+#include <TLib/core/tsystem_task_service.h>
+
+#include "tls_common.h"
 
 //struct T_StockCodeName
 //{
@@ -18,6 +24,8 @@
 //    T_StockCodeName(const std::string &cd, const std::string &nm, int tp, int maket) : code(cd), name(nm), type(tp), nmarket(maket){}
 //    T_StockCodeName(const T_StockCodeName &lh) : code(lh.code), name(lh.name), type(lh.type), nmarket(lh.nmarket){}
 //};
+
+typedef std::list<T_KbarData>  T_KbarDataContainer;
 
 namespace SQLite
 {
@@ -30,11 +38,12 @@ namespace TSystem
 }
 //class FuturesForecastApp;
 //class StockMan;
+class AquireDataApp;
 class DataBase
 {
 public:
 
-    DataBase(/*FuturesForecastApp *app*/);
+    DataBase(AquireDataApp *app);
     ~DataBase();
 
     bool Initialize();
@@ -44,6 +53,12 @@ public:
 
     //void GetStockCode(const std::string &code, std::vector<T_StockCodeName>& ret);
 
+    void HandleSaveKbarData(std::shared_ptr<T_KbarDataContainer> &kbar_datas , TlsTypePeriod type);
+    void SaveKbarData(std::shared_ptr<T_KbarDataContainer> &kbar_datas , TlsTypePeriod type);
+
+    void TriggerProcessSave();
+    void ProcessSave();
+
 private:
      
     DataBase(DataBase&);
@@ -52,14 +67,31 @@ private:
     void Open(std::shared_ptr<SQLite::SQLiteConnection>& db_conn);
 
     //TSystem::LocalLogger *local_logger_;
-    //WinnerApp *app_;
+    AquireDataApp *app_;
+    std::shared_ptr<TSystem::TaskStrand>       strand_;
+
     std::shared_ptr<SQLite::SQLiteConnection>  db_conn_;
 
-    //std::shared_ptr<TSystem::TaskStrand>  strand_;
+    SQLite::SQLiteStatement                    kdata_mon_stm_;
+    SQLite::SQLiteStatement                    kdata_week_stm_;
+    SQLite::SQLiteStatement                    kdata_day_stm_;
+    SQLite::SQLiteStatement                    kdata_hour_stm_;
+    SQLite::SQLiteStatement                    kdata_30m_stm_;
+    SQLite::SQLiteStatement                    kdata_15m_stm_;
+    SQLite::SQLiteStatement                    kdata_5m_stm_;
+    SQLite::SQLiteStatement                    kdata_1m_stm_;
+
+    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_mon_waitting_buffer_;
+    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_mon_process_buffer_;
+
+    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_5m_waitting_buffer_;
+    std::list<std::shared_ptr<T_KbarDataContainer> >        kdata_5m_process_buffer_;
 
     typedef boost::shared_mutex            WRMutex;  
     typedef boost::unique_lock<WRMutex>    WriteLock;  
     typedef boost::shared_lock<WRMutex>    ReadLock;  
+
+    bool                  process_flag_;
 };
  
 

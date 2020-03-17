@@ -63,16 +63,16 @@ void little_sleep(int ms)
   } while (std::chrono::high_resolution_clock::now() < end);
 }
  
-
-int HqWrapperApi_GetAllHisKBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type)
+// asynchronous 
+bool HqWrapperApi_GetAllHisKBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type)
 {
-
-    GetInstance()->GetAllHisBars(para_code, para_is_index, para_nmarket, para_kbar_type);
-         
-   // return items.size();
-    return 1;
+    return GetInstance()->GetAllHisBars(para_code, para_is_index, para_nmarket, para_kbar_type);
 }
 
+bool HqWrapperApi_IsFinishGettingData()
+{
+    return GetInstance()->IsFinishGettingData();
+}
 
 HqWrapperConcrete::HqWrapperConcrete()
     : is_geting_data_(false)
@@ -151,12 +151,13 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
            count = max_count; 
            std::list<T_KbarData>  items_hlp;
            ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, items_hlp);
+           std::for_each(std::begin(items_hlp), std::end(items_hlp), [](T_KbarData& entery)
+            {
+                WriteLog("%d %d %.2f", entery.date, entery.hhmmss, entery.close);
+            });
            items.splice(items.begin(), items_hlp);
         }
-        std::for_each(std::begin(items), std::end(items), [](T_KbarData& entery)
-        {
-            WriteLog("%d %d %.2f", entery.date, entery.hhmmss, entery.close);
-        });
+        
 
         this->is_geting_data_= false;
     });

@@ -30,4 +30,20 @@ enum TlsTypePeriod
 
 #define  MAX_K_COUNT 500 
 
+struct T_KbarData
+{
+    int  date; 
+    int  hhmmss;
+    double open;
+    double close;
+    double high;
+    double low;
+    double vol;
+    T_KbarData() : date(0), hhmmss(0), open(0.0), close(0.0), high(0.0), low(0.0), vol(0.0){}
+};
+
+
+
+
+
 #endif //TLS_CMOMMON_H_DSF23DSFDS_

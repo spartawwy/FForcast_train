@@ -4,6 +4,7 @@
 #include <QtWidgets/QWidget>
 #include "ui_tlsaquiredata.h"
 
+class QTimer;
 class AquireDataApp;
 class AquireDataWin : public QWidget
 {
@@ -17,6 +18,7 @@ public:
 public slots:
 
     void DoGetHisData();
+    void DoTimeOut();
 
 protected:
     virtual void closeEvent(QCloseEvent * event) override;
@@ -25,6 +27,8 @@ private:
     Ui::TlsAquireDataClass ui;
 
     AquireDataApp *app_;
+
+    QTimer *timer_;
 };
 
 #endif // TLSAQUIREDATA_H

@@ -15,10 +15,7 @@
 //class QTimer;
 class ExchangeCalendar;
 class DataBase;
-//class StockMan;
 class AquireDataWin;
-//class MainWindow;
-//class KLineWall;
 class AquireDataApp : public QApplication, public TSystem::ServerClientAppBase
 {
     //Q_OBJECT
@@ -38,7 +35,10 @@ protected:
         , const TSystem::TError& ) override {};
 
 private:
+
     std::shared_ptr<AquireDataWin>  win_;
+
+    std::shared_ptr<DataBase> data_base_;
 };
 
 #endif

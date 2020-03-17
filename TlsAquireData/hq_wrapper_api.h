@@ -6,19 +6,6 @@
 #include <list>
 
 #include "tls_common.h"
-  
-
-struct T_KbarData
-{
-    int  date; 
-    int  hhmmss;
-    double open;
-    double close;
-    double high;
-    double low;
-    double vol;
-    T_KbarData() : date(0), hhmmss(0), open(0.0), close(0.0), high(0.0), low(0.0), vol(0.0){}
-};
 
 
 #define  IMEXPORT
@@ -37,8 +24,9 @@ int HqWrapperApi_GetHisKBars(const char* code, bool is_index, int nmarket, int k
                  , int end_date, int end_time
                  , T_KbarData *items, unsigned int item_max_size);
 
-int HqWrapperApi_GetAllHisKBars(const char* code, bool is_index, int nmarket, int kbar_type);
+bool HqWrapperApi_GetAllHisKBars(const char* code, bool is_index, int nmarket, int kbar_type);
 
+bool HqWrapperApi_IsFinishGettingData();
 //#ifdef __cplusplus
 //}
 //#endif
@@ -65,7 +53,8 @@ public:
     // items date is from small to big; // get data from start index to left(oldest date):     <---len---0 
     int __GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, std::list<T_KbarData> &items);
     
-
+    bool IsFinishGettingData(){ return !is_geting_data_; }
+    
 private:
 
     int _ConnectServer();

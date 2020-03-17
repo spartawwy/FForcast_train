@@ -5,40 +5,160 @@
 #include <memory>
 
 #include <SQLite/sqlite_connection.h>
+
 #include <TLib/core/tsystem_core_common.h>
 #include <TLib/core/tsystem_sqlite_functions.h>
 #include <TLib/core/tsystem_utility_functions.h>
 #include <Tlib/core/tsystem_time.h>
+#include <TLib/core/tsystem_task_service.h>
 
 #include "exch_calendar.h"
-//#include "futures_forecast_app.h"
-//#include "stock_man.h"
 
+#include "aquire_data_app.h" 
+
+using namespace SQLite;
 using namespace  TSystem;
-DataBase::DataBase(/*FuturesForecastApp *app*/)
-    : db_conn_(nullptr)
-    //, strand_(std::make_shared<TSystem::TaskStrand>(app->task_pool()))
-{
 
+DataBase::DataBase(AquireDataApp *app)
+    : app_(app)
+    , strand_(std::make_shared<TSystem::TaskStrand>(app->task_pool()))
+    , db_conn_(std::make_shared<SQLite::SQLiteConnection>())
+    , kdata_mon_stm_(db_conn_)
+    , kdata_week_stm_(db_conn_)
+    , kdata_day_stm_(db_conn_)
+    , kdata_hour_stm_(db_conn_)
+    , kdata_30m_stm_(db_conn_)
+    , kdata_15m_stm_(db_conn_)
+    , kdata_5m_stm_(db_conn_)
+    , kdata_1m_stm_(db_conn_)
+    , process_flag_(false)
+{
+    /*kdata_mon_waitting_buffer_.reserve(1024);
+    kdata_mon_process_buffer_.reserve(1024);
+
+    kdata_5m_waitting_buffer_.reserve(1024);
+    kdata_5m_process_buffer_.reserve(1024);*/
+     
 }
 
 DataBase::~DataBase()
 {
-
+    if( db_conn_ )
+        db_conn_->Close();
 }
 
 bool DataBase::Initialize()
 {
     Open(db_conn_);
 
+    // setup busy timeout : hard code for 60s
+	db_conn_->SetBusyTimeout(60*1000);
+
+    //----------------
+    // create table
+    //---------------
+    std::string sql;
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_MON( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_WEEK( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_DAY( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_HOUR( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_30M( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_15M( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_5M( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    sql = "CREATE TABLE IF NOT EXISTS SCL9_1M( "
+        "longdate INTEGER, time INTEGER, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "PRIMARY KEY(longdate, time) )";
+    db_conn_->ExecuteSQL(sql.c_str());
+
+    //--------------
+	// insert table
+	//--------------
+
+    sql = "INSERT OR IGNORE INTO SCL9_MON( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_mon_stm_.CompileSQL(sql.c_str());
+
+
+    sql = "INSERT OR IGNORE INTO SCL9_WEEK( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_week_stm_.CompileSQL(sql.c_str());
+
+    sql = "INSERT OR IGNORE INTO SCL9_DAY( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_day_stm_.CompileSQL(sql.c_str());
+
+    sql = "INSERT OR IGNORE INTO SCL9_HOUR( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_hour_stm_.CompileSQL(sql.c_str());
+
+    sql = "INSERT OR IGNORE INTO SCL9_30M( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_30m_stm_.CompileSQL(sql.c_str());
+
+    sql = "INSERT OR IGNORE INTO SCL9_15M( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_15m_stm_.CompileSQL(sql.c_str());
+
+    sql = "INSERT OR IGNORE INTO SCL9_5M( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_5m_stm_.CompileSQL(sql.c_str());
+
+    sql = "INSERT OR IGNORE INTO SCL9_1M( "
+        "longdate, time, open, close, high, low )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+    kdata_1m_stm_.CompileSQL(sql.c_str());
+
     return db_conn_ != nullptr;
 }
 
 void DataBase::Open(std::shared_ptr<SQLite::SQLiteConnection>& db_conn/*, const std::string db_file*/)
 {
-    db_conn = std::make_shared<SQLite::SQLiteConnection>();
+    //db_conn = std::make_shared<SQLite::SQLiteConnection>();
 
-    std::string db_file = "./exchbase.kd";
+    std::string db_file = "./hqhis.kd";
 
     if( db_conn->Open(db_file.c_str(), SQLite::SQLiteConnection::OpenMode::READ_WRITE) != SQLite::SQLiteCode::OK )
         ThrowTException( CoreErrorCategory::ErrorCode::BAD_CONTENT
@@ -46,6 +166,7 @@ void DataBase::Open(std::shared_ptr<SQLite::SQLiteConnection>& db_conn/*, const 
         , "can't open database: " + db_file);
 
 }
+
 #if 0
 void DataBase::LoadAllStockBaseInfo(std::shared_ptr<StockMan> &stock_man)
 {
@@ -123,6 +244,87 @@ void DataBase::LoadTradeDate(void *exchange_calendar)
         return 0;
     }); 
 }
+
+void DataBase::SaveKbarData(std::shared_ptr<T_KbarDataContainer> &kbar_datas , TlsTypePeriod type)
+{
+    strand_->PostTask(std::bind(&DataBase::HandleSaveKbarData, this, kbar_datas, type));
+}
+
+void DataBase::HandleSaveKbarData(std::shared_ptr<T_KbarDataContainer>  &kbar_datas , TlsTypePeriod type)
+{
+    switch(type)
+    {
+        case TlsTypePeriod::PERIOD_5M:
+            kdata_5m_waitting_buffer_.push_back(kbar_datas);
+            break;
+         case TlsTypePeriod::PERIOD_MON:
+            kdata_mon_waitting_buffer_.push_back(kbar_datas);
+            break;
+        default: 
+            assert(false);
+            break;
+    }
+    if( process_flag_ )
+        return;
+
+    TriggerProcessSave();
+}
+
+void DataBase::TriggerProcessSave()
+{
+    if( kdata_5m_waitting_buffer_.size() || kdata_mon_waitting_buffer_.size() )
+    {
+        process_flag_ = true;
+
+        kdata_5m_process_buffer_.swap(kdata_5m_waitting_buffer_);
+        kdata_mon_process_buffer_.swap(kdata_mon_waitting_buffer_);
+
+        strand_->GetTaskPool().PostTask( std::bind(&DataBase::ProcessSave, this) );
+    }else
+    {
+        process_flag_ = false;
+    }
+
+}
+
+void DataBase::ProcessSave()
+{
+    try
+    {
+        //-------------
+		// Transaction
+		//-------------
+
+		BeginTransaction(*db_conn_);
+
+        std::for_each( std::begin(kdata_5m_process_buffer_), std::end(kdata_5m_process_buffer_), [this](const std::shared_ptr<T_KbarDataContainer>& entry)
+        {
+            std::for_each( std::begin(*entry), std::end(*entry), [this](const T_KbarData& in)
+            {
+                this->kdata_5m_stm_.BindParam(1, in.date);
+                this->kdata_5m_stm_.BindParam(2, in.hhmmss);
+                this->kdata_5m_stm_.BindParam(3, in.open);
+                this->kdata_5m_stm_.BindParam(4, in.close);
+                this->kdata_5m_stm_.BindParam(5, in.high);
+                this->kdata_5m_stm_.BindParam(6, in.low);
+                this->kdata_5m_stm_.Evaluate();
+            });
+
+        });
+        // todo
+
+        EndTransaction(*db_conn_);
+    }catch(const SQLiteException& e)
+	{
+		ThrowTException(CoreErrorCategory::ErrorCode::BAD_CONTENT
+			, "DataBase::ProcessSave"
+			, FormatThirdPartyError("SQLite", static_cast<int>(e.code()), e.what()));
+	}
+    kdata_5m_process_buffer_.clear();
+    kdata_mon_process_buffer_.clear();
+    strand_->PostTask(std::bind(&DataBase::TriggerProcessSave, this));
+}
+
 
 #if 0
 void DataBase::GetStockCode(const std::string &code, std::vector<T_StockCodeName>& ret)
