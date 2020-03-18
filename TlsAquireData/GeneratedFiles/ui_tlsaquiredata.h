@@ -13,6 +13,7 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
@@ -25,6 +26,7 @@ class Ui_TlsAquireDataClass
 public:
     QPushButton *btnGetHisData;
     QLabel *lab_information;
+    QComboBox *cmb_k_type;
 
     void setupUi(QWidget *TlsAquireDataClass)
     {
@@ -40,6 +42,9 @@ public:
         QFont font;
         font.setPointSize(17);
         lab_information->setFont(font);
+        cmb_k_type = new QComboBox(TlsAquireDataClass);
+        cmb_k_type->setObjectName(QStringLiteral("cmb_k_type"));
+        cmb_k_type->setGeometry(QRect(80, 60, 261, 31));
 
         retranslateUi(TlsAquireDataClass);
 

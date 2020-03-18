@@ -44,6 +44,16 @@
     <string>TextLabel</string>
    </property>
   </widget>
+  <widget class="QComboBox" name="cmb_k_type">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>60</y>
+     <width>261</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>

@@ -260,39 +260,7 @@ T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, in
                 items_in_container.push_back(std::move(k_item));
             }
         }
-
-#if 0
-        if( p_data_items[p_data_items.size()-1].date < items_in_container.back()->stk_item.date 
-            || p_data_items[0].date < items_in_container.back()->stk_item.date )
-        { 
-            for( int k = count; k > 0; --k )
-            {  
-                //auto ck_val = p_data_items[k-1].date;
-                // push old to front
-                if( p_data_items[k-1].date < items_in_container.front()->stk_item.date || 
-                    (p_data_items[k-1].date == items_in_container.front()->stk_item.date &&
-                    p_data_items[k-1].hhmmss < items_in_container.front()->stk_item.hhmmss) )
-                {
-                    auto k_item = std::make_shared<T_KlineDataItem>(p_data_items[k-1]); 
-                    k_item->zhibiao_atoms.push_back(std::move(std::make_shared<MomentumZhibiao>()));
-                    items_in_container.push_front(std::move(k_item));
-                }
-            }
-        }else
-        {
-            for( int k = 0; k < count; ++k )
-            {
-                if( p_data_items[k].date > items_in_container.back()->stk_item.date ||
-                    (p_data_items[k].date == items_in_container.back()->stk_item.date &&
-                    p_data_items[k].hhmmss > items_in_container.back()->stk_item.hhmmss) )
-                {
-                    auto k_item = std::make_shared<T_KlineDataItem>(p_data_items[k]); 
-                    k_item->zhibiao_atoms.push_back(std::move(std::make_shared<MomentumZhibiao>()));
-                    items_in_container.push_back(std::move(k_item));
-                }
-            }
-        }
-#endif
+         
     }else // first insert
     {
         for( int k = 0; k < count; ++k )

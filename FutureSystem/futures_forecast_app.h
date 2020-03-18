@@ -56,7 +56,7 @@ private:
 
     std::shared_ptr<DataBase>  data_base_;
     std::shared_ptr<ExchangeCalendar>  exchange_calendar_;
-    std::shared_ptr<StockMan>  stock_man_;
+    //std::shared_ptr<StockMan>  stock_man_;
 
     std::shared_ptr<StockDataMan>  stock_data_man_;
 

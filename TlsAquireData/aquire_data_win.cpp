@@ -21,6 +21,26 @@ AquireDataWin::AquireDataWin(AquireDataApp *app, QWidget *parent)
     , timer_(nullptr)
 {
     ui.setupUi(this);
+
+    QVariant item_val;
+    item_val.setValue(KTYPE_PERIOD_1M);
+    ui.cmb_k_type->addItem("1M", item_val);
+    item_val.setValue(KTYPE_PERIOD_5M);
+    ui.cmb_k_type->addItem("5M", item_val);
+    item_val.setValue(KTYPE_PERIOD_15M);
+    ui.cmb_k_type->addItem("15M", item_val);
+    item_val.setValue(KTYPE_PERIOD_30M);
+    ui.cmb_k_type->addItem("30M", item_val);
+    item_val.setValue(KTYPE_PERIOD_HOUR);
+    ui.cmb_k_type->addItem("HOUR", item_val);
+
+    item_val.setValue(KTYPE_PERIOD_DAY);
+    ui.cmb_k_type->addItem("DAY", item_val);
+    item_val.setValue(KTYPE_PERIOD_WEEK);
+    ui.cmb_k_type->addItem("WEEK", item_val);
+    item_val.setValue(KTYPE_PERIOD_MON);
+    ui.cmb_k_type->addItem("MON", item_val);
+
     bool ret = connect(ui.btnGetHisData, SIGNAL(clicked()), this, SLOT(DoGetHisData()));
 
     timer_ = new QTimer(this);
@@ -42,7 +62,9 @@ bool AquireDataWin::Init()
 
 void AquireDataWin::DoGetHisData()
 { 
-    bool result = HqWrapperApi_GetAllHisKBars("SCL9", true, MARKET_SH_FUTURES, KTYPE_PERIOD_1M, SaveKbarDataCallback, app_);
+    auto val = ui.cmb_k_type->currentData();
+    auto k_type = val.toInt();
+    bool result = HqWrapperApi_GetAllHisKBars("SCL9", true, MARKET_SH_FUTURES, k_type, SaveKbarDataCallback, app_);
     if( result )
     {
         ui.lab_information->setText("Geting Data!");
