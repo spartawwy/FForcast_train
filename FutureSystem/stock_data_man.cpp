@@ -47,7 +47,7 @@ static bool bompare(const T_KlineDataItem &lh, const T_KlineDataItem &rh)
 
  
 
-StockDataMan::StockDataMan(/*KLineWall *p_kwall, */ExchangeCalendar *p_exchange_calendar, TSystem::LocalLogger &local_logger)
+StockDataMan::StockDataMan(/*KLineWall *p_kwall, */ExchangeCalendar *p_exchange_calendar, TSystem::LocalLogger &local_logger, DataBase &data_base)
     : /*kwall_(p_kwall)
     ,*/ m5_stock_his_items_(1024)
     , m1_stock_his_items_(1024)
@@ -82,6 +82,7 @@ StockDataMan::StockDataMan(/*KLineWall *p_kwall, */ExchangeCalendar *p_exchange_
     , tdx_exhq_wrapper_(p_exchange_calendar, local_logger)
     , p_exchange_calendar_(p_exchange_calendar)
     , local_logger_(local_logger)
+    , data_base_(data_base)
 {
     //LoadDataFromFile("./data/600030.dat");
     zhibiao_types_.push_back(ZhibiaoType::MOMENTUM); // momentum is in pos MOMENTUM_POS: 0
@@ -180,9 +181,13 @@ T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, in
     std::string code = stk_code;
     if( is_index )
         code = TransIndex2TusharedCode(stk_code);
-
     auto p_stk_hisdata_item_vector = new std::vector<T_StockHisDataItem>();
-    bool ret = tdx_exhq_wrapper_.GetHisKBars(code, is_index, nmarket, ToTypePeriod(period_type), start_date, end_date, *p_stk_hisdata_item_vector);
+    bool ret = false;
+#if 0
+    ret = tdx_exhq_wrapper_.GetHisKBars(code, is_index, nmarket, ToTypePeriod(period_type), start_date, end_date, *p_stk_hisdata_item_vector);
+#else
+    // todo: 
+#endif
     local_logger_.LogLocal(TSystem::utility::FormatStr("AppendStockData GetHisKBars %d ret:%d %d", period_type, ret, p_stk_hisdata_item_vector->size()));
 
     if( !ret || p_stk_hisdata_item_vector->empty() ) // fail

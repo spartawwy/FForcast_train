@@ -9,6 +9,8 @@
 #include <atomic>
 #include <unordered_map>
 
+#include "stkfo_common.h"
+
 struct T_StockCodeName
 {
     std::string code;
@@ -42,6 +44,8 @@ public:
     void LoadTradeDate(void *exchange_calendar);
 
     void GetStockCode(const std::string &code, std::vector<T_StockCodeName>& ret);
+
+    bool GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date, std::vector<T_StockHisDataItem> &items);
 
 private:
      

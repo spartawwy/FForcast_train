@@ -52,7 +52,7 @@ bool FuturesForecastApp::Init()
     exchange_calendar_ = std::make_shared<ExchangeCalendar>();
     data_base_->LoadTradeDate(exchange_calendar_.get());
 
-    stock_data_man_ = std::make_shared<StockDataMan>(exchange_calendar_.get(), local_logger());
+    stock_data_man_ = std::make_shared<StockDataMan>(exchange_calendar_.get(), local_logger(), *data_base_);
     if( !stock_data_man_->Init() )
     {
         QMessageBox::information(nullptr, QString::fromLocal8Bit("警告"), QString::fromLocal8Bit("stock_data_man构件初始化失败!"));

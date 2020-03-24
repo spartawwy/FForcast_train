@@ -162,3 +162,17 @@ void DataBase::GetStockCode(const std::string &code, std::vector<T_StockCodeName
     });
     return;
 }
+
+bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date, std::vector<T_StockHisDataItem> &items)
+{
+    char  table_name[128] = {"\0"};
+    switch(kbar_type)
+    {
+        case TypePeriod::PERIOD_1M: 
+            sprintf_s(table_name, "%s_1M", code.c_str()); break;
+        default:break;
+    }
+    // todo: judge if table exists
+    // todo: select data
+    return true;
+}

@@ -28,12 +28,12 @@ namespace  TSystem
 }
 class KLineWall;
 class ExchangeCalendar;
-
+class DataBase;
 class StockDataMan
 {
 public:
 
-    StockDataMan(/*KLineWall *p_kwall, */ExchangeCalendar *p_exchange_calendar, TSystem::LocalLogger &local_logger);
+    StockDataMan(/*KLineWall *p_kwall, */ExchangeCalendar *p_exchange_calendar, TSystem::LocalLogger &local_logger, DataBase &data_base);
     ~StockDataMan();
     bool Init();
 
@@ -121,6 +121,7 @@ private:
    std::vector<ZhibiaoType> zhibiao_types_;
    ExchangeCalendar *p_exchange_calendar_;
    TSystem::LocalLogger &local_logger_;
+   DataBase  &data_base_;
 };
 
 // < 0 : meaning no related data
