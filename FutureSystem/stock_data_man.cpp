@@ -20,7 +20,9 @@
 
 #include "tdx_exhq_wrapper.h"
 #include "zhibiao.h"
+#include "database.h"
 #include "exchange_calendar.h"
+
 #include "kline_wall.h"
 
 #include "futures_forecast_app.h"
@@ -186,7 +188,8 @@ T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, in
 #if 0
     ret = tdx_exhq_wrapper_.GetHisKBars(code, is_index, nmarket, ToTypePeriod(period_type), start_date, end_date, *p_stk_hisdata_item_vector);
 #else
-    // todo: 
+    char error_str[256] = {"\0"};
+    ret = data_base_.GetHisKBars(code, is_index, nmarket, ToTypePeriod(period_type), start_date, end_date, *p_stk_hisdata_item_vector, error_str);
 #endif
     local_logger_.LogLocal(TSystem::utility::FormatStr("AppendStockData GetHisKBars %d ret:%d %d", period_type, ret, p_stk_hisdata_item_vector->size()));
 

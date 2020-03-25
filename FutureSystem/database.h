@@ -45,7 +45,8 @@ public:
 
     void GetStockCode(const std::string &code, std::vector<T_StockCodeName>& ret);
 
-    bool GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date, std::vector<T_StockHisDataItem> &items);
+    bool GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date
+        , std::vector<T_StockHisDataItem> &items, char *error);
 
 private:
      
@@ -53,10 +54,12 @@ private:
     DataBase& operator = (DataBase&);
 
     void Open(std::shared_ptr<SQLite::SQLiteConnection>& db_conn);
+    void OpenHisHqDb(std::shared_ptr<SQLite::SQLiteConnection>& hishq_db_conn);
 
     //TSystem::LocalLogger *local_logger_;
     //WinnerApp *app_;
     std::shared_ptr<SQLite::SQLiteConnection>  db_conn_;
+    std::shared_ptr<SQLite::SQLiteConnection>  hishq_db_conn_;
 
     std::shared_ptr<TSystem::TaskStrand>  strand_;
 

@@ -21,6 +21,8 @@ public:
     static int DateAddDays(int date, int days);
 
     ExchangeCalendar();
+    ExchangeCalendar(const ExchangeCalendar &lh);
+    ExchangeCalendar & operator = (const ExchangeCalendar &lh);
 
     bool IsTradeDate(int date); // yyyymmdd
     bool IsTradeTime(int hhmm); // HHMM
@@ -32,6 +34,8 @@ public:
 	 
     int DateTradingSpan(int start_date, int end_date);
     T_TupleIndexLen GetStartIndexAndLen_backforward(int type_period, int start_date, int end_date);
+
+    
 
 private:
 

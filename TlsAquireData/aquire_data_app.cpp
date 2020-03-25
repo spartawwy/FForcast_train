@@ -2,6 +2,7 @@
 #include "aquire_data_win.h"
 
 #include "aqd_database.h"
+#include "exch_calendar.h"
 
 AquireDataApp::AquireDataApp(int argc, char* argv[])
     : QApplication(argc, argv)
@@ -26,6 +27,9 @@ bool AquireDataApp::Init()
 
     data_base_ = std::make_shared<DataBase>(this);
     data_base_->Initialize();
+
+    exchange_calendar_ = std::make_shared<ExchangeCalendar>();
+    data_base_->LoadTradeDate(exchange_calendar_.get());
     //---------------
     win_ = std::make_shared<AquireDataWin>(this);
     win_->Init();

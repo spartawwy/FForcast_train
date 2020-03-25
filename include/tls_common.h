@@ -39,6 +39,7 @@ struct T_KbarData
     double high;
     double low;
     double vol;
+    double hold;  // total hold position
     T_KbarData() : date(0), hhmmss(0), open(0.0), close(0.0), high(0.0), low(0.0), vol(0.0){}
     T_KbarData(const T_KbarData&lh) : date(lh.date), hhmmss(lh.hhmmss), open(lh.open)
         , close(lh.close), high(lh.high), low(lh.low), vol(lh.vol){}

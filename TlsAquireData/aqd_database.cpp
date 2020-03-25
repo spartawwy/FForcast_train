@@ -60,49 +60,49 @@ bool DataBase::Initialize()
     std::string sql;
     sql = "CREATE TABLE IF NOT EXISTS SCL9_MON( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
     sql = "CREATE TABLE IF NOT EXISTS SCL9_WEEK( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
     sql = "CREATE TABLE IF NOT EXISTS SCL9_DAY( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
     sql = "CREATE TABLE IF NOT EXISTS SCL9_HOUR( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
     sql = "CREATE TABLE IF NOT EXISTS SCL9_30M( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
     sql = "CREATE TABLE IF NOT EXISTS SCL9_15M( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
     sql = "CREATE TABLE IF NOT EXISTS SCL9_5M( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
     sql = "CREATE TABLE IF NOT EXISTS SCL9_1M( "
         "longdate INTEGER, time INTEGER, "
-        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, "
+        "open DOUBLE, close DOUBLE, high DOUBLE, low DOUBLE, vol DOUBLE, "
         "PRIMARY KEY(longdate, time) )";
     db_conn_->ExecuteSQL(sql.c_str());
 
@@ -111,44 +111,44 @@ bool DataBase::Initialize()
 	//--------------
 
     sql = "INSERT OR IGNORE INTO SCL9_MON( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_mon_stm_.CompileSQL(sql.c_str());
 
 
     sql = "INSERT OR IGNORE INTO SCL9_WEEK( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_week_stm_.CompileSQL(sql.c_str());
 
     sql = "INSERT OR IGNORE INTO SCL9_DAY( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_day_stm_.CompileSQL(sql.c_str());
 
     sql = "INSERT OR IGNORE INTO SCL9_HOUR( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_hour_stm_.CompileSQL(sql.c_str());
 
     sql = "INSERT OR IGNORE INTO SCL9_30M( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_30m_stm_.CompileSQL(sql.c_str());
 
     sql = "INSERT OR IGNORE INTO SCL9_15M( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_15m_stm_.CompileSQL(sql.c_str());
 
     sql = "INSERT OR IGNORE INTO SCL9_5M( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_5m_stm_.CompileSQL(sql.c_str());
 
     sql = "INSERT OR IGNORE INTO SCL9_1M( "
-        "longdate, time, open, close, high, low )"
-        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6 )";
+        "longdate, time, open, close, high, low, vol )"
+        "VALUES( ?1, ?2, ?3, ?4, ?5, ?6, ?7 )";
     kdata_1m_stm_.CompileSQL(sql.c_str());
 
     return db_conn_ != nullptr;
@@ -213,18 +213,21 @@ void DataBase::LoadAllStockBaseInfo(std::shared_ptr<StockMan> &stock_man)
 
 void DataBase::LoadTradeDate(void *exchange_calendar)
 {
-    assert(db_conn_);
-    if( !db_conn_ )
-        Open(db_conn_);
+    std::string ex_db_file = "./exchbase.kd";
+    SQLite::SQLiteConnection  ex_db_conn;
+    if( ex_db_conn.Open(ex_db_file.c_str(), SQLite::SQLiteConnection::OpenMode::READ_WRITE) != SQLite::SQLiteCode::OK )
+        ThrowTException( CoreErrorCategory::ErrorCode::BAD_CONTENT
+        , "DBMoudle::Open"
+        , "can't open database: " + ex_db_conn);
 
-    if( !utility::ExistTable("ExchangeDate", *db_conn_) )
+    if( !utility::ExistTable("ExchangeDate", ex_db_conn) )
         throw "DBMoudle::LoadTradeDate can't find table ExchangeDate"; 
 
     int end_date = ExchangeCalendar::TodayAddDays(7); 
     std::string sql = utility::FormatStr("SELECT date, is_tradeday FROM ExchangeDate WHERE date <= %d ORDER BY date DESC", end_date);
     int num = 0;
     ((ExchangeCalendar*)exchange_calendar)->max_trade_date_ = 0;
-    db_conn_->ExecuteSQL(sql.c_str(), [&num, &exchange_calendar, this](int /*num_cols*/, char** vals, char** /*names*/)->int
+    ex_db_conn.ExecuteSQL(sql.c_str(), [&num, &exchange_calendar, this](int /*num_cols*/, char** vals, char** /*names*/)->int
     { 
         try
         { 
@@ -351,43 +354,13 @@ void DataBase::ProcessSave()
                     p_sql_states[i]->BindParam(4, in.close);
                     p_sql_states[i]->BindParam(5, in.high);
                     p_sql_states[i]->BindParam(6, in.low);
+                    p_sql_states[i]->BindParam(7, in.vol);
                     p_sql_states[i]->Evaluate();
                 });
 
             });
         }
         
-
-        //std::for_each( std::begin(kdata_5m_process_buffer_), std::end(kdata_5m_process_buffer_), [this](const std::shared_ptr<T_KbarDataContainer>& entry)
-        //{
-        //    std::for_each( std::begin(*entry), std::end(*entry), [this](const T_KbarData& in)
-        //    {
-        //        this->kdata_5m_stm_.BindParam(1, in.date);
-        //        this->kdata_5m_stm_.BindParam(2, in.hhmmss);
-        //        this->kdata_5m_stm_.BindParam(3, in.open);
-        //        this->kdata_5m_stm_.BindParam(4, in.close);
-        //        this->kdata_5m_stm_.BindParam(5, in.high);
-        //        this->kdata_5m_stm_.BindParam(6, in.low);
-        //        this->kdata_5m_stm_.Evaluate();
-        //    });
-
-        //});
-        //std::for_each( std::begin(kdata_1m_process_buffer_), std::end(kdata_1m_process_buffer_), [this](const std::shared_ptr<T_KbarDataContainer>& entry)
-        //{
-        //    std::for_each( std::begin(*entry), std::end(*entry), [this](const T_KbarData& in)
-        //    {
-        //        this->kdata_1m_stm_.BindParam(1, in.date);
-        //        this->kdata_1m_stm_.BindParam(2, in.hhmmss);
-        //        this->kdata_1m_stm_.BindParam(3, in.open);
-        //        this->kdata_1m_stm_.BindParam(4, in.close);
-        //        this->kdata_1m_stm_.BindParam(5, in.high);
-        //        this->kdata_1m_stm_.BindParam(6, in.low);
-        //        this->kdata_1m_stm_.Evaluate();
-        //    });
-
-        //});
-        //// todo
-
         EndTransaction(*db_conn_);
     }catch(const SQLiteException& e)
 	{
@@ -399,14 +372,7 @@ void DataBase::ProcessSave()
     {
         p_containers[i]->clear();
     }
-    /*kdata_mon_process_buffer_.clear();
-    kdata_week_process_buffer_.clear();
-    kdata_day_process_buffer_.clear();
-    kdata_hour_process_buffer_.clear();
-    kdata_30m_process_buffer_.clear();
-    kdata_15m_process_buffer_.clear();
-    kdata_5m_process_buffer_.clear();
-    kdata_1m_process_buffer_.clear();*/
+     
     strand_->PostTask(std::bind(&DataBase::TriggerProcessSave, this));
 }
 

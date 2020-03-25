@@ -39,10 +39,19 @@ struct T_StockHisDataItem
     double high_price;
     double low_price;
     double open_price;
-    double pre_close_price;
+    //double pre_close_price;
     double vol;
     double capital;
     T_StockHisDataItem() : date(0), hhmmss(0){}
+    T_StockHisDataItem(int date_p, int hhmmss_p
+                       , double close_price_p, double high_price_p
+                        , double low_price_p, double open_price_p
+                        /*, double pre_close_price_p*/, double vol_p):date(date_p), hhmmss(hhmmss_p)
+                        , close_price(close_price_p), high_price(high_price_p), low_price(low_price_p), open_price(open_price_p)
+                        , vol(vol_p) {}
+    T_StockHisDataItem(const T_StockHisDataItem &lh):date(lh.date), hhmmss(lh.hhmmss)
+                        , close_price(lh.close_price), high_price(lh.high_price), low_price(lh.low_price), open_price(lh.open_price)
+                        , /*pre_close_price(lh.pre_close_price),*/ vol(lh.vol), capital(lh.capital){}
 };
 
 extern "C" int STKQUOTER_IMEXPORT StkQuoteGetQuote(char stocks[][16], const unsigned int size, T_StockPriceInfo price_info[]/*, unsigned int *ret_size*/);

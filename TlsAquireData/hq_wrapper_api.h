@@ -17,7 +17,7 @@ typedef std::list<std::unique_ptr<T_KbarData> >   T_KDataContainer;
 //#endif
 
 // return connect handle( > -1 )
-int HqWrapperApi_Init();
+int HqWrapperApi_Init(void *exchange_calendare);
 void HqWrapperApi_Destroy();
 
 int HqWrapperApi_GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type
@@ -33,6 +33,7 @@ bool HqWrapperApi_IsFinishGettingData();
 //}
 //#endif
 
+class ExchangeCalendar;
 class HqWrapperConcrete
 {
 public:
@@ -40,7 +41,7 @@ public:
     HqWrapperConcrete();
     ~HqWrapperConcrete();
 
-    bool Init();
+    bool Init(ExchangeCalendar &calendar);
     bool ConnectServer();
     void DisConnect();
     bool ReconnectServer();
@@ -62,7 +63,8 @@ private:
 
     int _ConnectServer();
 
-    
+    std::shared_ptr<ExchangeCalendar>  exchange_calendar_;
+
     int conn_handle_;
 
     std::mutex conn_handle_mutext_;

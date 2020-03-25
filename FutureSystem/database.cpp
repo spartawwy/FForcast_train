@@ -17,6 +17,7 @@
 using namespace  TSystem;
 DataBase::DataBase(FuturesForecastApp *app)
     : db_conn_(nullptr)
+    , hishq_db_conn_(nullptr)
     , strand_(std::make_shared<TSystem::TaskStrand>(app->task_pool()))
 {
 
@@ -30,8 +31,9 @@ DataBase::~DataBase()
 bool DataBase::Initialize()
 {
     Open(db_conn_);
+    OpenHisHqDb(hishq_db_conn_);
 
-    return db_conn_ != nullptr;
+    return db_conn_ != nullptr && hishq_db_conn_ != nullptr;
 }
 
 void DataBase::Open(std::shared_ptr<SQLite::SQLiteConnection>& db_conn/*, const std::string db_file*/)
@@ -42,9 +44,21 @@ void DataBase::Open(std::shared_ptr<SQLite::SQLiteConnection>& db_conn/*, const 
 
     if( db_conn->Open(db_file.c_str(), SQLite::SQLiteConnection::OpenMode::READ_WRITE) != SQLite::SQLiteCode::OK )
         ThrowTException( CoreErrorCategory::ErrorCode::BAD_CONTENT
-        , "DBMoudle::Open"
+        , "DataBase::Open"
         , "can't open database: " + db_file);
 
+}
+
+void DataBase::OpenHisHqDb(std::shared_ptr<SQLite::SQLiteConnection>& hishq_db_conn)
+{
+    hishq_db_conn = std::make_shared<SQLite::SQLiteConnection>();
+
+    std::string db_file = "./hqhis.kd";
+
+    if( hishq_db_conn->Open(db_file.c_str(), SQLite::SQLiteConnection::OpenMode::READ_WRITE) != SQLite::SQLiteCode::OK )
+        ThrowTException( CoreErrorCategory::ErrorCode::BAD_CONTENT
+        , "DataBase::Open"
+        , "can't open database: " + db_file);
 }
 
 void DataBase::LoadAllStockBaseInfo(std::shared_ptr<StockMan> &stock_man)
@@ -163,16 +177,66 @@ void DataBase::GetStockCode(const std::string &code, std::vector<T_StockCodeName
     return;
 }
 
-bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date, std::vector<T_StockHisDataItem> &items)
+bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date
+                           , std::vector<T_StockHisDataItem> &items, char *error)
 {
+    assert(hishq_db_conn_);
+    if( !hishq_db_conn_ )
+    {
+        OpenHisHqDb(hishq_db_conn_);
+    }
     char  table_name[128] = {"\0"};
     switch(kbar_type)
     {
         case TypePeriod::PERIOD_1M: 
             sprintf_s(table_name, "%s_1M", code.c_str()); break;
-        default:break;
+        case TypePeriod::PERIOD_5M: 
+            sprintf_s(table_name, "%s_5M", code.c_str()); break;
+        case TypePeriod::PERIOD_15M: 
+            sprintf_s(table_name, "%s_15M", code.c_str()); break;
+        case TypePeriod::PERIOD_30M: 
+            sprintf_s(table_name, "%s_30M", code.c_str()); break;
+        case TypePeriod::PERIOD_HOUR: 
+            sprintf_s(table_name, "%s_HOUR", code.c_str()); break;
+        case TypePeriod::PERIOD_DAY: 
+            sprintf_s(table_name, "%s_DAY", code.c_str()); break;
+        case TypePeriod::PERIOD_WEEK: 
+            sprintf_s(table_name, "%s_WEEK", code.c_str()); break;
+        case TypePeriod::PERIOD_MON: 
+            sprintf_s(table_name, "%s_MON", code.c_str()); break;
+        default:  assert(false); break;
     }
-    // todo: judge if table exists
+    // judge if table exists
+    if( !utility::ExistTable(table_name, *hishq_db_conn_) )
+    {
+        if( error ) sprintf(error, "DBMoudle::GetHisKBars can't find table %s", table_name);
+        return false;//throw "DBMoudle::LoadTradeDate can't find table ExchangeDate"; 
+    }
     // todo: select data
+    std::string sql = utility::FormatStr("SELECT longdate, time, close, high, low, open, vol FROM %s WHERE longdate >= %d "
+                                        " AND longdate <= %d "
+                                        " ORDER BY longdate, time"
+                                        , table_name, start_date, end_date); 
+
+     hishq_db_conn_->ExecuteSQL(sql.c_str(), [&items, this](int /*num_cols*/, char** vals, char** /*names*/)->int
+    { 
+        try
+        {  
+            T_StockHisDataItem item;
+            item.date =  boost::lexical_cast<int>(*(vals)); 
+            item.hhmmss = boost::lexical_cast<int>(*(vals + 1)); 
+            item.close_price = boost::lexical_cast<double>(*(vals + 2)); 
+            item.high_price = boost::lexical_cast<double>(*(vals + 3)); 
+            item.low_price = boost::lexical_cast<double>(*(vals + 4)); 
+            item.open_price = boost::lexical_cast<double>(*(vals + 5)); 
+            item.vol = boost::lexical_cast<double>(*(vals + 6)); 
+            items.push_back(item);
+             
+        }catch(boost::exception& e)
+        {
+            return 0;
+        } 
+        return 0;
+    }); 
     return true;
 }

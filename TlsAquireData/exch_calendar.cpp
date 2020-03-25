@@ -9,6 +9,18 @@ ExchangeCalendar::ExchangeCalendar() : min_trade_date_(0), max_trade_date_(0)
     trade_dates_ = std::make_shared<T_DateMapIsopen>(10*1024);
 }
 
+ExchangeCalendar::ExchangeCalendar(const ExchangeCalendar &lh)
+{
+    trade_dates_ = std::make_shared<T_DateMapIsopen>(10*1024);
+    *trade_dates_ = *lh.trade_dates_;
+}
+
+ExchangeCalendar & ExchangeCalendar::operator = (const ExchangeCalendar &lh)
+{
+    *trade_dates_ = *lh.trade_dates_;
+    return *this;
+}
+
 bool ExchangeCalendar::IsTradeDate(int date)
 {
      assert(trade_dates_->size() > 0);

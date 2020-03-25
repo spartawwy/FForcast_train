@@ -30,6 +30,8 @@ public:
 
     void SaveKbarDatas(int kbar_type, T_KbarData *data_ret[], unsigned int size);
 
+    ExchangeCalendar * exchange_calendar() { return exchange_calendar_.get(); }
+
 protected:
 
     virtual void HandleNodeHandShake(TSystem::communication::Connection* , const TSystem::Message& ) override {};
@@ -41,6 +43,8 @@ private:
     std::shared_ptr<AquireDataWin>  win_;
 
     std::shared_ptr<DataBase> data_base_;
+
+    std::shared_ptr<ExchangeCalendar>  exchange_calendar_;
 };
 
 #endif

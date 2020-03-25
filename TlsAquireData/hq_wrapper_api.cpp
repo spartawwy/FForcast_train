@@ -10,6 +10,7 @@
 
 #include "ExHqApi.h"
 
+//#include "aqd_database.h
 #include "exch_calendar.h"
 #include "write_log.h"
 
@@ -18,7 +19,7 @@
 #define FIX_TTY_BUG
 
 void little_sleep(int ms);
-ExchangeCalendar exchange_calendar;
+//ExchangeCalendar exchange_calendar;
 
 
 
@@ -34,9 +35,11 @@ HqWrapperConcrete *GetInstance()
     return &hq_app;
 }
 
-int HqWrapperApi_Init()
+int HqWrapperApi_Init(void *exchange_calendare)
 {
-   return (int)GetInstance()->Init();
+   if( exchange_calendare == nullptr)
+       return -1;
+   return (int)GetInstance()->Init(*(ExchangeCalendar*)exchange_calendare);
 }
 
 void HqWrapperApi_Destroy()
@@ -68,7 +71,8 @@ bool HqWrapperApi_IsFinishGettingData()
 
 //=====================================================================
 HqWrapperConcrete::HqWrapperConcrete()
-    : is_geting_data_(false)
+    : exchange_calendar_(nullptr)
+    , is_geting_data_(false)
     , conn_handle_(-1)
     , p_get_data_callback(nullptr)
     , p_func_para(nullptr)
@@ -81,8 +85,11 @@ HqWrapperConcrete::~HqWrapperConcrete()
 
 }
 
-bool HqWrapperConcrete::Init()
+bool HqWrapperConcrete::Init(ExchangeCalendar &calendar)
 {
+    exchange_calendar_ = std::make_shared<ExchangeCalendar>();
+    *exchange_calendar_ = calendar;
+
     return ConnectServer();
 }
 
@@ -148,8 +155,24 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
         short start = 0;
         const short max_count = 400;
         short count = max_count; 
+
         int ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, *p_items);
-        while( ret >= max_count )
+        if( ret <= 0 )
+        {
+            delete p_items;
+            this->is_geting_data_= false;
+            return;
+        }
+        T_KbarData *p_data_array[MAX_K_COUNT*2]; 
+        int i = 0;
+        std::for_each(std::begin(*p_items), std::end(*p_items), [&](T_KDataContainer::reference entery)
+        {
+            //WriteLog("%d %d %.2f", entery->date, entery->hhmmss, entery->close);
+            p_data_array[i++] = entery.get();
+        });
+        p_get_data_callback(p_func_para, kbar_type, p_data_array, (unsigned int)ret);
+
+        while( ret >= max_count ) // result is not finish 
         {
            little_sleep(1);
            start += ret;
@@ -161,8 +184,8 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
                WriteLog("get %d ret %d break", kbar_type, ret);
                break;
            }
-           T_KbarData *p_data_array[MAX_K_COUNT*2]; 
-           int i = 0;
+           //T_KbarData *p_data_array[MAX_K_COUNT*2]; 
+           i = 0;
            std::for_each(std::begin(items_hlp), std::end(items_hlp), [&](T_KDataContainer::reference entery)
             {
                 //WriteLog("%d %d %.2f", entery->date, entery->hhmmss, entery->close);
@@ -370,7 +393,7 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
 #if 1
                         if( k_data->hhmmss > 2100 )
                         {
-                            //k_data.date = exchange_calendar_->PreTradeDate(k_data.date, 1);
+                            k_data->date = exchange_calendar_->PreTradeDate(k_data->date, 1);
                         }
 #endif 
                     }else
@@ -392,6 +415,7 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                     ++index;
                     k_data->vol = boost::lexical_cast<double>(match_result[index]);
                     ++index;
+                    k_data->hold = boost::lexical_cast<double>(match_result[index]);
                     //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
                     items.push_back(std::move(k_data));
 
@@ -430,7 +454,7 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                             k_data->hhmmss = hour * 100 + minute;
                             if( k_data->hhmmss > 2100 )
                             {
-                                //k_data.date = exchange_calendar_->PreTradeDate(k_data.date, 1);
+                                k_data->date = exchange_calendar_->PreTradeDate(k_data->date, 1);
                             }
                         }else
                         {
@@ -451,6 +475,7 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         ++index;
                         k_data->vol = boost::lexical_cast<double>(match_result[index]);
                         ++index;
+                        k_data->hold = boost::lexical_cast<double>(match_result[index]);
                         //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
                         items.push_back(std::move(k_data));
 

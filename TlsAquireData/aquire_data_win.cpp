@@ -56,7 +56,7 @@ AquireDataWin::~AquireDataWin()
 
 bool AquireDataWin::Init()
 {
-    int ret = HqWrapperApi_Init();
+    int ret = HqWrapperApi_Init(app_->exchange_calendar());
     return ret > -1;
 }
 
