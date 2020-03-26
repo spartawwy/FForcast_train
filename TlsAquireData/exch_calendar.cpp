@@ -82,20 +82,29 @@ int ExchangeCalendar::FloorTradeDate(int date)
 int ExchangeCalendar::PreTradeDate(int date, unsigned int n)
 {   
     assert(trade_dates_->size() > 0);
-    // auto date_time_point = TSystem::MakeTimePoint(date/10000, (date % 10000) / 100, date % 100);
+    //auto date_time_point = TSystem::MakeTimePoint(date/10000, (date % 10000) / 100, date % 100);
     unsigned int count = 0;
     int i = 1;
     T_DateMapIsopen &date_map_opend = *trade_dates_;
     int a = 0;
-    while( count < n )
+    if( n > 0 )
     {
-        a = DateAddDays(date, -1 * i);  
-        if( a < min_trade_date_ )
-            return 0;
-        auto iter = date_map_opend.find(a);
-        if( iter != date_map_opend.end() && iter->second )
-            ++count;
-        ++i;
+        while( count < n )
+        {
+            a = DateAddDays(date, i);  
+            if( a > max_trade_date_ )
+                return 0;
+            auto iter = date_map_opend.find(a);
+            if( iter != date_map_opend.end() && iter->second )
+                ++count;
+            ++i;
+        }
+    }else
+    {
+        if( IsTradeDate(date) )
+            a = date;
+        else
+            a = CeilingTradeDate(date);
     }
     return a;
 }

@@ -60,6 +60,7 @@ public:
     QLabel *label_10;
     QLineEdit *le_short_pos;
     QScrollBar *hScrollBar_TrainTimeRange;
+    QLabel *lab_start_date;
 
     void setupUi(QWidget *TrainDlgForm)
     {
@@ -192,6 +193,11 @@ public:
         hScrollBar_TrainTimeRange->setObjectName(QStringLiteral("hScrollBar_TrainTimeRange"));
         hScrollBar_TrainTimeRange->setGeometry(QRect(320, 20, 191, 31));
         hScrollBar_TrainTimeRange->setOrientation(Qt::Horizontal);
+        lab_start_date = new QLabel(TrainDlgForm);
+        lab_start_date->setObjectName(QStringLiteral("lab_start_date"));
+        lab_start_date->setGeometry(QRect(330, 60, 151, 21));
+        lab_start_date->setFont(font1);
+        lab_start_date->setAlignment(Qt::AlignCenter);
 
         retranslateUi(TrainDlgForm);
 
@@ -219,6 +225,7 @@ public:
         lab_status->setText(QApplication::translate("TrainDlgForm", "status", 0));
         label_10->setText(QApplication::translate("TrainDlgForm", "\347\251\272\345\244\264\345\244\264\345\257\270:", 0));
         le_short_pos->setText(QString());
+        lab_start_date->setText(QApplication::translate("TrainDlgForm", "\345\274\200\344\273\223\346\211\213\347\273\255\350\264\271:", 0));
     } // retranslateUi
 
 };

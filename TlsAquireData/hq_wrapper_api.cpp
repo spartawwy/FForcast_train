@@ -190,8 +190,6 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
                WriteLog("get %d ret %d break", kbar_type, ret);
                break;
            }
-           //T_KbarData *p_data_array[MAX_K_COUNT*2]; 
-           i = 0;
            std::for_each(std::begin(items_hlp), std::end(items_hlp), [&](T_KDataContainer::reference entery)
             {
                 //WriteLog("%d %d %.2f", entery->date, entery->hhmmss, entery->close);

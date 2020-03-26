@@ -96,15 +96,24 @@ int ExchangeCalendar::NextTradeDate(int date, unsigned int n)
     int i = 1;
     T_DateMapIsopen &date_map_opend = *trade_dates_;
     int a = 0;
-    while( count < n )
+    if( n > 0 )
     {
-        a = DateAddDays(date, i);  
-        if( a > max_trade_date_ )
-            return 0;
-        auto iter = date_map_opend.find(a);
-        if( iter != date_map_opend.end() && iter->second )
-            ++count;
-        ++i;
+        while( count < n )
+        {
+            a = DateAddDays(date, i);  
+            if( a > max_trade_date_ )
+                return 0;
+            auto iter = date_map_opend.find(a);
+            if( iter != date_map_opend.end() && iter->second )
+                ++count;
+            ++i;
+        }
+    }else
+    {
+        if( IsTradeDate(date) )
+            a = date;
+        else
+            a = CeilingTradeDate(date);
     }
     return a;
 }
@@ -342,4 +351,128 @@ int ExchangeCalendar::DateAddDays(int date, int days)
     tm tm_day_t;
     _localtime64_s(&tm_day_t, &day_t);
     return (tm_day_t.tm_year + 1900) * 10000 + (tm_day_t.tm_mon + 1) * 100 + tm_day_t.tm_mday;
+}
+ 
+// ret: <= val;  ret == 0 means false
+int ExchangeCalendar::Translate2DateMaySmall(int val)
+{   //date/10000, (date % 10000) / 100, date % 100
+    int year = val / 10000;
+    int mon = (val % 10000) / 100;
+    int day = val % 100;
+    if( year < 1700 )
+        return 0;
+    if( year > 3000 )
+        return 0;
+    if( mon < 1 )
+    {
+        year -= 1;
+        mon = 12;
+    }
+    if( mon > 12 )
+        mon = 12;
+    if( day < 1 )
+    {
+        mon -= 1;
+        if( mon < 1 )
+        {
+            year -= 1;
+            mon = 12;
+        } 
+        day = 31;
+    }
+    if( day > 31 )
+        day = 31;
+    while( !IsValidDate(year, mon, day) )
+    {
+        day -= 1;
+        if( day < 1 )
+        {
+            mon -= 1;
+            if( mon < 1 )
+            {
+                year -= 1;
+                mon = 12;
+            } 
+            day = 31;
+        }
+    }
+    return year * 10000 + mon * 100 + day;
+}
+ 
+// ret: >= val;  ret == 0 means false
+int ExchangeCalendar::Translate2DateMayBig(int val)
+{   //date/10000, (date % 10000) / 100, date % 100
+    int year = val / 10000;
+    int mon = (val % 10000) / 100;
+    int day = val % 100;
+    if( year < 1700 )
+        return 0;
+    if( year > 3000 )
+        return 0;
+    if( mon < 1 || mon > 12 )
+    {
+        year += 1;
+        mon = 1;
+    }
+     
+    if( day < 1 )
+    {
+        mon += 1;
+        if( mon > 12 )
+        {
+            year += 1;
+            mon = 1;
+        } 
+        day = 1;
+    }
+    if( day > 31 )
+        day = 31;
+    while( !IsValidDate(year, mon, day) )
+    {
+        day += 1;
+        if( day > 31 )
+        {
+            mon += 1;
+            if( mon > 12 )
+            {
+                year += 1;
+                mon = 1;
+            } 
+            day = 1;
+        }
+    }
+    return year * 10000 + mon * 100 + day;
+}
+
+bool ExchangeCalendar::IsLeapYear(int Year)
+{
+    return ((Year % 4 == 0 && Year % 100 != 0 ) || Year % 400 == 0);
+}
+
+bool ExchangeCalendar::IsValidDate(int Year,int Month,int Day)
+{
+    int nDay;
+    if ( Year < 1 || Month >12 || Month < 1 || Day < 1 ) 
+        return false;
+
+    switch( Month ) {
+    case 4:
+    case 6:
+    case 9:
+    case 11:
+        nDay = 30;
+        break;
+    case 2:
+        if(IsLeapYear(Year))
+            nDay = 29;
+        else
+            nDay = 28;
+        break;
+    default:
+        nDay = 31;
+    }
+
+    if( Day > nDay )
+        return false; 
+    return true;
 }

@@ -19,8 +19,8 @@
 
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_TrainDlg_t {
-    QByteArrayData data[10];
-    char stringdata[118];
+    QByteArrayData data[11];
+    char stringdata[141];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -30,17 +30,19 @@ struct qt_meta_stringdata_TrainDlg_t {
 static const qt_meta_stringdata_TrainDlg_t qt_meta_stringdata_TrainDlg = {
     {
 QT_MOC_LITERAL(0, 0, 8),
-QT_MOC_LITERAL(1, 9, 17),
-QT_MOC_LITERAL(2, 27, 0),
-QT_MOC_LITERAL(3, 28, 12),
-QT_MOC_LITERAL(4, 41, 11),
-QT_MOC_LITERAL(5, 53, 13),
-QT_MOC_LITERAL(6, 67, 12),
-QT_MOC_LITERAL(7, 80, 13),
-QT_MOC_LITERAL(8, 94, 14),
-QT_MOC_LITERAL(9, 109, 7)
+QT_MOC_LITERAL(1, 9, 22),
+QT_MOC_LITERAL(2, 32, 0),
+QT_MOC_LITERAL(3, 33, 17),
+QT_MOC_LITERAL(4, 51, 12),
+QT_MOC_LITERAL(5, 64, 11),
+QT_MOC_LITERAL(6, 76, 13),
+QT_MOC_LITERAL(7, 90, 12),
+QT_MOC_LITERAL(8, 103, 13),
+QT_MOC_LITERAL(9, 117, 14),
+QT_MOC_LITERAL(10, 132, 7)
     },
-    "TrainDlg\0OnCalendarClicked\0\0OnStartTrain\0"
+    "TrainDlg\0OnScrollTrainTimeMoved\0\0"
+    "OnCalendarClicked\0OnStartTrain\0"
     "OnStopTrain\0OnMoveToNextK\0OnMoveToPreK\0"
     "OnOpenOpenWin\0OnOpenCloseWin\0OnTrade\0"
 };
@@ -52,7 +54,7 @@ static const uint qt_meta_data_TrainDlg[] = {
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-       8,   14, // methods
+       9,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -60,16 +62,18 @@ static const uint qt_meta_data_TrainDlg[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    1,   54,    2, 0x0a,
-       3,    0,   57,    2, 0x0a,
-       4,    0,   58,    2, 0x0a,
-       5,    0,   59,    2, 0x0a,
-       6,    0,   60,    2, 0x0a,
-       7,    0,   61,    2, 0x0a,
-       8,    0,   62,    2, 0x0a,
-       9,    0,   63,    2, 0x0a,
+       1,    1,   59,    2, 0x0a,
+       3,    1,   62,    2, 0x0a,
+       4,    0,   65,    2, 0x0a,
+       5,    0,   66,    2, 0x0a,
+       6,    0,   67,    2, 0x0a,
+       7,    0,   68,    2, 0x0a,
+       8,    0,   69,    2, 0x0a,
+       9,    0,   70,    2, 0x0a,
+      10,    0,   71,    2, 0x0a,
 
  // slots: parameters
+    QMetaType::Void, QMetaType::Int,    2,
     QMetaType::Void, QMetaType::QDate,    2,
     QMetaType::Void,
     QMetaType::Void,
@@ -87,14 +91,15 @@ void TrainDlg::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, vo
     if (_c == QMetaObject::InvokeMetaMethod) {
         TrainDlg *_t = static_cast<TrainDlg *>(_o);
         switch (_id) {
-        case 0: _t->OnCalendarClicked((*reinterpret_cast< const QDate(*)>(_a[1]))); break;
-        case 1: _t->OnStartTrain(); break;
-        case 2: _t->OnStopTrain(); break;
-        case 3: _t->OnMoveToNextK(); break;
-        case 4: _t->OnMoveToPreK(); break;
-        case 5: _t->OnOpenOpenWin(); break;
-        case 6: _t->OnOpenCloseWin(); break;
-        case 7: _t->OnTrade(); break;
+        case 0: _t->OnScrollTrainTimeMoved((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 1: _t->OnCalendarClicked((*reinterpret_cast< const QDate(*)>(_a[1]))); break;
+        case 2: _t->OnStartTrain(); break;
+        case 3: _t->OnStopTrain(); break;
+        case 4: _t->OnMoveToNextK(); break;
+        case 5: _t->OnMoveToPreK(); break;
+        case 6: _t->OnOpenOpenWin(); break;
+        case 7: _t->OnOpenCloseWin(); break;
+        case 8: _t->OnTrade(); break;
         default: ;
         }
     }
@@ -125,13 +130,13 @@ int TrainDlg::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 8)
+        if (_id < 9)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 8;
+        _id -= 9;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 8)
+        if (_id < 9)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 8;
+        _id -= 9;
     }
     return _id;
 }

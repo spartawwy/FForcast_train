@@ -2,8 +2,10 @@
 
 #include <QtWidgets/QComboBox>
 #include <QMessageBox>
+#include <QDebug>
 
 #include "database.h"
+#include "exchange_calendar.h"
 
 #include "futures_forecast_app.h"
 #include "mainwindow.h"
@@ -22,7 +24,8 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , is_started_(false)
     , account_info_()
     , force_close_low_(MAX_PRICE)
-    , force_close_high_(MIN_PRICE)
+    , force_close_high_(MIN_PRICE) 
+    , scroll_bar_date_(0)
 {
     ui.setupUi(this);
 
@@ -72,7 +75,17 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
         latest_time = (latest_date == latest_date_5m ? latest_time_5m : latest_time_1m);
 
     hisk_date_range_ = std::make_tuple(eldest_date, eldest_time, latest_date, latest_time);
+    
     //----------------------------------------
+    ui.hScrollBar_TrainTimeRange->setMinimum(eldest_date);
+    ui.hScrollBar_TrainTimeRange->setMaximum(latest_date);
+    ui.hScrollBar_TrainTimeRange->setValue(eldest_date);
+    int distan_days = main_win_->app_->exchange_calendar()->DateTradingSpan(eldest_date, latest_date);
+    ui.hScrollBar_TrainTimeRange->setSingleStep((latest_date-eldest_date)/distan_days);
+     
+    scroll_bar_date_ = eldest_date;
+    ret = connect(ui.hScrollBar_TrainTimeRange, SIGNAL(sliderMoved(int)), this, SLOT(OnScrollTrainTimeMoved(int)));
+
     //ui.le_date->text().clear();
     //ui.le_date->setReadOnly(true);
     OnStopTrain();
@@ -83,6 +96,15 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
 const T_StockHisDataItem & TrainDlg::CurHisStockDataItem()
 {
     return parent_->CurTrainStockDataItem();
+}
+
+void TrainDlg::OnScrollTrainTimeMoved(int val)
+{
+    int distance = val - ui.hScrollBar_TrainTimeRange->minimum();
+    int dis_trade_days = distance / ui.hScrollBar_TrainTimeRange->singleStep(); 
+    scroll_bar_date_ = main_win_->app_->exchange_calendar()->NextTradeDate(ui.hScrollBar_TrainTimeRange->minimum(), dis_trade_days);
+    ui.lab_start_date->setText(QString::number(scroll_bar_date_));
+      
 }
 
 void TrainDlg::OnCalendarClicked(const QDate & date)

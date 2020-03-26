@@ -30,6 +30,7 @@ public:
 
 public slots:
 
+    void OnScrollTrainTimeMoved(int);
     void OnCalendarClicked(const QDate &);
     void OnStartTrain();
     void OnStopTrain();
@@ -75,6 +76,7 @@ private:
     std::vector<TradeRecordAtom>  trade_records_;
 
     T_DateRange  hisk_date_range_;
+    int scroll_bar_date_;
 };
 
 #endif // TRAIN_DLG_SDFS23343543_H_

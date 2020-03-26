@@ -35,7 +35,9 @@ public:
     int DateTradingSpan(int start_date, int end_date);
     T_TupleIndexLen GetStartIndexAndLen_backforward(int type_period, int start_date, int end_date);
 
-    
+    int Translate2DateMaySmall(int val);
+    bool IsLeapYear(int Year);
+    bool IsValidDate(int Year,int Month,int Day);
 
 private:
 
