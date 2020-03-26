@@ -27,6 +27,7 @@ public:
     QPushButton *btnGetHisData;
     QLabel *lab_information;
     QComboBox *cmb_k_type;
+    QPushButton *btnGetRecentHisData;
 
     void setupUi(QWidget *TlsAquireDataClass)
     {
@@ -35,7 +36,7 @@ public:
         TlsAquireDataClass->resize(600, 400);
         btnGetHisData = new QPushButton(TlsAquireDataClass);
         btnGetHisData->setObjectName(QStringLiteral("btnGetHisData"));
-        btnGetHisData->setGeometry(QRect(430, 60, 75, 23));
+        btnGetHisData->setGeometry(QRect(370, 40, 101, 23));
         lab_information = new QLabel(TlsAquireDataClass);
         lab_information->setObjectName(QStringLiteral("lab_information"));
         lab_information->setGeometry(QRect(80, 200, 381, 71));
@@ -45,6 +46,9 @@ public:
         cmb_k_type = new QComboBox(TlsAquireDataClass);
         cmb_k_type->setObjectName(QStringLiteral("cmb_k_type"));
         cmb_k_type->setGeometry(QRect(80, 60, 261, 31));
+        btnGetRecentHisData = new QPushButton(TlsAquireDataClass);
+        btnGetRecentHisData->setObjectName(QStringLiteral("btnGetRecentHisData"));
+        btnGetRecentHisData->setGeometry(QRect(370, 80, 101, 23));
 
         retranslateUi(TlsAquireDataClass);
 
@@ -54,8 +58,9 @@ public:
     void retranslateUi(QWidget *TlsAquireDataClass)
     {
         TlsAquireDataClass->setWindowTitle(QApplication::translate("TlsAquireDataClass", "TlsAquireData", 0));
-        btnGetHisData->setText(QApplication::translate("TlsAquireDataClass", "GetHisData", 0));
+        btnGetHisData->setText(QApplication::translate("TlsAquireDataClass", "GetAllHisData", 0));
         lab_information->setText(QApplication::translate("TlsAquireDataClass", "TextLabel", 0));
+        btnGetRecentHisData->setText(QApplication::translate("TlsAquireDataClass", "GeRecentHisData", 0));
     } // retranslateUi
 
 };

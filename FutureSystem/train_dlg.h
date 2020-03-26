@@ -73,6 +73,8 @@ private:
     double fee_rate_;
      
     std::vector<TradeRecordAtom>  trade_records_;
+
+    T_DateRange  hisk_date_range_;
 };
 
 #endif // TRAIN_DLG_SDFS23343543_H_

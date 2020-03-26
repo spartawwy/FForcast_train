@@ -308,6 +308,9 @@ typedef std::unordered_map<std::string, T_BiContainer> T_CodeMapBiContainer;
 
 typedef std::deque<std::shared_ptr<T_StructLine> >  T_StructLineContainer; 
 
+// eldest date, eldest time, latest date, latest time
+typedef std::tuple<int, int, int, int>  T_DateRange;
+
 class T_Section
 {
 public:
@@ -370,5 +373,6 @@ KGreenRedType KGGetGreenRedType(const T_StockHisDataItem &item, TypePeriod type_
 
 #define MARKET_SH_FUTURES  30
 
+#define DEFAULT_CODE  "SCL9"
 
 #endif // STKFO_COMMON_SDF3DSF_H_

@@ -27,7 +27,8 @@ int HqWrapperApi_GetHisKBars(const char* code, bool is_index, int nmarket, int k
 
 bool HqWrapperApi_GetAllHisKBars(const char* code, bool is_index, int nmarket, int kbar_type
                                  , T_GetDataCallBack *func, void *func_para);
-
+bool HqWrapperApi_GetRecentHisKBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type
+                                , int para_count, T_GetDataCallBack *func, void *func_para);
 bool HqWrapperApi_IsFinishGettingData();
 //#ifdef __cplusplus
 //}
@@ -54,6 +55,8 @@ public:
     bool GetAllHisBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type
                    , T_GetDataCallBack *func, void *func_para);
 
+    bool GetRecentHisBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type
+                   , int para_count, T_GetDataCallBack *func, void *func_para);
     // items date is from small to big; // get data from start index to left(oldest date):     <---len---0 
     int __GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, short start, short &count, T_KDataContainer &items);
     

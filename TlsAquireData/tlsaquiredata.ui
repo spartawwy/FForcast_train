@@ -16,14 +16,14 @@
   <widget class="QPushButton" name="btnGetHisData">
    <property name="geometry">
     <rect>
-     <x>430</x>
-     <y>60</y>
-     <width>75</width>
+     <x>370</x>
+     <y>40</y>
+     <width>101</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>GetHisData</string>
+    <string>GetAllHisData</string>
    </property>
   </widget>
   <widget class="QLabel" name="lab_information">
@@ -52,6 +52,19 @@
      <width>261</width>
      <height>31</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnGetRecentHisData">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>80</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>GeRecentHisData</string>
    </property>
   </widget>
  </widget>

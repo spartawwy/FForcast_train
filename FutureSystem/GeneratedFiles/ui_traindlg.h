@@ -22,6 +22,7 @@
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPlainTextEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QTableView>
 #include <QtWidgets/QWidget>
 
@@ -58,6 +59,7 @@ public:
     QDateTimeEdit *de_begin;
     QLabel *label_10;
     QLineEdit *le_short_pos;
+    QScrollBar *hScrollBar_TrainTimeRange;
 
     void setupUi(QWidget *TrainDlgForm)
     {
@@ -115,7 +117,7 @@ public:
         label_5->setFont(font);
         layoutWidget = new QWidget(TrainDlgForm);
         layoutWidget->setObjectName(QStringLiteral("layoutWidget"));
-        layoutWidget->setGeometry(QRect(50, 60, 158, 25));
+        layoutWidget->setGeometry(QRect(50, 60, 158, 28));
         horizontalLayout = new QHBoxLayout(layoutWidget);
         horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
         horizontalLayout->setContentsMargins(0, 0, 0, 0);
@@ -186,6 +188,10 @@ public:
         le_short_pos = new QLineEdit(TrainDlgForm);
         le_short_pos->setObjectName(QStringLiteral("le_short_pos"));
         le_short_pos->setGeometry(QRect(320, 250, 111, 31));
+        hScrollBar_TrainTimeRange = new QScrollBar(TrainDlgForm);
+        hScrollBar_TrainTimeRange->setObjectName(QStringLiteral("hScrollBar_TrainTimeRange"));
+        hScrollBar_TrainTimeRange->setGeometry(QRect(320, 20, 191, 31));
+        hScrollBar_TrainTimeRange->setOrientation(Qt::Horizontal);
 
         retranslateUi(TrainDlgForm);
 

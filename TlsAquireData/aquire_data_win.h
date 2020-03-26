@@ -18,6 +18,7 @@ public:
 public slots:
 
     void DoGetHisData();
+    void DoGetRecentHisData();
     void DoTimeOut();
 
 protected:

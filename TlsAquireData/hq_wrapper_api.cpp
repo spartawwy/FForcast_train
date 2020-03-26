@@ -52,7 +52,6 @@ int HqWrapperApi_GetHisKBars(const char* code, bool is_index, int nmarket, int k
                 , int end_date, int end_time
                 , T_KbarData *items, unsigned int item_max_size)
 {
-
     return 0;
 }
 
@@ -62,6 +61,13 @@ bool HqWrapperApi_GetAllHisKBars(const char* para_code, bool para_is_index, int 
                                  , T_GetDataCallBack *func, void *func_para)
 {
     return GetInstance()->GetAllHisBars(para_code, para_is_index, para_nmarket, para_kbar_type, func, func_para);
+}
+
+bool HqWrapperApi_GetRecentHisKBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type
+                                , int para_count, T_GetDataCallBack *func, void *func_para)
+{
+    return GetInstance()->GetRecentHisBars(para_code, para_is_index, para_nmarket, para_kbar_type
+                                , para_count, func, func_para);
 }
 
 bool HqWrapperApi_IsFinishGettingData()
@@ -202,6 +208,92 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
     data_get_mutext_.unlock();
     return true;
 }
+
+bool HqWrapperConcrete::GetRecentHisBars(const char* para_code, bool para_is_index, int para_nmarket, int para_kbar_type
+                   , int para_count, T_GetDataCallBack *func, void *func_para)
+{
+    assert(func);
+    assert(para_count > 0);
+    if( !data_get_mutext_.try_lock() )
+        return false;
+
+    if( is_geting_data_ )
+    {
+        data_get_mutext_.unlock();
+        return false;
+    }
+    is_geting_data_= true;
+
+    p_get_data_callback = func;
+    p_func_para = func_para;
+    std::thread  thread_get_data([this, para_code, para_is_index, para_nmarket, para_kbar_type, para_count]()
+    {
+        auto p_items = new T_KDataContainer;
+        char code[64] = {'\0'};
+        strcpy(code, para_code);
+        bool is_index = para_is_index;
+        int  nmarket = para_nmarket;
+        int  kbar_type = para_kbar_type;
+        const int input_count = para_count;
+        int rest_count = input_count;
+        short start = 0;
+        const short max_count = 400;
+        short count = max_count; 
+        if( input_count > max_count )
+            count = max_count; 
+        else
+            count = input_count;
+        int ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, *p_items);
+        if( ret <= 0 )
+        {
+            delete p_items;
+            this->is_geting_data_= false;
+            return;
+        }
+        rest_count -= ret;
+        T_KbarData *p_data_array[MAX_K_COUNT*2]; 
+        int i = 0;
+        std::for_each(std::begin(*p_items), std::end(*p_items), [&](T_KDataContainer::reference entery)
+        {
+            //WriteLog("%d %d %.2f", entery->date, entery->hhmmss, entery->close);
+            p_data_array[i++] = entery.get();
+        });
+        p_get_data_callback(p_func_para, kbar_type, p_data_array, (unsigned int)ret);
+
+        while( rest_count > 0) // result is not finish 
+        {
+           little_sleep(1);
+           start += ret;
+           if( rest_count > max_count )
+                count = max_count; 
+           else
+                count = rest_count;
+           T_KDataContainer  items_hlp;
+           ret = GetInstance()->__GetHisKBars(code, is_index, nmarket, kbar_type, start, count, items_hlp);
+           if( ret <= 0 )
+           {
+               WriteLog("get %d ret %d break", kbar_type, ret);
+               break;
+           }
+           rest_count -= ret;
+           i = 0;
+           std::for_each(std::begin(items_hlp), std::end(items_hlp), [&](T_KDataContainer::reference entery)
+            {
+                //WriteLog("%d %d %.2f", entery->date, entery->hhmmss, entery->close);
+                p_data_array[i++] = entery.get();
+            });
+           p_get_data_callback(p_func_para, kbar_type, p_data_array, (unsigned int)ret);
+           p_items->splice(p_items->begin(), items_hlp);
+        } // while
+        delete p_items;
+        this->is_geting_data_= false;
+    });
+    thread_get_data.detach();
+
+    data_get_mutext_.unlock();
+    return true;
+}
+
 
 bool HqWrapperConcrete::GetHisKBars(const char* code, bool is_index, int nmarket, int kbar_type, int para_start, short count
                                    , T_KDataContainer &items)

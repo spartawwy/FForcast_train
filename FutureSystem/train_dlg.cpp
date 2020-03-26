@@ -3,6 +3,9 @@
 #include <QtWidgets/QComboBox>
 #include <QMessageBox>
 
+#include "database.h"
+
+#include "futures_forecast_app.h"
 #include "mainwindow.h"
 #include "tool_bar.h"
 #include "kline_wall.h"
@@ -36,7 +39,40 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
 
     ret = connect(trade_dlg_.ui.pbt_trade, SIGNAL(clicked()), this, SLOT(OnTrade()));
     ret = ret;
+    // set his k date range info----------------
+    T_DateRange  date_rage_5m;
+    bool result = main_win_->app_->data_base()->GetHisKBarDateRange(DEFAULT_CODE, false, TypePeriod::PERIOD_5M, date_rage_5m);
+    if( !result )
+        QMessageBox::information(nullptr, "erro", "there is no history k date of 5m");
+    int eldest_date_5m = std::get<0>(date_rage_5m);
+    int eldest_time_5m = std::get<1>(date_rage_5m);
+    int latest_date_5m = std::get<2>(date_rage_5m);
+    int latest_time_5m = std::get<3>(date_rage_5m);
+    T_DateRange  date_rage_1m;
+    result = main_win_->app_->data_base()->GetHisKBarDateRange(DEFAULT_CODE, false, TypePeriod::PERIOD_1M, date_rage_1m);
+    if( !result )
+        QMessageBox::information(nullptr, "erro", "there is no history k date of 1m");
+    int eldest_date_1m = std::get<0>(date_rage_1m);
+    int eldest_time_1m = std::get<1>(date_rage_1m);
+    int latest_date_1m = std::get<2>(date_rage_1m);
+    int latest_time_1m = std::get<3>(date_rage_1m);
 
+    int eldest_date = std::max(eldest_date_5m, eldest_date_1m);
+    int eldest_time = 0; 
+    if( eldest_date_5m == eldest_date_1m )
+        eldest_time = std::max(eldest_time_5m, eldest_time_1m);
+    else 
+        eldest_time = (eldest_date == eldest_date_5m ? eldest_time_5m : eldest_time_1m);
+
+    int latest_date = std::min(latest_date_5m, latest_date_1m);
+    int latest_time = 0;
+    if( latest_date_5m == latest_date_1m )
+        latest_time = std::min(latest_time_5m, latest_time_1m);
+    else
+        latest_time = (latest_date == latest_date_5m ? latest_time_5m : latest_time_1m);
+
+    hisk_date_range_ = std::make_tuple(eldest_date, eldest_time, latest_date, latest_time);
+    //----------------------------------------
     //ui.le_date->text().clear();
     //ui.le_date->setReadOnly(true);
     OnStopTrain();

@@ -42,6 +42,7 @@ AquireDataWin::AquireDataWin(AquireDataApp *app, QWidget *parent)
     ui.cmb_k_type->addItem("MON", item_val);
 
     bool ret = connect(ui.btnGetHisData, SIGNAL(clicked()), this, SLOT(DoGetHisData()));
+    ret = connect(ui.btnGetRecentHisData, SIGNAL(clicked()), this, SLOT(DoGetRecentHisData()));
 
     timer_ = new QTimer(this);
     ret = connect(timer_, SIGNAL(timeout()), this, SLOT(DoTimeOut()));
@@ -68,6 +69,23 @@ void AquireDataWin::DoGetHisData()
     if( result )
     {
         ui.lab_information->setText("Geting Data!");
+        timer_->start(500);
+    }
+}
+
+void AquireDataWin::DoGetRecentHisData()
+{ 
+    auto val = ui.cmb_k_type->currentData();
+    auto k_type = val.toInt();
+    int count = MAX_K_COUNT;
+    if( k_type == KTYPE_PERIOD_1M )
+        count = 3600*12;
+    else
+        count = 12*12*5;
+    bool result = HqWrapperApi_GetRecentHisKBars("SCL9", true, MARKET_SH_FUTURES, k_type, count, SaveKbarDataCallback, app_);
+    if( result )
+    {
+        ui.lab_information->setText("Geting Recent Data!");
         timer_->start(500);
     }
 }

@@ -20,7 +20,6 @@
 #include "futures_forecast_app.h"
 #include "exchange_calendar.h"
   
-#define DEFAULT_CODE  "SCL9"
 
 static const int cst_default_year = 2017;
 static const Qt::CursorShape cst_cur_del_forcst_line = Qt::ClosedHandCursor;
@@ -1887,9 +1886,11 @@ void KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int date, int hhmm)
             k_num_ = 0;
         }
     }
-    k_cur_train_date_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
-    k_cur_train_hhmm_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.hhmmss;
-
+    if( !p_hisdata_container_->empty() )
+    {
+        k_cur_train_date_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
+        k_cur_train_hhmm_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.hhmmss;
+    }
     if( old_rend_index != k_rend_index_ || old_k_num != k_num_ )
     {
         UpdateKwallMinMaxPrice();

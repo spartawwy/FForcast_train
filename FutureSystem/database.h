@@ -11,6 +11,7 @@
 
 #include "stkfo_common.h"
 
+
 struct T_StockCodeName
 {
     std::string code;
@@ -47,6 +48,9 @@ public:
 
     bool GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date
         , std::vector<T_StockHisDataItem> &items, char *error);
+
+    bool GetHisKBarDateRange(const std::string &code, bool is_index, TypePeriod kbar_type, T_DateRange &range);
+
 
 private:
      

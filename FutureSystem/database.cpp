@@ -177,14 +177,8 @@ void DataBase::GetStockCode(const std::string &code, std::vector<T_StockCodeName
     return;
 }
 
-bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date
-                           , std::vector<T_StockHisDataItem> &items, char *error)
+std::string MakeTableName(const std::string &code, bool is_index, /*int nmarket,*/ TypePeriod kbar_type)
 {
-    assert(hishq_db_conn_);
-    if( !hishq_db_conn_ )
-    {
-        OpenHisHqDb(hishq_db_conn_);
-    }
     char  table_name[128] = {"\0"};
     switch(kbar_type)
     {
@@ -206,17 +200,31 @@ bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, 
             sprintf_s(table_name, "%s_MON", code.c_str()); break;
         default:  assert(false); break;
     }
+    return table_name;
+}
+
+bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, TypePeriod kbar_type, int start_date, int end_date
+                           , std::vector<T_StockHisDataItem> &items, char *error)
+{
+    assert(hishq_db_conn_);
+   /* if( !hishq_db_conn_ )
+    {
+        OpenHisHqDb(hishq_db_conn_);
+    }*/
+     
+    std::string table_name = MakeTableName(code, is_index, kbar_type);
+
     // judge if table exists
     if( !utility::ExistTable(table_name, *hishq_db_conn_) )
     {
-        if( error ) sprintf(error, "DBMoudle::GetHisKBars can't find table %s", table_name);
+        if( error ) sprintf(error, "DBMoudle::GetHisKBars can't find table %s", table_name.c_str());
         return false;//throw "DBMoudle::LoadTradeDate can't find table ExchangeDate"; 
     }
-    // todo: select data
+    // select data
     std::string sql = utility::FormatStr("SELECT longdate, time, close, high, low, open, vol FROM %s WHERE longdate >= %d "
                                         " AND longdate <= %d "
                                         " ORDER BY longdate, time"
-                                        , table_name, start_date, end_date); 
+                                        , table_name.c_str(), start_date, end_date); 
 
      hishq_db_conn_->ExecuteSQL(sql.c_str(), [&items, this](int /*num_cols*/, char** vals, char** /*names*/)->int
     { 
@@ -238,5 +246,59 @@ bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, 
         } 
         return 0;
     }); 
+    return true;
+}
+
+
+bool DataBase::GetHisKBarDateRange(const std::string &code, bool is_index, TypePeriod kbar_type, T_DateRange &range)
+{
+    assert(hishq_db_conn_); 
+     
+    std::string table_name = MakeTableName(code, is_index, kbar_type);
+
+    // judge if table exists
+    if( !utility::ExistTable(table_name, *hishq_db_conn_) )
+        return false;//throw "DBMoudle::LoadTradeDate can't find table ExchangeDate"; 
+
+    int eldest_date = 0, eldest_time = 0;
+    int latest_date = 0, latest_time = 0;
+    // select data
+    std::string sql = utility::FormatStr("select longdate, MIN(time) from %s where longdate = (SELECT MIN(longdate) from %s )"
+                                        , table_name.c_str(), table_name.c_str()); 
+    hishq_db_conn_->ExecuteSQL(sql.c_str(), [this, &eldest_date, &eldest_time](int /*num_cols*/, char** vals, char** /*names*/)->int
+    {
+        if( !*vals )
+            return 1;
+        try
+        {
+            eldest_date =  boost::lexical_cast<int>(*(vals)); 
+            eldest_time =  boost::lexical_cast<int>(*(vals + 1)); 
+        }catch(boost::exception& e)
+        {
+            return 0;
+        } 
+        return 0;
+    });
+
+    sql = utility::FormatStr("select longdate, MAX(time) from %s where longdate = (SELECT MAX(longdate) from %s )"
+                                        , table_name.c_str(), table_name.c_str()); 
+    hishq_db_conn_->ExecuteSQL(sql.c_str(), [this, &latest_date, &latest_time](int /*num_cols*/, char** vals, char** /*names*/)->int
+    {
+        if( !*vals )
+            return 1;
+        try
+        {
+            latest_date =  boost::lexical_cast<int>(*(vals)); 
+            latest_time =  boost::lexical_cast<int>(*(vals + 1)); 
+        }catch(boost::exception& e)
+        {
+            return 0;
+        } 
+        return 0;
+    });
+
+    if( eldest_date == 0 || latest_date == 0 )
+        return false;
+    range = std::make_tuple(eldest_date, eldest_time, latest_date, latest_time);
     return true;
 }
