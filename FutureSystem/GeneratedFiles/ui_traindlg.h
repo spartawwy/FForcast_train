@@ -61,6 +61,7 @@ public:
     QLineEdit *le_short_pos;
     QScrollBar *hScrollBar_TrainTimeRange;
     QLabel *lab_start_date;
+    QPushButton *pbtnNextStep;
 
     void setupUi(QWidget *TrainDlgForm)
     {
@@ -198,6 +199,10 @@ public:
         lab_start_date->setGeometry(QRect(330, 60, 151, 21));
         lab_start_date->setFont(font1);
         lab_start_date->setAlignment(Qt::AlignCenter);
+        pbtnNextStep = new QPushButton(TrainDlgForm);
+        pbtnNextStep->setObjectName(QStringLiteral("pbtnNextStep"));
+        pbtnNextStep->setGeometry(QRect(270, 100, 75, 23));
+        pbtnNextStep->setFont(font);
 
         retranslateUi(TrainDlgForm);
 
@@ -226,6 +231,7 @@ public:
         label_10->setText(QApplication::translate("TrainDlgForm", "\347\251\272\345\244\264\345\244\264\345\257\270:", 0));
         le_short_pos->setText(QString());
         lab_start_date->setText(QApplication::translate("TrainDlgForm", "\345\274\200\344\273\223\346\211\213\347\273\255\350\264\271:", 0));
+        pbtnNextStep->setText(QApplication::translate("TrainDlgForm", "\346\255\245\350\277\233", 0));
     } // retranslateUi
 
 };

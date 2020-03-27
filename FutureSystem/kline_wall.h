@@ -80,9 +80,15 @@ public:
 
     void UpdateIfNecessary(int target_date, int cur_hhmm);
     // train mode --------
-    void SetTrainStartDateTime(TypePeriod tp_period, int date, int hhmm);
+    TypePeriod  train_step_type_;
+    unsigned int cur_train_step_;
+    unsigned int cur_train_step(){ return cur_train_step_; }
+    void cur_train_step(unsigned int val) { cur_train_step_ = val; }
+    T_StockHisDataItem* SetTrainStartDateTime(TypePeriod tp_period, int date, int hhmm);
     std::tuple<int, int> MoveRightEndToNextK();
     void MoveRightEndToNextK(int date, int hhmm);
+    T_StockHisDataItem Train_NextStep();
+    void Train_NextStep(T_StockHisDataItem & input_item);
 
     void MoveRightEndToPreDayK();
     const T_StockHisDataItem & CurTrainStockDataItem();
@@ -125,8 +131,6 @@ private slots:
 
     void slotOpenStatisticDlg(bool);
     void slotZoominSelect(bool);
-
-    //void slotTbvTasksContextMenu(QPoint);
      
 private: 
       

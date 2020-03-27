@@ -42,7 +42,7 @@ struct T_StockHisDataItem
     //double pre_close_price;
     double vol;
     double capital;
-    T_StockHisDataItem() : date(0), hhmmss(0){}
+    T_StockHisDataItem() : date(0), hhmmss(0), close_price(0.0), high_price(.0),low_price(0.0),open_price(0.0),vol(0.0),capital(0.0){}
     T_StockHisDataItem(int date_p, int hhmmss_p
                        , double close_price_p, double high_price_p
                         , double low_price_p, double open_price_p

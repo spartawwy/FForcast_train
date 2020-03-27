@@ -37,6 +37,8 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ret = connect(ui.pbtnStop, SIGNAL(clicked()), this, SLOT(OnStopTrain()));
     ret = connect(ui.pbtnNextK, SIGNAL(clicked()), this, SLOT(OnMoveToNextK()));
     ret = connect(ui.pbtnPreK, SIGNAL(clicked()), this, SLOT(OnMoveToPreK()));
+    ret = connect(ui.pbtnNextStep, SIGNAL(clicked()), this, SLOT(OnNextStep()));
+
     ret = connect(ui.pbtnBuy, SIGNAL(clicked()), this, SLOT(OnOpenOpenWin()));
     ret = connect(ui.pbtnSell, SIGNAL(clicked()), this, SLOT(OnOpenCloseWin()));
 
@@ -82,7 +84,8 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ui.hScrollBar_TrainTimeRange->setValue(eldest_date);
     int distan_days = main_win_->app_->exchange_calendar()->DateTradingSpan(eldest_date, latest_date);
     ui.hScrollBar_TrainTimeRange->setSingleStep((latest_date-eldest_date)/distan_days);
-     
+    ui.lab_start_date->setText(QString::number(eldest_date));
+
     scroll_bar_date_ = eldest_date;
     ret = connect(ui.hScrollBar_TrainTimeRange, SIGNAL(sliderMoved(int)), this, SLOT(OnScrollTrainTimeMoved(int)));
 
@@ -174,17 +177,22 @@ void TrainDlg::OnStartTrain()
          this->showNormal();
     }*/
 
-    int date = ui.de_begin->date().toString("yyyyMMdd").toInt();
-    int time = ui.de_begin->time().toString("hhmm").toInt();
-    //int date = ui.le_date->text().toInt();
-    parent_->SetTrainStartDateTime(TypePeriod(main_win_->tool_bar_->main_cycle_comb()->currentData().toInt()), date, time);
-
+    int start_day = ui.lab_start_date->text().toInt();
+    int start_time = 905;
+    //int date = ui.de_begin->date().toString("yyyyMMdd").toInt();
+    //int time = ui.de_begin->time().toString("hhmm").toInt();
+     
+    //parent_->SetTrainStartDateTime(TypePeriod(main_win_->tool_bar_->main_cycle_comb()->currentData().toInt()), start_day, start_time);
+    auto p_item = parent_->SetTrainStartDateTime(TypePeriod::PERIOD_5M, start_day, start_time);
+    if( p_item )
+        parent_->cur_train_step(p_item->hhmmss % 5);
     if( main_win_->SubKlineWall() )
     {
+        main_win_->SubKlineWall()->cur_train_step(parent_->cur_train_step());
         main_win_->SubKlineWall()->SetTrainStartDateTime(TypePeriod(main_win_->tool_bar_->sub_cycle_comb()->currentData().toInt())
-            , date, time);
-        main_win_->SubKlineWall()->right_clicked_k_date(date);
-        main_win_->SubKlineWall()->right_clicked_k_hhmm(time);
+            , start_day, start_time);
+        main_win_->SubKlineWall()->right_clicked_k_date(start_day);
+        main_win_->SubKlineWall()->right_clicked_k_hhmm(start_time);
 
         main_win_->SubKlineWall()->slotOpenRelatedSubKwall(false);
     }
@@ -349,6 +357,23 @@ void TrainDlg::OnMoveToNextK()
                                     + cst_margin_capital * (long_pos + short_pos)));
 
     PrintTradeRecords();
+}
+
+void TrainDlg::OnNextStep()
+{
+    //std::tuple<int, int>  date_time = std::make_tuple(0, 0);
+    //double close_price = MAGIC_STOP_PRICE;
+    T_StockHisDataItem item;
+    if( main_win_->SubKlineWall() )
+        item = main_win_->SubKlineWall()->Train_NextStep();
+        parent_->Train_NextStep(item);
+
+    const T_StockHisDataItem & stock_item = CurHisStockDataItem();
+    if( stock_item.date == 0 )
+    {
+        SetStatusBar(QString::fromLocal8Bit("日期为0, 数据异常!"));
+        return;
+    }
 }
 
 void TrainDlg::OnMoveToPreK()

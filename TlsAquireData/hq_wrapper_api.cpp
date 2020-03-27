@@ -491,7 +491,10 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         k_data->date = boost::lexical_cast<int>(match_result[index]);
                         k_data->hhmmss = 0;
                     }
-
+                    // debug----------
+                    if( k_data->date == 0 )
+                        k_data->date = k_data->date;
+                    // end-----------
                     ++index;
                     k_data->open = boost::lexical_cast<double>(match_result[index]);
                     ++index;
@@ -551,7 +554,10 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                             k_data->date = boost::lexical_cast<int>(match_result[index]);
                             k_data->hhmmss = 0;
                         }
-
+                        // debug----------
+                        if( k_data->date == 0 )
+                            k_data->date = k_data->date;
+                        // end-----------
                         ++index;
                         k_data->open = boost::lexical_cast<double>(match_result[index]);
                         ++index;

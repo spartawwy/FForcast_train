@@ -13,11 +13,15 @@ ExchangeCalendar::ExchangeCalendar(const ExchangeCalendar &lh)
 {
     trade_dates_ = std::make_shared<T_DateMapIsopen>(10*1024);
     *trade_dates_ = *lh.trade_dates_;
+    min_trade_date_ = lh.min_trade_date_;
+    max_trade_date_ = lh.max_trade_date_;
 }
 
 ExchangeCalendar & ExchangeCalendar::operator = (const ExchangeCalendar &lh)
 {
     *trade_dates_ = *lh.trade_dates_;
+    min_trade_date_ = lh.min_trade_date_;
+    max_trade_date_ = lh.max_trade_date_;
     return *this;
 }
 

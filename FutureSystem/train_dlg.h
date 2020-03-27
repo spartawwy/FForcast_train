@@ -38,6 +38,8 @@ public slots:
     void OnMoveToNextK();
     void OnMoveToPreK();
 
+    void OnNextStep();
+
     void OnOpenOpenWin();
     void OnOpenCloseWin();
 
