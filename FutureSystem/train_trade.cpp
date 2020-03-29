@@ -407,7 +407,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLoss(int date, int hhmm, doub
 }
 #endif 
 
-std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit)
+std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids)
 { 
     std::vector<TradeRecordAtom> ret;
     assert( qty > 0 );
@@ -431,8 +431,10 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
             this_profit = (price - (*iter)->price) / cst_per_tick * cst_per_tick_capital * remain_tgt_qty;
             capital_ret += cst_margin_capital * remain_tgt_qty;
             if( (*iter)->qty == remain_tgt_qty )
+            {
+                if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
                 iter = long_positions_.erase(iter);
-            else
+            }else
             {
                 (*iter)->qty -= remain_tgt_qty;
                 ++iter;
@@ -444,6 +446,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
             this_profit = (price - (*iter)->price) / cst_per_tick * cst_per_tick_capital * this_qty;
             remain_tgt_qty -= this_qty;
             capital_ret += cst_margin_capital * this_qty;
+            if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
             iter = long_positions_.erase(iter);
         }
         profit += this_profit;
@@ -459,6 +462,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
         item.profit = this_profit;
         item.fee = CalculateFee(item.quantity, price, true);
         ret.push_back(item);
+        profit -= item.fee;
 
         if( remain_tgt_qty == 0 )
             break;
@@ -469,7 +473,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
     return ret;
 }
 
-std::vector<TradeRecordAtom> PositionInfo::CloseShort(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit)
+std::vector<TradeRecordAtom> PositionInfo::CloseShort(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids)
 { 
     assert( qty > 0 );
     assert( short_positions_.size() > 0 );
@@ -490,8 +494,10 @@ std::vector<TradeRecordAtom> PositionInfo::CloseShort(int date, int hhmm, double
             this_profit = ((*iter)->price - price) / cst_per_tick * cst_per_tick_capital * remain_tgt_qty;
             capital_ret += cst_margin_capital * remain_tgt_qty;
             if( (*iter)->qty == remain_tgt_qty )
+            {
+                if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
                 iter = short_positions_.erase(iter);
-            else
+            }else
             {
                 (*iter)->qty -= remain_tgt_qty;
                 ++iter;
@@ -503,6 +509,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseShort(int date, int hhmm, double
             this_profit = ((*iter)->price - price) / cst_per_tick * cst_per_tick_capital * this_qty;
             capital_ret += cst_margin_capital * this_qty;
             remain_tgt_qty -= this_qty;
+            if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
             iter = short_positions_.erase(iter);
         }
         profit += this_profit;
@@ -518,6 +525,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseShort(int date, int hhmm, double
         item.profit = this_profit;
         item.fee = CalculateFee(item.quantity, price, true);
         ret.push_back(item);
+        profit -= item.fee;
 
         if( remain_tgt_qty == 0 )
             break;

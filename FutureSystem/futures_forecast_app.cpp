@@ -17,7 +17,7 @@
 
 FuturesForecastApp::FuturesForecastApp(int argc, char* argv[])
     : QApplication(argc, argv)
-    , ServerClientAppBase("client", "futures_forecast", "1.0")
+    , ServerClientAppBase("client", "futures_train", "0.1")
     , data_base_(nullptr)
     //, stock_man_(nullptr)
     , stock_data_man_(nullptr)

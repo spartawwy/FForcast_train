@@ -369,6 +369,23 @@ int StockDataMan::UpdateOrAppendLatestItemStockData(PeriodType period_type, int 
 }
 
 // ps: data has sorted
+void StockDataMan::ReCaculateZhibiao(T_HisDataItemContainer &data_items_in_container, unsigned int item_index)
+{
+    for (unsigned int i = 0; i < zhibiao_types_.size(); ++i )
+    {
+        switch(zhibiao_types_[i])
+        {
+        case ZhibiaoType::MOMENTUM:
+            {
+                MomentumZhibiao::ReCaculateZhibiao(data_items_in_container, item_index);
+                break;
+            }
+        default: break;
+        }
+    }
+}
+
+// ps: data has sorted
 void StockDataMan::CaculateZhibiao(T_HisDataItemContainer &data_items_in_container)
 {
     for (unsigned int i = 0; i < zhibiao_types_.size(); ++i )

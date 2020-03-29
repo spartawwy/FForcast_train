@@ -1913,6 +1913,7 @@ T_StockHisDataItem KLineWall::Train_NextStep()
     const int old_k_rend_index = k_rend_index_; 
     const int old_date = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.date;
     const int old_hhmm = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.hhmmss;
+    
     auto update_next_step = [this, old_k_rend_index]()->T_StockHisDataItem
     {
             k_rend_index_for_train_ = k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0;
@@ -1922,6 +1923,8 @@ T_StockHisDataItem KLineWall::Train_NextStep()
             k_rend_index_ = k_rend_index_for_train_;
             if( old_k_rend_index != k_rend_index_ )
             {
+                const unsigned int left_index = p_hisdata_container_->size() - k_rend_index_for_train_ - 1;
+                app_->stock_data_man().ReCaculateZhibiao(*p_hisdata_container_, left_index);
                 UpdateKwallMinMaxPrice();
                 UpdatePosDatas();
                 update();
@@ -1963,12 +1966,7 @@ void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
             target_item->stk_item = input_item;
 
             k_rend_index_ = k_rend_index_for_train_;
-            /*if( old_k_rend_index != k_rend_index_ )
-            {
-                UpdateKwallMinMaxPrice();
-                UpdatePosDatas();
-                update();
-            }*/
+            
         }else{
             // update cur item
             cur_item->stk_item.hhmmss = input_item.hhmmss;
@@ -1978,6 +1976,8 @@ void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
             cur_item->stk_item.vol += input_item.vol;
             //--------------
         }
+        const unsigned int left_index = p_hisdata_container_->size() - k_rend_index_for_train_ - 1;
+        app_->stock_data_man().ReCaculateZhibiao(*p_hisdata_container_, left_index);
         UpdateKwallMinMaxPrice();
         UpdatePosDatas();
         update();

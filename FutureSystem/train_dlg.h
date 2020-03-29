@@ -5,7 +5,7 @@
 #include <cassert>
 #include <vector>
 #include <QtWidgets/QWidget>
-
+#include <QStandardItemModel>
 #include "ui_traindlg.h"
 
 #include "stkfo_common.h"
@@ -31,12 +31,11 @@ public:
 public slots:
 
     void OnScrollTrainTimeMoved(int);
-    void OnCalendarClicked(const QDate &);
     void OnStartTrain();
     void OnStopTrain();
 
     void OnMoveToNextK();
-    void OnMoveToPreK();
+    //void OnMoveToPreK();
 
     void OnNextStep();
 
@@ -44,7 +43,8 @@ public slots:
     void OnOpenCloseWin();
 
     void OnTrade();
-
+    void OnBuy();
+    void OnSell();
     
 protected:
 
@@ -53,10 +53,22 @@ protected:
 private:
 
     void PrintTradeRecords();
+    
+    void OpenPosition(double para_price, bool is_long);
+    void ClosePosition(double para_price, bool is_long);
+
+    void AddOpenOrder(double price, bool is_long);
+    void AddCloseOrder(double price, bool is_long);
+
+    unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
+
+    double RecaculatePositionTableFloatProfit(double cur_price);
+    // UI -----
     void SetStatusBar(const QString & val)
     {
         ui.lab_status->setText(val);
     }
+    void RefreshCapitalUi();
 
 private:
 

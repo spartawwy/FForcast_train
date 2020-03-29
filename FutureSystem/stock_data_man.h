@@ -106,10 +106,12 @@ public:
     std::vector<T_StockHisDataItem> *p_stk_hisdata_item_vector_;
     bool is_fetched_stk_hisdata_;
 #endif 
+    void ReCaculateZhibiao(T_HisDataItemContainer &data_items_in_container, unsigned int item_index);
 private:
 
     std::tuple<int, int> GetDateIndexFromContainer(PeriodType period_type, const std::string& stock, int start_date, int end_date);
     void CaculateZhibiao(T_HisDataItemContainer &data_items_in_container);
+    
 
 private:
 

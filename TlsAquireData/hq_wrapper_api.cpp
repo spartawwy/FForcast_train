@@ -169,7 +169,8 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
             this->is_geting_data_= false;
             return;
         }
-        T_KbarData *p_data_array[MAX_K_COUNT*2]; 
+        //const unsigned int max_k_bars = 2^19;
+        T_KbarData *p_data_array[max_count*2]; 
         int i = 0;
         std::for_each(std::begin(*p_items), std::end(*p_items), [&](T_KDataContainer::reference entery)
         {
@@ -177,7 +178,7 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
             p_data_array[i++] = entery.get();
         });
         p_get_data_callback(p_func_para, kbar_type, p_data_array, (unsigned int)ret);
-
+        i = 0;
         while( ret >= max_count ) // result is not finish 
         {
            little_sleep(1);
@@ -190,6 +191,7 @@ bool HqWrapperConcrete::GetAllHisBars(const char* para_code, bool para_is_index,
                WriteLog("get %d ret %d break", kbar_type, ret);
                break;
            }
+           i = 0;
            std::for_each(std::begin(items_hlp), std::end(items_hlp), [&](T_KDataContainer::reference entery)
             {
                 //WriteLog("%d %d %.2f", entery->date, entery->hhmmss, entery->close);

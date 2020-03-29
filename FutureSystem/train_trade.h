@@ -12,11 +12,11 @@
 
 static const double cst_per_tick = 0.1; // pow(0.1, DEFAULT_DECIMAL)
 static const double cst_per_tick_capital = 100.00;
-static const double cst_margin_capital = 6000.00;
-static const double cst_default_ori_capital = 20000.00;
-static const double cst_default_fee_rate_percent = 0.025;
+static const double cst_margin_capital = 40000.00;
+static const double cst_default_ori_capital = 250000.00;
+//static const double cst_default_fee_rate_percent = 0.025;
 
-static const double cst_per_hand_open_fee = 100.0;
+static const double cst_per_hand_open_fee = 25.0;
 static const double cst_per_hand_close_fee = 0.0;
 
 enum PositionType : unsigned char
@@ -138,9 +138,9 @@ public:
     std::vector<TradeRecordAtom> DoIfStopLoss(int date, int hhmm, double h_price, double l_price, double *p_profit);
 #endif
     // return trades
-    std::vector<TradeRecordAtom> CloseLong(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit);
+    std::vector<TradeRecordAtom> CloseLong(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
     // return trades
-    std::vector<TradeRecordAtom> CloseShort(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit);
+    std::vector<TradeRecordAtom> CloseShort(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
 
     void PushBack(bool is_long, std::shared_ptr<PositionAtom> &item);
 
