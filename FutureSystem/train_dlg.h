@@ -4,6 +4,7 @@
 //#include <unordered_map>
 #include <cassert>
 #include <vector>
+#include <list>
 #include <QtWidgets/QWidget>
 #include <QStandardItemModel>
 #include "ui_traindlg.h"
@@ -57,12 +58,14 @@ private:
     void OpenPosition(double para_price, bool is_long);
     void ClosePosition(double para_price, bool is_long);
 
-    void AddOpenOrder(double price, bool is_long);
-    void AddCloseOrder(double price, bool is_long);
+    bool AddOpenOrder(double price, unsigned int quantity, bool is_long);
+    bool AddCloseOrder(double price, unsigned int quantity, bool is_long);
 
     unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
 
     double RecaculatePositionTableFloatProfit(double cur_price);
+
+    void UpdateOrders2KlineWalls();
     // UI -----
     void SetStatusBar(const QString & val)
     {
@@ -88,9 +91,17 @@ private:
     double fee_rate_;
      
     std::vector<TradeRecordAtom>  trade_records_;
+    std::list<OrderInfo> order_infos_;
 
     T_DateRange  hisk_date_range_;
     int scroll_bar_date_;
+
+    // auto stop profit/loss related -----
+    bool auto_stop_profit_;
+    bool auto_stop_loss_;
+    unsigned int auto_stop_profit_ticks_;
+    unsigned int auto_stop_loss_ticks_;
+
 };
 
 #endif // TRAIN_DLG_SDFS23343543_H_

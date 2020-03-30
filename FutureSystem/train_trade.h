@@ -19,18 +19,6 @@ static const double cst_default_ori_capital = 250000.00;
 static const double cst_per_hand_open_fee = 25.0;
 static const double cst_per_hand_close_fee = 0.0;
 
-enum PositionType : unsigned char
-{
-    POS_LONG  = 0, // ×ö¶à
-    POS_SHORT = 1, // ×ö¿Õ
-};
-enum RecordAction : unsigned char
-{
-    OPEN = 0,
-    CLOSE,
-    //UNFREEZE, // only related to stock, this action is in the front of current day's other action
-};
-
 struct AccountAtom
 { 
     double  avaliable;
@@ -45,7 +33,7 @@ public:
     int trade_id;
     int date;
     int hhmm;
-    RecordAction action;
+    OrderAction action;
     PositionType pos_type;
     int quantity;
     double price;
@@ -53,7 +41,7 @@ public:
     double fee;
     double price_stop_profit;
     double price_stop_loss;
-    explicit TradeRecordAtom() : trade_id(-1), date(0), hhmm(0), action(RecordAction::OPEN), pos_type(PositionType::POS_LONG), quantity(0), price(0.0), profit(0.0), fee(0.0)
+    explicit TradeRecordAtom() : trade_id(-1), date(0), hhmm(0), action(OrderAction::OPEN), pos_type(PositionType::POS_LONG), quantity(0), price(0.0), profit(0.0), fee(0.0)
         , price_stop_profit(MAGIC_STOP_PRICE), price_stop_loss(MAGIC_STOP_PRICE) { }
     TradeRecordAtom(const TradeRecordAtom &lh) : trade_id(lh.trade_id), date(lh.date), hhmm(lh.hhmm), action(lh.action), pos_type(lh.pos_type), quantity(lh.quantity), price(lh.price), profit(lh.profit), fee(lh.fee)
         , price_stop_profit(lh.price_stop_profit), price_stop_loss(lh.price_stop_loss) { }
@@ -172,7 +160,7 @@ struct AccountInfo
     PositionInfo  position;
 };
 
-std::string ToStr(RecordAction action);
+std::string ToStr(OrderAction action);
 std::string ToStr(PositionType pos_tp);
 
 double CalculateFee(int quantity, double price, bool is_close);

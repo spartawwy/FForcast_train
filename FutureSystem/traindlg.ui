@@ -634,6 +634,19 @@
       </attribute>
      </widget>
     </widget>
+    <widget class="QCheckBox" name="checkb_follow_market">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>20</y>
+       <width>71</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>跟市</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tab_account">
     <attribute name="title">

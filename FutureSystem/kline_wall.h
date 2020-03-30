@@ -260,6 +260,7 @@ private:
      
     StatisticDlg  statistic_dlg_;
      
+    std::list<OrderInfo> order_infos_;
 
     friend class ZhibiaoWindow;
     friend class VolZhibiaoWin;

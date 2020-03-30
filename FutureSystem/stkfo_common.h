@@ -59,6 +59,31 @@ enum class TagType : int
 #define MARKET_TYPE_SH  1
 #define MARKET_TYPE_SZ  0
 
+
+enum PositionType : unsigned char
+{
+    POS_LONG  = 0, // ∂‡Õ∑
+    POS_SHORT = 1, // ø’Õ∑
+};
+enum OrderAction : unsigned char
+{
+    OPEN = 0,
+    CLOSE,
+    //UNFREEZE, // only related to stock, this action is in the front of current day's other action
+};
+
+struct OrderInfo
+{
+    OrderAction  action;
+    PositionType position_type;
+    double price;
+    unsigned int qty;
+    bool is_condition_order;
+    OrderInfo() : action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0), is_condition_order(false){}
+    OrderInfo(const OrderInfo &lh) : action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty), is_condition_order(lh.is_condition_order){}
+};
+
+
 enum class TypePeriod : unsigned char
 {
     PERIOD_1M = 1,

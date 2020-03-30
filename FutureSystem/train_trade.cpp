@@ -168,7 +168,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitLongPos(int date, int h
             trade_item.trade_id = GenerateTradeId();
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_LONG;
             trade_item.quantity = (*iter)->qty;
             if( p_cur_price )
@@ -207,7 +207,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitShortPos(int date, int 
             trade_item.trade_id = GenerateTradeId();
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = (*iter)->qty;
             if( p_cur_price )
@@ -247,7 +247,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossLongPos(int date, int hhm
             trade_item.trade_id = GenerateTradeId();
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_LONG;
             trade_item.quantity = (*iter)->qty;
             if( p_cur_price )
@@ -287,7 +287,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossShortPos(int date, int hh
             trade_item.trade_id = GenerateTradeId();
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = (*iter)->qty;
             if( p_cur_price )
@@ -326,7 +326,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfit(int date, int hhmm, do
             TradeRecordAtom  trade_item;
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_LONG;
             trade_item.quantity = long_positions_.at(i).qty;
             trade_item.price = long_positions_.at(i).stop_profit_price - cst_per_tick;
@@ -344,7 +344,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfit(int date, int hhmm, do
             TradeRecordAtom  trade_item;
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = short_positions_.at(i).qty;
             trade_item.price = short_positions_.at(i).stop_profit_price + cst_per_tick;
@@ -373,7 +373,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLoss(int date, int hhmm, doub
             TradeRecordAtom  trade_item;
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_LONG;
             trade_item.quantity = long_positions_.at(i).qty;
             trade_item.price = long_positions_.at(i).stop_loss_price - cst_per_tick;
@@ -391,7 +391,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLoss(int date, int hhmm, doub
             TradeRecordAtom  trade_item;
             trade_item.date = date;
             trade_item.hhmm = hhmm;
-            trade_item.action = RecordAction::CLOSE;
+            trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = short_positions_.at(i).qty;
             trade_item.price = short_positions_.at(i).stop_loss_price + cst_per_tick;
@@ -455,7 +455,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
         item.trade_id = GenerateTradeId();
         item.date = date;
         item.hhmm = hhmm;
-        item.action = RecordAction::CLOSE;
+        item.action = OrderAction::CLOSE;
         item.pos_type = PositionType::POS_LONG;
         item.quantity = this_qty;
         item.price = price;
@@ -518,7 +518,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseShort(int date, int hhmm, double
         item.trade_id = GenerateTradeId();
         item.date = date;
         item.hhmm = hhmm;
-        item.action = RecordAction::CLOSE;
+        item.action = OrderAction::CLOSE;
         item.pos_type = PositionType::POS_SHORT;
         item.quantity = this_qty;
         item.price = price;
@@ -598,7 +598,7 @@ TradeRecordAtom  PositionInfo::ClosePositionAtom(int id, double price, double *c
         trade_item.trade_id = GenerateTradeId();
         trade_item.date = TSystem::Today();
         trade_item.hhmm = cur_hhmm();
-        trade_item.action = RecordAction::CLOSE;
+        trade_item.action = OrderAction::CLOSE;
         trade_item.pos_type = pos_type;
         trade_item.price = price;
         trade_item.quantity = (*iter)->qty;  // close all position of this record 
@@ -621,13 +621,13 @@ TradeRecordAtom  PositionInfo::ClosePositionAtom(int id, double price, double *c
 }
 
 
-std::string ToStr(RecordAction action)
+std::string ToStr(OrderAction action)
 {
     switch(action)
     {
-    case RecordAction::OPEN:  return "开"; break;
-    case RecordAction::CLOSE: return "平"; break;
-        //case RecordAction::UNFREEZE: return "解冻";break;
+    case OrderAction::OPEN:  return "开"; break;
+    case OrderAction::CLOSE: return "平"; break;
+        //case OrderAction::UNFREEZE: return "解冻";break;
     default:assert(false);
     }
     return "";

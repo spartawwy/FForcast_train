@@ -330,7 +330,7 @@ void MockTradeDlg::_OpenBuySell(bool is_buy)
     trade_item.trade_id = trade_id;
     trade_item.date = TSystem::Today();
     trade_item.hhmm = cur_hhmm();
-    trade_item.action = RecordAction::OPEN;
+    trade_item.action = OrderAction::OPEN;
     trade_item.pos_type = is_buy ? PositionType::POS_LONG : PositionType::POS_SHORT;
     trade_item.quantity = qty;
     trade_item.price = target_price; 

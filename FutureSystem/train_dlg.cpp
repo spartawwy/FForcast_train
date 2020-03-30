@@ -43,6 +43,10 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , force_close_low_(MAX_PRICE)
     , force_close_high_(MIN_PRICE) 
     , scroll_bar_date_(0)
+    , auto_stop_profit_(false)
+    , auto_stop_loss_(false)
+    , auto_stop_profit_ticks_(10)
+    , auto_stop_loss_ticks_(10)
 {
     ui.setupUi(this);
 
@@ -415,7 +419,8 @@ void TrainDlg::OnNextStep()
         return;
     }
     ui.lab_quote->setText(QString::number(item.close_price));
-    ui.dbspb_price->setValue(item.close_price);
+    if( ui.checkb_follow_market->isChecked() )
+        ui.dbspb_price->setValue(item.close_price);
 
     double total_profit = RecaculatePositionTableFloatProfit(item.close_price);
     account_info_.capital.float_profit = ProcDecimal(total_profit, 0);
@@ -447,6 +452,13 @@ double TrainDlg::RecaculatePositionTableFloatProfit(double cur_price)
         profit_item->setText(QString::number(profit));
     }
     return total_profit;
+}
+
+void TrainDlg::UpdateOrders2KlineWalls()
+{
+    parent_->order_infos_ = order_infos_;
+    if( main_win_->SubKlineWall() )
+        main_win_->SubKlineWall()->order_infos_ = order_infos_;
 }
 
 void TrainDlg::RefreshCapitalUi()
@@ -587,7 +599,7 @@ void TrainDlg::OnTrade()
         trade_item.trade_id = account_info_.position.GenerateTradeId();
         trade_item.date = trade_dlg_.date_;
         trade_item.hhmm = trade_dlg_.hhmm_;
-        trade_item.action = RecordAction::CLOSE;
+        trade_item.action = OrderAction::CLOSE;
         trade_item.pos_type = is_pos_type_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
         trade_item.price = final_fill_price;
         trade_item.quantity = quantity;
@@ -638,7 +650,7 @@ void TrainDlg::OnTrade()
         trade_item.trade_id = pos_atom->trade_id;
         trade_item.date = trade_dlg_.date_;
         trade_item.hhmm = trade_dlg_.hhmm_;
-        trade_item.action = RecordAction::OPEN;
+        trade_item.action = OrderAction::OPEN;
         trade_item.pos_type = is_pos_type_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
         trade_item.price = final_fill_price;
         trade_item.quantity = quantity;
@@ -673,6 +685,7 @@ void TrainDlg::OnBuy()
 {
     SetStatusBar("");
     const double market_price = ui.lab_quote->text().toDouble();
+    const double order_price = ui.dbspb_price->text().toDouble();
     if( market_price < EPSINON )
     {
         SetStatusBar(QString::fromLocal8Bit("市价异常!"));
@@ -680,16 +693,16 @@ void TrainDlg::OnBuy()
     } 
     if( ui.radio_postion_o->isChecked() ) // buy to open long position 
     {
-        if( !(ui.dbspb_price->value() < market_price) )
+        if( !(order_price < market_price) )
             OpenPosition(market_price, true);
         else
-            AddOpenOrder(ui.dbspb_price->value(), true);
+            AddOpenOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), true);
     }else // buy to close short position
     {
-        if( !(ui.dbspb_price->value() < market_price) )
+        if( !(order_price < market_price) )
             ClosePosition(market_price, false);
         else
-            AddCloseOrder(ui.dbspb_price->value(), false);
+            AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), false);
     }
     RefreshCapitalUi();
 }
@@ -698,6 +711,7 @@ void TrainDlg::OnSell()
 {
     SetStatusBar("");
     const double market_price = ui.lab_quote->text().toDouble();
+    const double order_price = ui.dbspb_price->text().toDouble();
     if( market_price < EPSINON )
     {
         SetStatusBar(QString::fromLocal8Bit("市价异常!"));
@@ -705,16 +719,16 @@ void TrainDlg::OnSell()
     }
     if( ui.radio_postion_o->isChecked() ) // sell to open short position 
     {
-        if( !(ui.dbspb_price->value() > market_price) )
+        if( !(order_price > market_price) )
             OpenPosition(market_price, false);
         else
-            AddOpenOrder(ui.dbspb_price->value(), false);
+            AddOpenOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), false);
     }else // sell to close long position
     {
-        if( !(ui.dbspb_price->value() > market_price) )
+        if( !(order_price > market_price) )
             ClosePosition(market_price, true);
         else
-            AddCloseOrder(ui.dbspb_price->value(), true);
+            AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), true);
     }
     RefreshCapitalUi();
 }
@@ -748,7 +762,7 @@ void TrainDlg::OpenPosition(double para_price, bool is_long)
     trade_item.trade_id = pos_atom->trade_id;
     trade_item.date = 0;
     trade_item.hhmm = 0;
-    trade_item.action = RecordAction::OPEN;
+    trade_item.action = OrderAction::OPEN;
     trade_item.pos_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     trade_item.quantity = ui.spb_order_num->value();
     trade_item.price = pos_atom->price;
@@ -810,6 +824,27 @@ void TrainDlg::OpenPosition(double para_price, bool is_long)
         item = new QStandardItem( QString::number(pos_atom->qty) );
         model->setItem(row_index, cst_tbview_position_avaliable, item);
         model->item(row_index, cst_tbview_position_avaliable)->setTextAlignment(align_way);
+    }
+    // consider auto stop (profit/loss) order -----
+    if( auto_stop_profit_ )
+    {
+        OrderInfo  order;
+        order.action = OrderAction::CLOSE;
+        order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+        order.qty = pos_atom->qty;
+        order.price = is_long ? (price + cst_per_tick * (double)auto_stop_profit_ticks_) : (price - cst_per_tick * (double)auto_stop_profit_ticks_);
+        order.is_condition_order = true;
+        order_infos_.push_back(order);
+    }
+    if( auto_stop_loss_ )
+    {
+        OrderInfo  order;
+        order.action = OrderAction::CLOSE;
+        order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+        order.qty = pos_atom->qty;
+        order.price = is_long ? (price - cst_per_tick * (double)auto_stop_loss_ticks_) : (price + cst_per_tick * (double)auto_stop_loss_ticks_);
+        order.is_condition_order = true;
+        order_infos_.push_back(order);
     }
 }
 
@@ -880,14 +915,47 @@ void TrainDlg::ClosePosition(double para_price, bool is_long)
     account_info_.capital.float_profit = ProcDecimal(total_profit, 0);
 }
 
-void TrainDlg::AddOpenOrder(double price, bool is_long)
-{
-    //todo:
+bool TrainDlg::AddOpenOrder(double price, unsigned int quantity, bool is_long)
+{ 
+    double capital_buy = cst_margin_capital * quantity;
+    double fee = CalculateFee(quantity, price, false);
+    if( capital_buy + fee > account_info_.capital.avaliable )
+    {
+        SetStatusBar(QString::fromLocal8Bit("可用资金不足!"));
+        return false;
+    }
+    account_info_.capital.avaliable -= capital_buy;
+    account_info_.capital.frozen += capital_buy ;
+
+    OrderInfo  order;
+    order.action = OrderAction::OPEN;
+    order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+    order.qty = quantity;
+    order.price = price;
+    order_infos_.push_back(order);
+    // todo: tirgger kwall
+    UpdateOrders2KlineWalls();
+    return true;
 }
 
-void TrainDlg::AddCloseOrder(double price, bool is_long)
+bool TrainDlg::AddCloseOrder(double price, unsigned int quantity, bool is_long)
 {
-    //todo:
+    unsigned int rel_pos_size = is_long ? account_info_.position.LongPos() : account_info_.position.ShortPos();
+    if( quantity > rel_pos_size )
+    {
+        SetStatusBar("仓位不足!");
+        return false;
+    }
+
+    // todo: froze avaliable position
+
+    OrderInfo  order;
+    order.action = OrderAction::CLOSE;
+    order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+    order.qty = quantity;
+    order.price = price;
+    order_infos_.push_back(order);
+    // todo: tirgger kwall
 }
 
 unsigned int TrainDlg::GetItemPositionAllQty(QStandardItemModel& model, int row_index)

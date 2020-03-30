@@ -947,7 +947,7 @@ void KLineWall::paintEvent(QPaintEvent*)
     painter.drawLine(mm_w - right_w_, this->height() - h_axis_trans_in_paint_k_, mm_w - right_w_, -1 * this->height());
      
     // vertical' price scale ------------
-    
+    int old_pen_width = pen.width();
     pen.setColor(Qt::red);
     pen.setStyle(Qt::DotLine); // ............
     painter.setPen(pen); 
@@ -959,6 +959,19 @@ void KLineWall::paintEvent(QPaintEvent*)
         painter.drawLine(0, pos_y, mm_w - right_w_, pos_y);
     }
         
+    //-----orders line -------0330
+    pen.setColor(Qt::lightGray);
+    pen.setWidth(1);
+    painter.setPen(pen); 
+    //for( int i = 0; i < order_infos_.size(); ++i )
+    std::for_each(std::begin(order_infos_), std::end(order_infos_), [&painter, &pen, this, mm_w, k_mm_h, price_per_len](OrderInfo &entry)
+    {
+        double pos_y = get_price_y(entry.price, k_mm_h);
+        painter.drawLine(0.0, pos_y, double(mm_w - right_w_), pos_y);
+    });
+    //-------------------------
+    pen.setWidth(old_pen_width);
+
     //draw k_num_ k line -------------------------------------
 	if( p_hisdata_container_ && !p_hisdata_container_->empty() )
 	{   

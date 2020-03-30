@@ -13,6 +13,7 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
@@ -76,6 +77,7 @@ public:
     QPushButton *pbtn_clear_close;
     QWidget *tab_fill;
     QWidget *tab_condition_order;
+    QCheckBox *checkb_follow_market;
     QWidget *tab_account;
     QLabel *label_8;
     QLineEdit *le_cur_capital;
@@ -271,6 +273,9 @@ public:
         tab_condition_order = new QWidget();
         tab_condition_order->setObjectName(QStringLiteral("tab_condition_order"));
         tab_detail->addTab(tab_condition_order, QString());
+        checkb_follow_market = new QCheckBox(tab_trade);
+        checkb_follow_market->setObjectName(QStringLiteral("checkb_follow_market"));
+        checkb_follow_market->setGeometry(QRect(110, 20, 71, 18));
         tabwid_main->addTab(tab_trade, QString());
         tab_account = new QWidget();
         tab_account->setObjectName(QStringLiteral("tab_account"));
@@ -366,6 +371,7 @@ public:
         tab_detail->setTabText(tab_detail->indexOf(tab_position), QApplication::translate("TrainDlgForm", "\346\214\201\344\273\223", 0));
         tab_detail->setTabText(tab_detail->indexOf(tab_fill), QApplication::translate("TrainDlgForm", "\346\210\220\344\272\244\350\256\260\345\275\225", 0));
         tab_detail->setTabText(tab_detail->indexOf(tab_condition_order), QApplication::translate("TrainDlgForm", "\346\235\241\344\273\266\345\215\225", 0));
+        checkb_follow_market->setText(QApplication::translate("TrainDlgForm", "\350\267\237\345\270\202", 0));
         tabwid_main->setTabText(tabwid_main->indexOf(tab_trade), QApplication::translate("TrainDlgForm", "\344\272\244\346\230\223", 0));
         label_8->setText(QApplication::translate("TrainDlgForm", "\346\235\203\347\233\212:", 0));
         label_6->setText(QApplication::translate("TrainDlgForm", "\345\217\257\347\224\250\350\265\204\351\207\221:", 0));
