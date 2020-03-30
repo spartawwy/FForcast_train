@@ -962,13 +962,20 @@ void KLineWall::paintEvent(QPaintEvent*)
     //-----orders line -------0330
     pen.setColor(Qt::lightGray);
     pen.setWidth(1);
-    painter.setPen(pen); 
-    //for( int i = 0; i < order_infos_.size(); ++i )
-    std::for_each(std::begin(order_infos_), std::end(order_infos_), [&painter, &pen, this, mm_w, k_mm_h, price_per_len](OrderInfo &entry)
+    painter.setPen(pen);  
+    std::list<OrderInfo> *order_cotainer_array[] = {&hangon_order_infos_, &stop_order_infos_, &condition_order_infos_};
+    for( int i = 0; i < sizeof(order_cotainer_array)/sizeof(order_cotainer_array[0]); ++i )
     {
-        double pos_y = get_price_y(entry.price, k_mm_h);
-        painter.drawLine(0.0, pos_y, double(mm_w - right_w_), pos_y);
-    });
+        std::for_each(std::begin(*order_cotainer_array[i]), std::end(*order_cotainer_array[i]), [&painter, &pen, this, mm_w, k_mm_h, price_per_len](OrderInfo &entry)
+        {
+            auto info_tag = QString::fromLocal8Bit(entry.position_type == PositionType::POS_LONG ? "Âò" : "Âô");
+            info_tag += QString::fromLocal8Bit(entry.action == OrderAction::OPEN ? "¿ª" : "Æ½");
+            double pos_y = get_price_y(entry.price, k_mm_h);
+            painter.drawLine(0.0, pos_y, double(mm_w - 2*right_w_), pos_y);
+            painter.drawText((mm_w - 2*right_w_)/2, pos_y, info_tag);
+        });
+    }
+    
     //-------------------------
     pen.setWidth(old_pen_width);
 
@@ -1076,7 +1083,6 @@ void KLineWall::paintEvent(QPaintEvent*)
                 if( FindBtmItem_TowardLeft(*p_hisdata_container_, iter, j, left_pos_data) > 0 )
                     painter.drawLine(pos_data.top.x(), pos_data.top.y(), left_pos_data->bottom.x(), left_pos_data->bottom.y());
             }
-            
 
         }// if fenxin
         //----------------draw signal -----------------------

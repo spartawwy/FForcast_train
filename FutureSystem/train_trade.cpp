@@ -39,13 +39,22 @@ double PositionAtom::FloatProfit(double cur_price)
     return ProcDecimal(val, 0);
 }
 
-//----------------------
-unsigned int PositionInfo::LongPos()
+//---------------------- 
+unsigned int PositionInfo::LongPos(int target_status)
 {
     unsigned int qty = 0;
-    std::for_each( std::begin(long_positions_), std::end(long_positions_), [&qty](T_PositionAtoms::reference entry)
+    std::for_each( std::begin(long_positions_), std::end(long_positions_), [&qty, target_status](T_PositionAtoms::reference entry)
     {
-        qty += entry->qty;
+        if( target_status == POSITION_STATUS_FROZEN )
+        {
+            if( entry->is_frozen )
+                qty += entry->qty;
+        }else if( target_status == POSITION_STATUS_AVAILABLE )
+        {
+            if( !entry->is_frozen )
+                qty += entry->qty;
+        }else
+            qty += entry->qty;
     });
     return qty;
 }
@@ -65,14 +74,22 @@ double PositionInfo::LongAveragePrice()
     ave_price = amount / (double)qty;
     return ProcDecimal(ave_price, DEFAULT_DECIMAL);
 }
-
-
-unsigned int PositionInfo::ShortPos()
+ 
+unsigned int PositionInfo::ShortPos(int target_status)
 {
     unsigned int qty = 0;
-    std::for_each( std::begin(short_positions_), std::end(short_positions_), [&qty](T_PositionAtoms::reference entry)
+    std::for_each( std::begin(short_positions_), std::end(short_positions_), [&qty, target_status](T_PositionAtoms::reference entry)
     {
-        qty += entry->qty;
+        if( target_status == POSITION_STATUS_FROZEN )
+        {
+            if( entry->is_frozen )
+                qty += entry->qty;
+        }else if( target_status == POSITION_STATUS_AVAILABLE )
+        {
+            if( !entry->is_frozen )
+                qty += entry->qty;
+        }else
+            qty += entry->qty;
     });
     return qty;
 }
@@ -411,10 +428,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
 { 
     std::vector<TradeRecordAtom> ret;
     assert( qty > 0 );
-
-    /*if( long_positions_.empty() )
-        return ret;*/
-    
+     
     unsigned int remain_tgt_qty = qty;
     assert( LongPos() >= remain_tgt_qty );
 
@@ -423,6 +437,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
     //for( int i = long_positions_.size() - 1; i >= 0 ; --i ) 
     for( auto iter = long_positions_.begin(); iter != long_positions_.end(); )
     {
+        //if( (*iter)->is_frozen )
         double this_profit = 0.0;
         int this_qty = 0;
         if( (*iter)->qty >= remain_tgt_qty )

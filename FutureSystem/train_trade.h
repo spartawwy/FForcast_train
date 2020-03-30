@@ -10,6 +10,11 @@
 
 #include "stkfo_common.h"
 
+#define POSITION_STATUS_FROZEN  0
+#define POSITION_STATUS_AVAILABLE  1
+#define POSITION_STATUS_ALL  2
+
+static const int cst_position_target_status_available = 1;
 static const double cst_per_tick = 0.1; // pow(0.1, DEFAULT_DECIMAL)
 static const double cst_per_tick_capital = 100.00;
 static const double cst_margin_capital = 40000.00;
@@ -63,8 +68,8 @@ public:
 class PositionAtom
 {
 public:
-    PositionAtom() : trade_id(-1), price(0.0), is_long(false), stop_loss_price(MAGIC_STOP_PRICE), stop_profit_price(MAGIC_STOP_PRICE), qty(0){}
-    PositionAtom(const PositionAtom& lh) : trade_id(lh.trade_id), price(lh.price), is_long(lh.is_long), stop_loss_price(lh.stop_loss_price),stop_profit_price(lh.stop_profit_price), qty(lh.qty){}
+    PositionAtom() : trade_id(-1), price(0.0), is_long(false), stop_loss_price(MAGIC_STOP_PRICE), stop_profit_price(MAGIC_STOP_PRICE), qty(0), is_frozen(false){}
+    PositionAtom(const PositionAtom& lh) : trade_id(lh.trade_id), price(lh.price), is_long(lh.is_long), stop_loss_price(lh.stop_loss_price),stop_profit_price(lh.stop_profit_price), qty(lh.qty), is_frozen(lh.is_frozen){}
     PositionAtom& operator = (const PositionAtom& lh)
     { 
         if( this == &lh ) 
@@ -77,6 +82,7 @@ public:
             stop_loss_price = lh.stop_loss_price;
             stop_profit_price = lh.stop_profit_price;
             qty = lh.qty;
+            is_frozen = lh.is_frozen;
         }
         return *this; 
     }
@@ -89,6 +95,7 @@ public:
     double stop_loss_price;   // if < 0.0 means not set
     double stop_profit_price; // if < 0.0 means not set
     unsigned int qty;
+    bool is_frozen;
 };
 
 class PositionInfo
@@ -106,11 +113,11 @@ public:
 
     int GenerateTradeId(){ return ++max_trade_id_; }
     unsigned int TotalPosition() { return LongPos() + ShortPos(); }
-
-    unsigned int LongPos();
+     
+    unsigned int LongPos(int target_status=POSITION_STATUS_ALL);
     double LongAveragePrice();
-
-    unsigned int ShortPos();
+     
+    unsigned int ShortPos(int target_status=POSITION_STATUS_ALL);
     double ShortAveragePirce();
 
     double FloatProfit(double price);

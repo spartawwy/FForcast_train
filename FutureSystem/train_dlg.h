@@ -5,6 +5,8 @@
 #include <cassert>
 #include <vector>
 #include <list>
+
+#include <QVector>
 #include <QtWidgets/QWidget>
 #include <QStandardItemModel>
 #include "ui_traindlg.h"
@@ -63,7 +65,7 @@ private:
 
     unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
 
-    double RecaculatePositionTableFloatProfit(double cur_price);
+    double RecaculatePosTableViewFloatProfit(double cur_price);
 
     void UpdateOrders2KlineWalls();
     // UI -----
@@ -72,6 +74,8 @@ private:
         ui.lab_status->setText(val);
     }
     void RefreshCapitalUi();
+    void RemoveInPositionTableView(int position_id, PositionType position_type);
+    void RecaculatePosTableViewItem(QVector<int> &ids, int row_index);
 
 private:
 
@@ -91,7 +95,9 @@ private:
     double fee_rate_;
      
     std::vector<TradeRecordAtom>  trade_records_;
-    std::list<OrderInfo> order_infos_;
+    std::list<OrderInfo> hangon_order_infos_;
+    std::list<OrderInfo> stop_order_infos_; 
+    std::list<OrderInfo> condition_order_infos_; 
 
     T_DateRange  hisk_date_range_;
     int scroll_bar_date_;

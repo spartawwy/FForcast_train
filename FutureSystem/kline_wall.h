@@ -260,7 +260,9 @@ private:
      
     StatisticDlg  statistic_dlg_;
      
-    std::list<OrderInfo> order_infos_;
+    std::list<OrderInfo> hangon_order_infos_;
+    std::list<OrderInfo> stop_order_infos_; 
+    std::list<OrderInfo> condition_order_infos_; 
 
     friend class ZhibiaoWindow;
     friend class VolZhibiaoWin;

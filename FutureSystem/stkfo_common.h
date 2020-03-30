@@ -72,15 +72,18 @@ enum OrderAction : unsigned char
     //UNFREEZE, // only related to stock, this action is in the front of current day's other action
 };
 
+//there is 3 order types : 1. hang on orders 2. auto stop profit/loss orders 3.condition orders
 struct OrderInfo
 {
     OrderAction  action;
     PositionType position_type;
     double price;
     unsigned int qty;
-    bool is_condition_order;
-    OrderInfo() : action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0), is_condition_order(false){}
-    OrderInfo(const OrderInfo &lh) : action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty), is_condition_order(lh.is_condition_order){}
+    int rel_position_id;    // when action is close; -1 means no relate 
+    bool is_condition_order;// when price fit then send
+
+    OrderInfo() : action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0), rel_position_id(-1), is_condition_order(false){}
+    OrderInfo(const OrderInfo &lh) : action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty), rel_position_id(lh.rel_position_id), is_condition_order(lh.is_condition_order){}
 };
 
 
