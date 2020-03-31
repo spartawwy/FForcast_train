@@ -5,6 +5,7 @@
 #include <memory>
 #include <unordered_map>
 #include <deque>
+#include <vector>
 #include <QString>
 
 #include <QtCore/QPoint>
@@ -81,9 +82,10 @@ struct OrderInfo
     unsigned int qty;
     int rel_position_id;    // when action is close; -1 means no relate 
     bool is_condition_order;// when price fit then send
-
+    std::vector<int> help_contain;
     OrderInfo() : action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0), rel_position_id(-1), is_condition_order(false){}
-    OrderInfo(const OrderInfo &lh) : action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty), rel_position_id(lh.rel_position_id), is_condition_order(lh.is_condition_order){}
+    OrderInfo(const OrderInfo &lh) : action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty)
+        , rel_position_id(lh.rel_position_id), is_condition_order(lh.is_condition_order), help_contain(lh.help_contain){}
 };
 
 

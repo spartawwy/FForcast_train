@@ -32,7 +32,7 @@ public:
     const T_StockHisDataItem & CurHisStockDataItem();
 
 public slots:
-
+    void OnTblHangonOrdersRowDoubleClicked(const QModelIndex &);
     void OnScrollTrainTimeMoved(int);
     void OnStartTrain();
     void OnStopTrain();
@@ -42,8 +42,8 @@ public slots:
 
     void OnNextStep();
 
-    void OnOpenOpenWin();
-    void OnOpenCloseWin();
+    /*void OnOpenOpenWin();
+    void OnOpenCloseWin();*/
 
     void OnTrade();
     void OnBuy();
@@ -57,7 +57,8 @@ private:
 
     void PrintTradeRecords();
     
-    void OpenPosition(double para_price, bool is_long);
+    //void OpenPosition(double para_price, bool is_long);
+    void OpenPosition(unsigned int qty, double para_price, bool is_long);
     void ClosePosition(double para_price, bool is_long);
 
     bool AddOpenOrder(double price, unsigned int quantity, bool is_long);
@@ -68,6 +69,8 @@ private:
     double RecaculatePosTableViewFloatProfit(double cur_price);
 
     void UpdateOrders2KlineWalls();
+
+    int TblHangonOrdersRowCount();
     // UI -----
     void SetStatusBar(const QString & val)
     {

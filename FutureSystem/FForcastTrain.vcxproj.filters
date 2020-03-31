@@ -265,6 +265,9 @@
     <CustomBuild Include="position_records_table_view.h">
       <Filter>moudle</Filter>
     </CustomBuild>
+    <CustomBuild Include="cfgtrain.ui">
+      <Filter>Form</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h">
@@ -320,6 +323,9 @@
     </ClInclude>
     <ClInclude Include="tdx_exhq_wrapper.h">
       <Filter>tdx</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_cfgtrain.h">
+      <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

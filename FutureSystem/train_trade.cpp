@@ -40,7 +40,7 @@ double PositionAtom::FloatProfit(double cur_price)
 }
 
 //---------------------- 
-unsigned int PositionInfo::LongPos(int target_status)
+unsigned int PositionInfo::LongPosQty(int target_status)
 {
     unsigned int qty = 0;
     std::for_each( std::begin(long_positions_), std::end(long_positions_), [&qty, target_status](T_PositionAtoms::reference entry)
@@ -430,7 +430,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseLong(int date, int hhmm, double 
     assert( qty > 0 );
      
     unsigned int remain_tgt_qty = qty;
-    assert( LongPos() >= remain_tgt_qty );
+    assert( LongPosQty() >= remain_tgt_qty );
 
     double profit = 0.0;
     capital_ret = 0.0;

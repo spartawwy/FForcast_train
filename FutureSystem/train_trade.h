@@ -107,14 +107,14 @@ public:
      
     void open_fee(double fee) { open_fee_ = fee; }
     void close_fee(double fee) { close_fee_ = fee; }
-    std::mutex mutex_;
+    
 
     void Clear(){ long_positions_.clear(); short_positions_.clear(); position_holder_.clear(); max_trade_id_ = 0;}
 
     int GenerateTradeId(){ return ++max_trade_id_; }
-    unsigned int TotalPosition() { return LongPos() + ShortPos(); }
+    unsigned int TotalPosition() { return LongPosQty() + ShortPos(); }
      
-    unsigned int LongPos(int target_status=POSITION_STATUS_ALL);
+    unsigned int LongPosQty(int target_status=POSITION_STATUS_ALL);
     double LongAveragePrice();
      
     unsigned int ShortPos(int target_status=POSITION_STATUS_ALL);
@@ -143,6 +143,8 @@ public:
 
     PositionAtom * FindPositionAtom(int id);
     TradeRecordAtom  ClosePositionAtom(int id, double price, double *capital_ret);
+
+    std::mutex mutex_;
 
 private:
      
