@@ -217,6 +217,7 @@ public:
         checkb_follow_market = new QCheckBox(tab_trade);
         checkb_follow_market->setObjectName(QStringLiteral("checkb_follow_market"));
         checkb_follow_market->setGeometry(QRect(120, 20, 51, 18));
+        checkb_follow_market->setChecked(true);
         tabwid_main->addTab(tab_trade, QString());
         tab_account = new QWidget();
         tab_account->setObjectName(QStringLiteral("tab_account"));

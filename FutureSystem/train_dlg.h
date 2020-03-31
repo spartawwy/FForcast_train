@@ -70,7 +70,9 @@ private:
 
     void UpdateOrders2KlineWalls();
 
+    //int QtyInHangonOrderInfo();
     int TblHangonOrdersRowCount();
+    void Append2TblHangonOrders(OrderInfo &order_info);
     // UI -----
     void SetStatusBar(const QString & val)
     {

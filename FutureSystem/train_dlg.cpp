@@ -28,8 +28,8 @@ static const int cst_tbview_position_avaliable = 5;
 static const int cst_tbview_position_filled_time = 6;
 static const int cst_tbview_position_col_count = 7;
 
-static const int cst_tbview_hangonorder_bs = 1;
 static const int cst_tbview_hangonorder_id = 0;
+static const int cst_tbview_hangonorder_bs = 1;
 static const int cst_tbview_hangonorder_price = 2;
 static const int cst_tbview_hangonorder_qty = 3;
 static const int cst_tbview_hangonorder_col_count = 4;
@@ -62,10 +62,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ret = connect(ui.pbtnStop, SIGNAL(clicked()), this, SLOT(OnStopTrain()));
     ret = connect(ui.pbtnNextK, SIGNAL(clicked()), this, SLOT(OnMoveToNextK()));
     ret = connect(ui.pbtnNextStep, SIGNAL(clicked()), this, SLOT(OnNextStep()));
-
-    //ret = connect(ui.pbtnBuy, SIGNAL(clicked()), this, SLOT(OnOpenOpenWin()));
-    //ret = connect(ui.pbtnSell, SIGNAL(clicked()), this, SLOT(OnOpenCloseWin()));
-
+     
     ret = connect(trade_dlg_.ui.pbt_trade, SIGNAL(clicked()), this, SLOT(OnTrade()));
     ret = connect(ui.pbtn_buy, SIGNAL(clicked()), this, SLOT(OnBuy()));
     ret = connect(ui.pbtn_sell, SIGNAL(clicked()), this, SLOT(OnSell()));
@@ -107,7 +104,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     //----------------------------------------
     ui.hScrollBar_TrainTimeRange->setMinimum(eldest_date);
     ui.hScrollBar_TrainTimeRange->setMaximum(latest_date);
-    ui.hScrollBar_TrainTimeRange->setValue(eldest_date);
+    ui.hScrollBar_TrainTimeRange->setValue(latest_date);
     int distan_days = main_win_->app_->exchange_calendar()->DateTradingSpan(eldest_date, latest_date);
     ui.hScrollBar_TrainTimeRange->setSingleStep((latest_date-eldest_date)/distan_days);
     ui.lab_start_date->setText(QString::number(eldest_date));
@@ -157,11 +154,12 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     model->horizontalHeaderItem(cst_tbview_hangonorder_price)->setTextAlignment(Qt::AlignCenter);
     model->setHorizontalHeaderItem(cst_tbview_hangonorder_qty, new QStandardItem(QString::fromLocal8Bit("数量")));
     model->horizontalHeaderItem(cst_tbview_hangonorder_qty)->setTextAlignment(Qt::AlignCenter);
+    ui.table_view_order_hangon->setModel(model);
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_id, cst_small_width/2);
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_bs, cst_small_width/2);
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_qty, cst_small_width);
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_price, cst_small_width);
-    connect(ui.table_view_order_hangon, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(onTblHangonOrdersRowDoubleClicked(const QModelIndex &)));
+    ret = connect(ui.table_view_order_hangon, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(onTblHangonOrdersRowDoubleClicked(const QModelIndex &)));
      
     
     OnStopTrain();
@@ -403,7 +401,7 @@ void TrainDlg::OnMoveToNextK()
         || (force_close_high_ > MIN_PRICE && stock_item.high_price + EPSINON > force_close_high_) )
     {  // force close
         double profit_close_long = 0.0;
-        auto long_pos = account_info_.position.LongPos();
+        auto long_pos = account_info_.position.LongPosQty();
         if( long_pos > 0 )
         {
         double capital_ret = 0.0;
@@ -412,7 +410,7 @@ void TrainDlg::OnMoveToNextK()
         }
 
         double profit_close_short = 0.0;
-        auto short_pos = account_info_.position.ShortPos();
+        auto short_pos = account_info_.position.ShortPosQty();
         if( short_pos > 0 )
         {
         double capital_ret = 0.0;
@@ -435,8 +433,8 @@ void TrainDlg::OnMoveToNextK()
         assert(account_info_.capital.avaliable + account_info_.capital.float_profit > EPSINON);
     }
      
-    auto long_pos = account_info_.position.LongPos();
-    auto short_pos = account_info_.position.ShortPos();
+    auto long_pos = account_info_.position.LongPosQty();
+    auto short_pos = account_info_.position.ShortPosQty();
      
     ui.le_cur_capital->setText(ToQString(account_info_.capital.avaliable + account_info_.capital.float_profit));
     ui.lab_assets->setText(ToQString(account_info_.capital.avaliable + account_info_.capital.float_profit
@@ -605,6 +603,24 @@ int TrainDlg::TblHangonOrdersRowCount()
     return model->rowCount();
 }
 
+void TrainDlg::Append2TblHangonOrders(OrderInfo &order_info)
+{
+    auto model = (QStandardItemModel*)ui.table_view_order_hangon->model();
+    model->insertRow(model->rowCount());
+    int row_index = model->rowCount() - 1;
+    auto item = new QStandardItem(QString::number(order_info.fake_id));
+    model->setItem(row_index, cst_tbview_hangonorder_id, item);
+
+    item = new QStandardItem(QString::fromLocal8Bit(order_info.position_type == PositionType::POS_LONG ? "买" : "卖"));
+    model->setItem(row_index, cst_tbview_hangonorder_bs, item);
+
+    item = new QStandardItem(QString::number(order_info.price));
+    model->setItem(row_index, cst_tbview_hangonorder_price, item);
+
+    item = new QStandardItem(QString::number(order_info.qty));
+    model->setItem(row_index, cst_tbview_hangonorder_qty, item);
+}
+
 void TrainDlg::RefreshCapitalUi()
 {
     ui.label_capital->setText(QString::number(account_info_.capital.avaliable + account_info_.capital.frozen + account_info_.capital.float_profit));
@@ -667,8 +683,8 @@ void TrainDlg::RefreshCapitalUi()
 //        trade_dlg_.ui.le_qty_ava->setText(ToQString((int)account_info_.position.LongPos()));
 //    }else
 //    {
-//        trade_dlg_.ui.le_qty->setText(ToQString((int)account_info_.position.ShortPos()));
-//        trade_dlg_.ui.le_qty_ava->setText(ToQString((int)account_info_.position.ShortPos()));
+//        trade_dlg_.ui.le_qty->setText(ToQString((int)account_info_.position.ShortPosQty()));
+//        trade_dlg_.ui.le_qty_ava->setText(ToQString((int)account_info_.position.ShortPosQty()));
 //    }
 //    trade_dlg_.ui.le_capital_ava->setText(ToQString(account_info_.capital.avaliable));
 //
@@ -712,9 +728,9 @@ void TrainDlg::OnTrade()
         } 
         int avaliable_pos = 0;
         if( is_pos_type_long )
-            avaliable_pos = (int)account_info_.position.LongPos();
+            avaliable_pos = (int)account_info_.position.LongPosQty();
         else
-            avaliable_pos = (int)account_info_.position.ShortPos();
+            avaliable_pos = (int)account_info_.position.ShortPosQty();
 
         if( quantity > avaliable_pos )
         {
@@ -1003,7 +1019,7 @@ void TrainDlg::ClosePosition(double para_price, bool is_long)
     }
     
     //auto total_qty = GetItemPositionAllQty(*model, row_index);
-    auto total_qty = is_long ? account_info_.position.LongPos(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPos(POSITION_STATUS_AVAILABLE);
+    auto total_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_ALL) : account_info_.position.ShortPosQty(POSITION_STATUS_ALL);
     if( close_qty > total_qty )
          return SetStatusBar(QString::fromLocal8Bit("平仓数量超过现有仓位!"));
     QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
@@ -1076,19 +1092,20 @@ bool TrainDlg::AddOpenOrder(double price, unsigned int quantity, bool is_long)
     account_info_.capital.frozen += capital_buy ;
 
     OrderInfo  order;
-    order.rel_position_id = TblHangonOrdersRowCount(); //temp id
+    order.fake_id = TblHangonOrdersRowCount();  
     order.action = OrderAction::OPEN;
     order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     order.qty = quantity;
     order.price = price;
     hangon_order_infos_.push_back(order);
+    Append2TblHangonOrders(order);
     UpdateOrders2KlineWalls();
     return true;
 }
 
 bool TrainDlg::AddCloseOrder(double price, unsigned int quantity, bool is_long)
 {
-    unsigned int rel_pos_size = is_long ? account_info_.position.LongPos(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPos(POSITION_STATUS_AVAILABLE);
+    unsigned int rel_pos_size = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
     if( quantity > rel_pos_size )
     {
         SetStatusBar(QString::fromLocal8Bit("仓位不足!"));
@@ -1098,11 +1115,13 @@ bool TrainDlg::AddCloseOrder(double price, unsigned int quantity, bool is_long)
     // todo: froze avaliable position
 
     OrderInfo  order;
+    order.fake_id = TblHangonOrdersRowCount();
     order.action = OrderAction::CLOSE;
     order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     order.qty = quantity;
     order.price = price;
     hangon_order_infos_.push_back(order);
+    Append2TblHangonOrders(order);
     UpdateOrders2KlineWalls();
 }
 

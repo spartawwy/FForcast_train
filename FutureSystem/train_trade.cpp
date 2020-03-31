@@ -75,7 +75,22 @@ double PositionInfo::LongAveragePrice()
     return ProcDecimal(ave_price, DEFAULT_DECIMAL);
 }
  
-unsigned int PositionInfo::ShortPos(int target_status)
+//std::vector<PositionAtom *> PositionInfo::FrozeLongPosWhichUnfrozen(unsigned int qty)
+//{
+//    std::vector<PositionAtom *>  ret;
+//    unsigned int temp_qty = 0;
+//    //std::for_each( std::begin(long_positions_), std::end(long_positions_), [qty, &temp_qty, &ret](T_PositionAtoms::reference entry)
+//    for( int i = 0; i < long_positions_.size(); ++i )
+//    {
+//        if( !long_positions_.at(i)->is_frozen )
+//        {
+//            temp_qty += long_positions_.at(i)->qty;
+//        }
+//    });
+//    return qty;
+//}
+
+unsigned int PositionInfo::ShortPosQty(int target_status)
 {
     unsigned int qty = 0;
     std::for_each( std::begin(short_positions_), std::end(short_positions_), [&qty, target_status](T_PositionAtoms::reference entry)
@@ -494,7 +509,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseShort(int date, int hhmm, double
     assert( short_positions_.size() > 0 );
     std::vector<TradeRecordAtom> ret;
     unsigned int remain_tgt_qty = qty;
-    assert( ShortPos() >= remain_tgt_qty );
+    assert( ShortPosQty() >= remain_tgt_qty );
 
     double profit = 0.0;
     capital_ret = 0.0;

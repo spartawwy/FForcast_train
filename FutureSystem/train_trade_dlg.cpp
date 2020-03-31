@@ -90,9 +90,9 @@ void TrainTradeDlg::_onBtnQuantity(double val)
     if( is_close_ )
     {
         if( ui.radioBtn_long->isChecked() )
-            ui.le_qty->setText( ToQString(int(train_dlg_->account_info().position.LongPos() * val)) );
+            ui.le_qty->setText( ToQString(int(train_dlg_->account_info().position.LongPosQty() * val)) );
         else
-            ui.le_qty->setText( ToQString(int(train_dlg_->account_info().position.ShortPos() * val)) );
+            ui.le_qty->setText( ToQString(int(train_dlg_->account_info().position.ShortPosQty() * val)) );
     }else
     {
         const T_StockHisDataItem & stock_item = train_dlg_->CurHisStockDataItem();

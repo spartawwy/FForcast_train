@@ -112,12 +112,12 @@ public:
     void Clear(){ long_positions_.clear(); short_positions_.clear(); position_holder_.clear(); max_trade_id_ = 0;}
 
     int GenerateTradeId(){ return ++max_trade_id_; }
-    unsigned int TotalPosition() { return LongPosQty() + ShortPos(); }
+    unsigned int TotalPosition() { return LongPosQty() + ShortPosQty(); }
      
     unsigned int LongPosQty(int target_status=POSITION_STATUS_ALL);
     double LongAveragePrice();
      
-    unsigned int ShortPos(int target_status=POSITION_STATUS_ALL);
+    unsigned int ShortPosQty(int target_status=POSITION_STATUS_ALL);
     double ShortAveragePirce();
 
     double FloatProfit(double price);
@@ -132,6 +132,9 @@ public:
     std::vector<TradeRecordAtom> DoIfStopProfit(int date, int hhmm, double h_price, double l_price, double *p_profit);
     std::vector<TradeRecordAtom> DoIfStopLoss(int date, int hhmm, double h_price, double l_price, double *p_profit);
 #endif
+
+    /*std::vector<PositionAtom *> FrozeLongPosWhichUnfrozen(unsigned int qty);
+    std::vector<PositionAtom *> FrozeShortPosWhichUnfrozen(unsigned int qty);*/
     // return trades
     std::vector<TradeRecordAtom> CloseLong(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
     // return trades

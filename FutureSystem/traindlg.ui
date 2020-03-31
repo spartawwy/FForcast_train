@@ -457,6 +457,9 @@
      <property name="text">
       <string>跟市</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </widget>
    <widget class="QWidget" name="tab_account">

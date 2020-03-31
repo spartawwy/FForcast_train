@@ -456,7 +456,7 @@ bool MockTradeDlg::JudgeDoForceClose(double price)
         int today = TSystem::Today();
 
         double profit_close_long = 0.0;
-        auto long_pos = account_info_.position.LongPos();
+        auto long_pos = account_info_.position.LongPosQty();
         if( long_pos > 0 )
         {
             double capital_ret = 0.0;
@@ -466,7 +466,7 @@ bool MockTradeDlg::JudgeDoForceClose(double price)
         }
 
         double profit_close_short = 0.0;
-        auto short_pos = account_info_.position.ShortPos();
+        auto short_pos = account_info_.position.ShortPosQty();
         if( short_pos > 0 )
         {
             double capital_ret = 0.0;
