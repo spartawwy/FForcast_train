@@ -191,12 +191,19 @@ void TrainDlg::OnTblHangonOrdersRowDoubleClicked(const QModelIndex &index)
                 RefreshCapitalUi();
             }else  // close
             {
-                // unfroze related position
+                // unfroze related positions
                 for(int i = 0; iter->help_contain.size(); ++i )
                 {
                     auto pos_item = account_info_.position.FindPositionAtom(iter->help_contain.at(i));
                     if( pos_item )
-                        pos_item->is_frozen = false;
+                    {
+                        auto iter_frozen_party = pos_item->qty_frozens.find(temp_order_id);
+                        if( iter_frozen_party != pos_item->qty_frozens.end() )
+                        {
+                            pos_item->qty_available += iter_frozen_party->second;
+                            pos_item->qty_frozens.erase(iter_frozen_party);
+                        }
+                    }
                 }
             }
             hangon_order_infos_.erase(iter++);
@@ -405,7 +412,7 @@ void TrainDlg::OnMoveToNextK()
         if( long_pos > 0 )
         {
         double capital_ret = 0.0;
-        std::vector<TradeRecordAtom> trades_close_long = account_info_.position.CloseLong(stock_item.date, stock_item.hhmmss, force_close_low_, unsigned int(long_pos), capital_ret, &profit_close_long);
+        std::vector<TradeRecordAtom> trades_close_long = account_info_.position.CloseAvaliableLong(force_close_low_, unsigned int(long_pos), capital_ret, &profit_close_long);
         trade_records_.insert(trade_records_.end(), trades_close_long.begin(), trades_close_long.end());
         }
 
@@ -414,7 +421,7 @@ void TrainDlg::OnMoveToNextK()
         if( short_pos > 0 )
         {
         double capital_ret = 0.0;
-        std::vector<TradeRecordAtom> trades_close_short = account_info_.position.CloseShort(stock_item.date, stock_item.hhmmss, force_close_low_, unsigned int(short_pos), capital_ret, &profit_close_short);
+        std::vector<TradeRecordAtom> trades_close_short = account_info_.position.CloseAvaliableShort(force_close_low_, unsigned int(short_pos), capital_ret, &profit_close_short);
         trade_records_.insert(trade_records_.end(), trades_close_short.begin(), trades_close_short.end());
         }
 
@@ -491,7 +498,7 @@ void TrainDlg::OnNextStep()
            bool is_fit_price = iter->position_type == PositionType::POS_LONG ? (!(item.high_price < iter->price)) : (!(item.low_price > iter->price));
            if( is_fit_price )
            { 
-               OpenPosition(iter->qty, iter->price, iter->position_type == PositionType::POS_LONG);
+               OpenPosition(iter->price, iter->qty, iter->position_type == PositionType::POS_LONG);
                hangon_order_infos_.erase(iter++);
                continue;
            }
@@ -543,8 +550,8 @@ void TrainDlg::RecaculatePosTableViewItem(QVector<int> &ids, int row_index)
         auto pos_item = account_info_.position.FindPositionAtom(ids[i]);
         if( pos_item )
         {
-            total_amount += pos_item->qty * pos_item->price;
-            total_qty += pos_item->qty;
+            total_amount += pos_item->qty_all() * pos_item->price;
+            total_qty += pos_item->qty_all();
         }
     }
     assert(total_qty > 0);
@@ -745,11 +752,11 @@ void TrainDlg::OnTrade()
         if( is_pos_type_long )
         {
             final_fill_price = price - cst_per_tick;
-            account_info_.position.CloseLong(stock_item.date, stock_item.hhmmss, final_fill_price, unsigned int(quantity), capital_ret, &profit);
+            account_info_.position.CloseAvaliableLong(final_fill_price, unsigned int(quantity), capital_ret, &profit);
         }else
         {
             final_fill_price = price + cst_per_tick;
-            account_info_.position.CloseShort(stock_item.date, stock_item.hhmmss, final_fill_price, unsigned int(quantity), capital_ret, &profit);
+            account_info_.position.CloseAvaliableShort(final_fill_price, unsigned int(quantity), capital_ret, &profit);
         }
         double fee = CalculateFee(quantity, final_fill_price, true);
          
@@ -801,7 +808,7 @@ void TrainDlg::OnTrade()
         auto pos_atom = std::make_shared<PositionAtom>();
         pos_atom->trade_id = account_info_.position.GenerateTradeId();
         pos_atom->price = final_fill_price;
-        pos_atom->qty = (unsigned int)quantity;
+        pos_atom->qty_available = (unsigned int)quantity;
         pos_atom->stop_profit_price = stop_profit_price;
         pos_atom->stop_loss_price = stop_loss_price;
         account_info_.position.PushBack(is_pos_type_long, pos_atom);
@@ -859,7 +866,7 @@ void TrainDlg::OnBuy()
     }else // buy to close short position
     {
         if( !(order_price < market_price) )
-            ClosePosition(market_price, false);
+            CloseInputSizePosition(market_price, false);
         else
             AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), false);
     }
@@ -879,20 +886,20 @@ void TrainDlg::OnSell()
     if( ui.radio_postion_o->isChecked() ) // sell to open short position 
     {
         if( !(order_price > market_price) )
-            OpenPosition(ui.dbspb_price->value(), market_price, false);
+            OpenPosition(market_price, ui.spb_order_num->value(), false);
         else
             AddOpenOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), false);
     }else // sell to close long position
     {
         if( !(order_price > market_price) )
-            ClosePosition(market_price, true);
+            CloseInputSizePosition(market_price, true);
         else
             AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), true);
     }
     RefreshCapitalUi();
 }
 
-void TrainDlg::OpenPosition(unsigned int qty, double para_price, bool is_long)
+void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
 { 
     //auto qty = (unsigned int)ui.spb_order_num->value();
     assert(qty > 0);
@@ -911,7 +918,7 @@ void TrainDlg::OpenPosition(unsigned int qty, double para_price, bool is_long)
     pos_atom->trade_id = account_info_.position.GenerateTradeId();
     pos_atom->is_long = is_long;
     pos_atom->price = price;
-    pos_atom->qty = qty;
+    pos_atom->qty_available = qty;
     //pos_atom->stop_profit_price = stop_profit_price;
     //pos_atom->stop_loss_price = stop_loss_price;
 
@@ -942,14 +949,17 @@ void TrainDlg::OpenPosition(unsigned int qty, double para_price, bool is_long)
         var_ids.setValue(ids);
         model->item(row_index, cst_tbview_position_id)->setData(var_ids);
 
-        auto amount_qty = get_total_amount_qty(account_info_.position, ids);
-        double total_amount = std::get<0>(amount_qty);
-        unsigned int total_qty = std::get<1>(amount_qty);
+        //std::unordered_map<int, unsigned int> pos_ids_sizes = account_info_.position.LongPosSizeInfo(POSITION_STATUS_ALL);
+
+        //auto amount_qty = get_total_amount_qty(account_info_.position, ids);
+        //double total_amount = std::get<0>(amount_qty);
+        unsigned int total_qty = account_info_.position.LongPosQty(POSITION_STATUS_ALL);
         assert(total_qty > 0); 
-        double avarege_price = ProcDecimal(total_amount/total_qty, DEFAULT_DECIMAL+1);
+        unsigned int ava_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
+        double avarege_price = pos_atom->is_long ? account_info_.position.LongAveragePrice() : account_info_.position.ShortAveragePirce();
         model->item(row_index, cst_tbview_position_average_price)->setText(QString::number(avarege_price));
         model->item(row_index, cst_tbview_position_size)->setText(QString::number(total_qty));
-        model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(total_qty));
+        model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(ava_qty));
 
     }else
     {
@@ -976,11 +986,11 @@ void TrainDlg::OpenPosition(unsigned int qty, double para_price, bool is_long)
         model->setItem(row_index, cst_tbview_position_bs, item);
         model->item(row_index, cst_tbview_position_bs)->setTextAlignment(align_way);
 
-        item = new QStandardItem( QString::number(pos_atom->qty) );
+        item = new QStandardItem( QString::number(pos_atom->qty_all()) );
         model->setItem(row_index, cst_tbview_position_size, item);
         model->item(row_index, cst_tbview_position_size)->setTextAlignment(align_way);
 
-        item = new QStandardItem( QString::number(pos_atom->qty) );
+        item = new QStandardItem( QString::number(pos_atom->qty_available) );
         model->setItem(row_index, cst_tbview_position_avaliable, item);
         model->item(row_index, cst_tbview_position_avaliable)->setTextAlignment(align_way);
     }
@@ -991,7 +1001,7 @@ void TrainDlg::OpenPosition(unsigned int qty, double para_price, bool is_long)
         order.rel_position_id = pos_atom.trade_id;
         order.action = OrderAction::CLOSE;
         order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
-        order.qty = pos_atom.qty;
+        order.qty = pos_atom.qty_available;
         if( is_stop_loss )
             order.price = is_long ? (price - cst_per_tick * (double)auto_stop_loss_ticks_) : (price + cst_per_tick * (double)auto_stop_loss_ticks_);
         else // stop profit
@@ -1007,7 +1017,7 @@ void TrainDlg::OpenPosition(unsigned int qty, double para_price, bool is_long)
 }
 
 
-void TrainDlg::ClosePosition(double para_price, bool is_long)
+void TrainDlg::CloseInputSizePosition(double para_price, bool is_long)
 {
     int close_qty = ui.spb_order_num->value();
     QTableView &tbv = *ui.table_view_position;
@@ -1019,7 +1029,7 @@ void TrainDlg::ClosePosition(double para_price, bool is_long)
     }
     
     //auto total_qty = GetItemPositionAllQty(*model, row_index);
-    auto total_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_ALL) : account_info_.position.ShortPosQty(POSITION_STATUS_ALL);
+    auto total_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
     if( close_qty > total_qty )
          return SetStatusBar(QString::fromLocal8Bit("平仓数量超过现有仓位!"));
     QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
@@ -1031,9 +1041,9 @@ void TrainDlg::ClosePosition(double para_price, bool is_long)
     std::vector<int> position_ids;
     std::vector<TradeRecordAtom> trade_record_atoms;
     if( is_long )
-        trade_record_atoms = account_info_.position.CloseLong(date, hhmm, para_price, close_qty, capital_ret, &profit_close, &position_ids);
+        trade_record_atoms = account_info_.position.CloseAvaliableLong(para_price, close_qty, capital_ret, &profit_close, &position_ids);
     else
-        trade_record_atoms = account_info_.position.CloseShort(date, hhmm, para_price, close_qty, capital_ret, &profit_close, &position_ids);
+        trade_record_atoms = account_info_.position.CloseAvaliableShort(para_price, close_qty, capital_ret, &profit_close, &position_ids);
     account_info_.capital.frozen -= capital_ret;
     account_info_.capital.avaliable += capital_ret + profit_close;
 
@@ -1112,17 +1122,57 @@ bool TrainDlg::AddCloseOrder(double price, unsigned int quantity, bool is_long)
         return false;
     }
 
-    // todo: froze avaliable position
-
+    //---------------------------------------
     OrderInfo  order;
     order.fake_id = TblHangonOrdersRowCount();
     order.action = OrderAction::CLOSE;
     order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     order.qty = quantity;
     order.price = price;
+    // froze avaliable position
+    std::unordered_map<int, unsigned int> rel_ids_sizes = is_long ? account_info_.position.LongPosSizeInfo(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosSizeInfo(POSITION_STATUS_AVAILABLE);
+    int remain_qty = quantity;
+
+    for( auto iter = rel_ids_sizes.begin(); iter != rel_ids_sizes.end() && remain_qty > 0; ++iter )
+    {
+        PositionAtom * p_target_atom = account_info_.position.FindPositionAtom(iter->first);
+        assert( p_target_atom );
+        if( p_target_atom->qty_available >= remain_qty )
+        {
+            p_target_atom->Freeze(order.fake_id, remain_qty);
+            order.help_contain.insert(std::make_pair(p_target_atom->trade_id, remain_qty));
+            remain_qty = 0;
+            break;
+        }else
+        {
+            p_target_atom->Freeze(order.fake_id, p_target_atom->qty_available);
+            order.help_contain.insert(std::make_pair(p_target_atom->trade_id, p_target_atom->qty_available));
+            remain_qty -= (int)p_target_atom->qty_available;
+        }
+    }
+
     hangon_order_infos_.push_back(order);
+
     Append2TblHangonOrders(order);
-    UpdateOrders2KlineWalls();
+
+    // ----------update table_view_position 
+    QTableView &tbv = *ui.table_view_position;
+    QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
+    auto row_index = find_model_first_fit_index(*model, is_long);
+    if( row_index > -1 ) 
+    {  
+        unsigned int ava_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
+        model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(ava_qty));
+    }
+
+    parent_->hangon_order_infos_ = hangon_order_infos_;
+    parent_->update();
+    if( main_win_->SubKlineWall() )
+    {
+        main_win_->SubKlineWall()->hangon_order_infos_ = hangon_order_infos_;
+        main_win_->SubKlineWall()->update();
+    }
+    return true;
 }
 
 unsigned int TrainDlg::GetItemPositionAllQty(QStandardItemModel& model, int row_index)
@@ -1133,7 +1183,7 @@ unsigned int TrainDlg::GetItemPositionAllQty(QStandardItemModel& model, int row_
     {
         PositionAtom *position_atom = account_info_.position.FindPositionAtom(ids[i]);
         assert(position_atom);
-        total_qty += position_atom->qty;
+        total_qty += position_atom->qty_all();
     }
     return total_qty;
 }
@@ -1157,8 +1207,8 @@ std::tuple<double, unsigned int> get_total_amount_qty(PositionInfo &position, QV
         auto pos_item = position.FindPositionAtom(ids[i]);
         if( pos_item )
         {
-            total_amount += pos_item->qty * pos_item->price;
-            total_qty += pos_item->qty;
+            total_amount += pos_item->qty_all() * pos_item->price;
+            total_qty += pos_item->qty_all();
         }
     }
     return std::make_tuple(total_amount, total_qty);

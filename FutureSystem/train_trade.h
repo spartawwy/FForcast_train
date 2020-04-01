@@ -1,10 +1,12 @@
 #ifndef TRAIN_TRADE_DSFSDF_H_
 #define TRAIN_TRADE_DSFSDF_H_
 
+#include <cassert>
 #include <vector>
 #include <tuple>
 #include <atomic>
 #include <mutex>
+#include <unordered_map>
 
 #include <QString>
 
@@ -68,8 +70,9 @@ public:
 class PositionAtom
 {
 public:
-    PositionAtom() : trade_id(-1), price(0.0), is_long(false), stop_loss_price(MAGIC_STOP_PRICE), stop_profit_price(MAGIC_STOP_PRICE), qty(0), is_frozen(false){}
-    PositionAtom(const PositionAtom& lh) : trade_id(lh.trade_id), price(lh.price), is_long(lh.is_long), stop_loss_price(lh.stop_loss_price),stop_profit_price(lh.stop_profit_price), qty(lh.qty), is_frozen(lh.is_frozen){}
+    PositionAtom() : trade_id(-1), price(0.0), is_long(false), stop_loss_price(MAGIC_STOP_PRICE), stop_profit_price(MAGIC_STOP_PRICE), qty_available(0), qty_frozens(){}
+    PositionAtom(const PositionAtom& lh) : trade_id(lh.trade_id), price(lh.price), is_long(lh.is_long)
+        , stop_loss_price(lh.stop_loss_price),stop_profit_price(lh.stop_profit_price), qty_available(lh.qty_available), qty_frozens(lh.qty_frozens){}
     PositionAtom& operator = (const PositionAtom& lh)
     { 
         if( this == &lh ) 
@@ -81,21 +84,32 @@ public:
             is_long = lh.is_long;
             stop_loss_price = lh.stop_loss_price;
             stop_profit_price = lh.stop_profit_price;
-            qty = lh.qty;
-            is_frozen = lh.is_frozen;
+            qty_available = lh.qty_available;
+            qty_frozens = lh.qty_frozens;
+            //is_frozen = lh.is_frozen;
         }
         return *this; 
     }
 
     double FloatProfit(double price);
 
+    unsigned int qty_all(){ return qty_available + qty_frozen(); }
+    unsigned int qty_frozen();
+    void Freeze(int id, unsigned qty)
+    { 
+        assert(qty_available >= qty);
+        qty_available -= qty;
+        qty_frozens.insert(std::make_pair(id, qty));
+    }
+
     int trade_id;
     double price;
     bool is_long;
     double stop_loss_price;   // if < 0.0 means not set
     double stop_profit_price; // if < 0.0 means not set
-    unsigned int qty;
-    bool is_frozen;
+    unsigned int qty_available;
+    //<id, frozen quantity>
+    std::unordered_map<int, unsigned int> qty_frozens;
 };
 
 class PositionInfo
@@ -115,10 +129,18 @@ public:
     unsigned int TotalPosition() { return LongPosQty() + ShortPosQty(); }
      
     unsigned int LongPosQty(int target_status=POSITION_STATUS_ALL);
+    // (id, special position size)
+    std::unordered_map<int, unsigned int> LongPosSizeInfo(int target_status=POSITION_STATUS_ALL){ return PositionSizeInfo(PositionType::POS_LONG, target_status);}
     double LongAveragePrice();
      
     unsigned int ShortPosQty(int target_status=POSITION_STATUS_ALL);
+    // (id, special position size)
+    std::unordered_map<int, unsigned int> ShortPosSizeInfo(int target_status=POSITION_STATUS_ALL){ return PositionSizeInfo(PositionType::POS_SHORT, target_status);}
     double ShortAveragePirce();
+
+    unsigned int PositionQty(PositionType type, int target_status=POSITION_STATUS_ALL);
+    // (id, special status position size)
+    std::unordered_map<int, unsigned int> PositionSizeInfo(PositionType type,  int target_status=POSITION_STATUS_ALL);
 
     double FloatProfit(double price);
     // ret <low, high>
@@ -136,9 +158,9 @@ public:
     /*std::vector<PositionAtom *> FrozeLongPosWhichUnfrozen(unsigned int qty);
     std::vector<PositionAtom *> FrozeShortPosWhichUnfrozen(unsigned int qty);*/
     // return trades
-    std::vector<TradeRecordAtom> CloseLong(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
+    std::vector<TradeRecordAtom> CloseAvaliableLong(double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
     // return trades
-    std::vector<TradeRecordAtom> CloseShort(int date, int hhmm, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
+    std::vector<TradeRecordAtom> CloseAvaliableShort(double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
 
     void PushBack(bool is_long, std::shared_ptr<PositionAtom> &item);
 

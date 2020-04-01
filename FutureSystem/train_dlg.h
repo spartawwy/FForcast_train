@@ -58,8 +58,8 @@ private:
     void PrintTradeRecords();
     
     //void OpenPosition(double para_price, bool is_long);
-    void OpenPosition(unsigned int qty, double para_price, bool is_long);
-    void ClosePosition(double para_price, bool is_long);
+    void OpenPosition(double para_price, unsigned int qty, bool is_long);
+    void CloseInputSizePosition(double para_price, bool is_long);
 
     bool AddOpenOrder(double price, unsigned int quantity, bool is_long);
     bool AddCloseOrder(double price, unsigned int quantity, bool is_long);

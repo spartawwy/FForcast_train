@@ -342,11 +342,11 @@ void MockTradeDlg::_OpenBuySell(bool is_buy)
     position_item->trade_id = trade_id;
     position_item->price = target_price;
     position_item->is_long = is_buy;
-    position_item->qty = qty; 
+    position_item->qty_available = qty; 
      
     account_info_.position.PushBack(is_buy, position_item);
     // avaliable can be < 0 , when avaliable + float_profit > 0 
-    account_info_.capital.avaliable -= cst_margin_capital * position_item->qty + CalculateFee(qty, target_price, false);
+    account_info_.capital.avaliable -= cst_margin_capital * qty + CalculateFee(qty, target_price, false);
     
     auto low_high = account_info_.position.GetForceClosePrices(account_info_.capital.avaliable + account_info_.capital.float_profit);
     force_close_low_ = std::get<0>(low_high);
@@ -460,7 +460,7 @@ bool MockTradeDlg::JudgeDoForceClose(double price)
         if( long_pos > 0 )
         {
             double capital_ret = 0.0;
-            std::vector<TradeRecordAtom> trades_close_long = account_info_.position.CloseLong(today, hhmm, force_close_low_, unsigned int(long_pos), capital_ret, &profit_close_long);
+            std::vector<TradeRecordAtom> trades_close_long = account_info_.position.CloseAvaliableLong(/*today, hhmm, */force_close_low_, unsigned int(long_pos), capital_ret, &profit_close_long);
             AppendTradesToRecordsUi(trades_close_long);
             trade_records_.insert(trade_records_.end(), trades_close_long.begin(), trades_close_long.end());
         }
@@ -470,7 +470,7 @@ bool MockTradeDlg::JudgeDoForceClose(double price)
         if( short_pos > 0 )
         {
             double capital_ret = 0.0;
-            std::vector<TradeRecordAtom> trades_close_short = account_info_.position.CloseShort(today, hhmm, force_close_low_, unsigned int(short_pos), capital_ret, &profit_close_short);
+            std::vector<TradeRecordAtom> trades_close_short = account_info_.position.CloseAvaliableShort(/*today, hhmm, */force_close_low_, unsigned int(short_pos), capital_ret, &profit_close_short);
             AppendTradesToRecordsUi(trades_close_short);
             trade_records_.insert(trade_records_.end(), trades_close_short.begin(), trades_close_short.end());
         }
