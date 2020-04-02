@@ -91,24 +91,47 @@ public:
         return *this; 
     }
 
-    double FloatProfit(double price);
+    double FloatProfit(double cur_price);
+    double PartProfit(double cur_price, unsigned int qty);
 
     unsigned int qty_all(){ return qty_available + qty_frozen(); }
     unsigned int qty_frozen();
-    void Freeze(int id, unsigned qty)
+    void Freeze(int fake_id, unsigned qty)
     { 
         assert(qty_available >= qty);
         qty_available -= qty;
-        qty_frozens.insert(std::make_pair(id, qty));
+        qty_frozens.insert(std::make_pair(fake_id, qty));
+    }
+    void UnFreeze(int fake_id)
+    {
+        auto iter = qty_frozens.find(fake_id);
+        assert(iter != qty_frozens.end());
+        if( iter != qty_frozens.end() )
+        {
+            qty_available += iter->second;
+            qty_frozens.erase(iter);
+        }
+    }
+    unsigned int DecreaseFrozen(int fake_id)
+    {
+        unsigned int size = 0; 
+        auto iter = qty_frozens.find(fake_id);
+        assert(iter != qty_frozens.end());
+        if( iter != qty_frozens.end() )
+        {
+            unsigned int size = iter->second; 
+            qty_frozens.erase(iter);
+        }
+        return size;
     }
 
     int trade_id;
-    double price;
+    double price; // open price
     bool is_long;
     double stop_loss_price;   // if < 0.0 means not set
     double stop_profit_price; // if < 0.0 means not set
     unsigned int qty_available;
-    //<id, frozen quantity>
+    //<order fake id, frozen quantity>
     std::unordered_map<int, unsigned int> qty_frozens;
 };
 
@@ -168,6 +191,7 @@ public:
 
     PositionAtom * FindPositionAtom(int id);
     TradeRecordAtom  ClosePositionAtom(int id, double price, double *capital_ret);
+    void RemoveAtom(int id);
 
     std::mutex mutex_;
 

@@ -39,6 +39,13 @@ double PositionAtom::FloatProfit(double cur_price)
     return ProcDecimal(val, 0);
 }
 
+double PositionAtom::PartProfit(double cur_price, unsigned int qty)
+{
+    double dis_price = is_long ? cur_price - price : price - cur_price;
+    double val = dis_price / cst_per_tick * cst_per_tick_capital * qty;
+    return ProcDecimal(val, 0);
+}
+
 unsigned int PositionAtom::qty_frozen()
 {
     unsigned int  frozened_qty = 0;
@@ -621,6 +628,22 @@ PositionAtom * PositionInfo::FindPositionAtom(int id)
         return nullptr;
 }
 
+void PositionInfo::RemoveAtom(int id)
+{
+    auto iter = position_holder_.find(id);
+    if( iter == position_holder_.end() )
+        return;
+    T_PositionAtoms *p_position_array = iter->second->is_long ? &long_positions_ : &short_positions_;
+    auto atom_iter = p_position_array->begin();
+    for( int i = 0; i < p_position_array->size(); ++i )
+    {
+        if( p_position_array->at(i)->trade_id == id )
+        {
+            p_position_array->erase(atom_iter++);
+            break;
+        }
+    }
+}
 
 TradeRecordAtom  PositionInfo::ClosePositionAtom(int id, double price, double *capital_ret)
 {

@@ -73,6 +73,8 @@ private:
     //int QtyInHangonOrderInfo();
     int TblHangonOrdersRowCount();
     void Append2TblHangonOrders(OrderInfo &order_info);
+    void RemoveFromTblHangonOrderByFakeId(int fake_id);
+
     // UI -----
     void SetStatusBar(const QString & val)
     {
