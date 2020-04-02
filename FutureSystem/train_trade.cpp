@@ -465,21 +465,24 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLoss(int date, int hhmm, doub
 }
 #endif 
 
-std::vector<TradeRecordAtom> PositionInfo::CloseAvaliableLong(double price, unsigned int qty
-                                                     , double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids)
-{ 
+std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids)
+{
     std::vector<TradeRecordAtom> ret;
     assert( qty > 0 );
-     
+    T_PositionAtoms * p_positions = target_long ? &long_positions_ : &short_positions_;
     unsigned int remain_tgt_qty = qty;
-    assert( LongPosQty() >= remain_tgt_qty );
+    unsigned int pos_quantity = target_long ? LongPosQty() : ShortPosQty();
+    assert( pos_quantity >= remain_tgt_qty );
 
     double profit = 0.0;
     capital_ret = 0.0;
-    //for( int i = long_positions_.size() - 1; i >= 0 ; --i ) 
-    for( auto iter = long_positions_.begin(); iter != long_positions_.end(); )
+    for( auto iter = p_positions->begin(); iter != p_positions->end(); )
     {
-        //if( (*iter)->is_frozen )
+        if( (*iter)->qty_available == 0 )
+        {
+            ++iter;
+            continue;
+        }
         double this_profit = 0.0;
         int this_qty = 0;
         if( (*iter)->qty_available >= remain_tgt_qty )
@@ -490,8 +493,9 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliableLong(double price, unsi
             if( (*iter)->qty_available == remain_tgt_qty )
             {
                 if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
-                if( (*iter)->qty_frozen() == 0 ) iter = long_positions_.erase(iter);
-            }else
+                if( (*iter)->qty_frozen() == 0 ) iter = p_positions->erase(iter);
+                else ++iter;
+            }else // >
             {
                 (*iter)->qty_available -= remain_tgt_qty;
                 ++iter;
@@ -504,7 +508,8 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliableLong(double price, unsi
             remain_tgt_qty -= this_qty;
             capital_ret += cst_margin_capital * this_qty;
             if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
-            if( (*iter)->qty_frozen() == 0 )iter = long_positions_.erase(iter);
+            if( (*iter)->qty_frozen() == 0 ) iter = p_positions->erase(iter);
+            else ++iter;
         }
         profit += this_profit;
 
@@ -513,7 +518,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliableLong(double price, unsi
         item.date = 0;
         item.hhmm = 0;
         item.action = OrderAction::CLOSE;
-        item.pos_type = PositionType::POS_LONG;
+        item.pos_type = target_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
         item.quantity = this_qty;
         item.price = price;
         item.profit = this_profit;
@@ -529,69 +534,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliableLong(double price, unsi
         *p_profit = profit;
     return ret;
 }
-
-std::vector<TradeRecordAtom> PositionInfo::CloseAvaliableShort(double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids)
-{ 
-    assert( qty > 0 );
-    assert( short_positions_.size() > 0 );
-    std::vector<TradeRecordAtom> ret;
-    unsigned int remain_tgt_qty = qty;
-    assert( ShortPosQty() >= remain_tgt_qty );
-
-    double profit = 0.0;
-    capital_ret = 0.0;
-    //for( int i = short_positions_.size() - 1; i >= 0 ; --i ) 
-    for( auto iter = short_positions_.begin(); iter != short_positions_.end(); )
-    {
-        double this_profit = 0.0;
-        int this_qty = 0;
-        if( (*iter)->qty_available >= remain_tgt_qty )
-        {
-            this_qty = remain_tgt_qty;
-            this_profit = ((*iter)->price - price) / cst_per_tick * cst_per_tick_capital * remain_tgt_qty;
-            capital_ret += cst_margin_capital * remain_tgt_qty;
-            if( (*iter)->qty_available == remain_tgt_qty )
-            {
-                if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
-                if( (*iter)->qty_frozen() == 0 ) iter = short_positions_.erase(iter);
-            }else
-            {
-                (*iter)->qty_available -= remain_tgt_qty;
-                ++iter;
-            }
-            remain_tgt_qty = 0;
-        }else
-        {
-            this_qty = (*iter)->qty_available;
-            this_profit = ((*iter)->price - price) / cst_per_tick * cst_per_tick_capital * this_qty;
-            capital_ret += cst_margin_capital * this_qty;
-            remain_tgt_qty -= this_qty;
-            if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
-            if( (*iter)->qty_frozen() == 0 ) iter = short_positions_.erase(iter);
-        }
-        profit += this_profit;
-
-        TradeRecordAtom item;
-        item.trade_id = GenerateTradeId();
-        item.date = 0;
-        item.hhmm = 0;
-        item.action = OrderAction::CLOSE;
-        item.pos_type = PositionType::POS_SHORT;
-        item.quantity = this_qty;
-        item.price = price;
-        item.profit = this_profit;
-        item.fee = CalculateFee(item.quantity, price, true);
-        ret.push_back(item);
-        profit -= item.fee;
-
-        if( remain_tgt_qty == 0 )
-            break;
-    }// for
-    if( p_profit )
-        *p_profit = profit;
-    return ret;
-}
-
+ 
 void PositionInfo::PushBack(bool is_long, std::shared_ptr<PositionAtom> &item)
 {
     assert(item->trade_id >= 0);

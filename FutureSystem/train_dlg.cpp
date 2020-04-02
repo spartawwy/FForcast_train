@@ -485,47 +485,46 @@ void TrainDlg::OnNextStep()
        {
            std::vector<int> pos_del_ids;
            bool is_fit_price = iter->position_type == PositionType::POS_LONG ? (!(item.high_price < iter->price)) : (!(item.low_price > iter->price));
-           if( is_fit_price )
-           {  
-                // for each related position
-                double total_profit = 0.0;
-                unsigned int total_decrease_size = 0;
-                for( auto posid_size_iter = iter->help_contain.begin(); posid_size_iter != iter->help_contain.end(); ++posid_size_iter )
-                {
-                    auto p_pos_atom = account_info_.position.FindPositionAtom(posid_size_iter->first);
-                    auto decrease_size = p_pos_atom->DecreaseFrozen(iter->fake_id);
-                    total_decrease_size += decrease_size;
-                    assert(decrease_size == posid_size_iter->second);
-                    if( decrease_size == p_pos_atom->qty_all() )
-                        pos_del_ids.push_back(posid_size_iter->first);
-                    total_profit += p_pos_atom->PartProfit(iter->price, decrease_size);
-                }
-                assert(iter->qty == total_decrease_size);
+           if( !is_fit_price )
+           {
+               ++iter;
+               continue;
+           }
+            // for each related position
+            double total_profit = 0.0;
+            unsigned int total_decrease_size = 0;
+            for( auto posid_size_iter = iter->help_contain.begin(); posid_size_iter != iter->help_contain.end(); ++posid_size_iter )
+            {
+                auto p_pos_atom = account_info_.position.FindPositionAtom(posid_size_iter->first);
+                auto decrease_size = p_pos_atom->DecreaseFrozen(iter->fake_id);
+                assert(decrease_size == posid_size_iter->second);
+                total_decrease_size += decrease_size;
+                if( 0 == p_pos_atom->qty_all() )
+                    pos_del_ids.push_back(posid_size_iter->first);
 
-                TradeRecordAtom trade_item;
-                trade_item.trade_id = account_info_.position.GenerateTradeId();
-                trade_item.date = //TSystem::Today();
-                trade_item.hhmm = //cur_hhmm();
-                trade_item.action = OrderAction::CLOSE;
-                trade_item.pos_type = iter->position_type;
-                trade_item.price =  iter->price;
-                trade_item.quantity = total_decrease_size;  // close all position of this record 
-                trade_item.profit = total_profit; //
-                trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
-                trade_record_atoms.push_back(trade_item);
+                total_profit += p_pos_atom->PartProfit(iter->price, decrease_size);
+            }
+            assert(iter->qty == total_decrease_size);
 
-                double capital_ret = cst_margin_capital * total_decrease_size + trade_item.profit - trade_item.fee;
-                account_info_.capital.frozen -= cst_margin_capital * total_decrease_size;
-                account_info_.capital.avaliable += capital_ret;
+            TradeRecordAtom trade_item;
+            trade_item.trade_id = account_info_.position.GenerateTradeId();
+            trade_item.date = //TSystem::Today();
+            trade_item.hhmm = //cur_hhmm();
+            trade_item.action = OrderAction::CLOSE;
+            trade_item.pos_type = iter->position_type;
+            trade_item.price =  iter->price;
+            trade_item.quantity = total_decrease_size;  // close all position of this record 
+            trade_item.profit = total_profit; //
+            trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
+            trade_record_atoms.push_back(trade_item);
 
-                RemoveFromTblHangonOrderByFakeId(iter->fake_id);
-                hangon_order_infos_.erase(iter++);
-                continue;
-           }// if( is_fit_price )
-            
+            double capital_ret = cst_margin_capital * total_decrease_size + trade_item.profit - trade_item.fee;
+            account_info_.capital.frozen -= cst_margin_capital * total_decrease_size;
+            account_info_.capital.avaliable += capital_ret;
+            // reset position table ----------
             QTableView &tbv = *ui.table_view_position;
             QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
-            auto row_index = find_model_first_fit_index(*model, iter->position_type);
+            auto row_index = find_model_first_fit_index(*model, iter->position_type == PositionType::POS_LONG);
             assert(row_index > -1); 
             QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
             QVector<int> ids_after;
@@ -538,9 +537,11 @@ void TrainDlg::OnNextStep()
             if( ids_after.empty() )
                 model->removeRow(row_index);
             else
-            {
                 RecaculatePosTableViewItem(ids_after, row_index);
-            }
+            //------------------
+            RemoveFromTblHangonOrderByFakeId(iter->fake_id);
+            hangon_order_infos_.erase(iter++);
+            continue;
 
        }else //open 
        {
@@ -556,6 +557,7 @@ void TrainDlg::OnNextStep()
        ++iter;
     }
 
+    //-------for stop profit/loss orders----------------
     for(auto iter = stop_order_infos_.begin(); iter != stop_order_infos_.end(); )
     {
        assert( iter->action == OrderAction::CLOSE );
@@ -595,6 +597,7 @@ void TrainDlg::RecaculatePosTableViewItem(QVector<int> &ids, int row_index)
     //recaculate average open price-------
     double total_amount = 0.0;
     unsigned int total_qty = 0;
+    unsigned int avaliable_qty = 0;
     for( int i = 0; i < ids.size(); ++i )
     {
         auto pos_item = account_info_.position.FindPositionAtom(ids[i]);
@@ -602,6 +605,7 @@ void TrainDlg::RecaculatePosTableViewItem(QVector<int> &ids, int row_index)
         {
             total_amount += pos_item->qty_all() * pos_item->price;
             total_qty += pos_item->qty_all();
+            avaliable_qty += pos_item->qty_available;
         }
     }
     assert(total_qty > 0);
@@ -609,7 +613,7 @@ void TrainDlg::RecaculatePosTableViewItem(QVector<int> &ids, int row_index)
 
     model->item(row_index, cst_tbview_position_average_price)->setText(QString::number(after_average_price));
     model->item(row_index, cst_tbview_position_size)->setText(QString::number(total_qty));
-    model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(total_qty));
+    model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(avaliable_qty));
 }
 
 // ps: auto set  profit ui item
