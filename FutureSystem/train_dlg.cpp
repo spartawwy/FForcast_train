@@ -112,6 +112,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
 
     scroll_bar_date_ = eldest_date;
     ret = connect(ui.hScrollBar_TrainTimeRange, SIGNAL(sliderMoved(int)), this, SLOT(OnScrollTrainTimeMoved(int)));
+    assert(ret);
     //-----------------------------------------
 
     //------------------table position
@@ -142,8 +143,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ui.table_view_position->setColumnWidth(cst_tbview_position_avaliable, cst_small_width);
 
     //--------------------table hangon order------ 
-
-    
+     
     ui.table_view_order_hangon->setEditTriggers(QAbstractItemView::NoEditTriggers);
     
     model = new QStandardItemModel(0, cst_tbview_hangonorder_col_count, this);
@@ -163,9 +163,10 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_oc, cst_small_width/2);
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_qty, cst_small_width);
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_price, cst_small_width);
-    ret = connect(ui.table_view_order_hangon, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(onTblHangonOrdersRowDoubleClicked(const QModelIndex &)));
-     
-    
+    ret = connect(ui.table_view_order_hangon, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(OnTblHangonOrdersRowDoubleClicked(const QModelIndex &)));
+    assert(ret);
+    //------------------table position
+
     OnStopTrain();
 
     account_info_.capital.avaliable = cst_default_ori_capital;
@@ -179,26 +180,28 @@ const T_StockHisDataItem & TrainDlg::CurHisStockDataItem()
 {
     return parent_->CurTrainStockDataItem();
 }
-
+               
 void TrainDlg::OnTblHangonOrdersRowDoubleClicked(const QModelIndex &index)
 {
+    QStandardItemModel * tbl_view_pos_model = static_cast<QStandardItemModel *>(ui.table_view_position->model());
     auto model = (QStandardItemModel*)ui.table_view_order_hangon->model();
     auto temp_order_id = model->item(index.row(), cst_tbview_hangonorder_id)->text().toInt();
+    //bool is_target_long = model->item(index.row(), cst_tbview_hangonorder_oc)->text() == QString::fromLocal8Bit("Âô") ? true : false;
     for( auto iter = hangon_order_infos_.begin(); iter != hangon_order_infos_.end(); )
     {
-        if( iter->rel_position_id == temp_order_id )
+        if( iter->fake_id == temp_order_id )
         {
             if( iter->action == OrderAction::OPEN )
             {
                 account_info_.capital.frozen -= cst_margin_capital * iter->qty;
-                account_info_.capital.avaliable += cst_margin_capital * iter->qty;;
-                RefreshCapitalUi();
+                account_info_.capital.avaliable += cst_margin_capital * iter->qty;
+                RefreshCapitalUi(); 
             }else  // close
             {
-                // unfroze related positions
-                for(int i = 0; iter->help_contain.size(); ++i )
-                {
-                    auto pos_item = account_info_.position.FindPositionAtom(iter->help_contain.at(i));
+                // unfroze related positions 
+                for(auto item = iter->help_contain.begin(); item != iter->help_contain.end(); ++item )
+                { 
+                    auto pos_item = account_info_.position.FindPositionAtom(item->first);
                     if( pos_item )
                     {
                         auto iter_frozen_party = pos_item->qty_frozens.find(temp_order_id);
@@ -209,6 +212,8 @@ void TrainDlg::OnTblHangonOrdersRowDoubleClicked(const QModelIndex &index)
                         }
                     }
                 }
+                auto row_index = find_model_first_fit_index(*tbl_view_pos_model, iter->position_type == PositionType::POS_LONG);
+                RecaculatePosTableViewItem(row_index);
             }
             hangon_order_infos_.erase(iter++);
             break;
@@ -216,6 +221,7 @@ void TrainDlg::OnTblHangonOrdersRowDoubleClicked(const QModelIndex &index)
         ++iter;
     }
     model->removeRow(index.row());
+     
     parent_->hangon_order_infos_ = hangon_order_infos_;
     main_win_->SubKlineWall()->hangon_order_infos_ = hangon_order_infos_;
 }
@@ -614,6 +620,15 @@ void TrainDlg::RecaculatePosTableViewItem(QVector<int> &ids, int row_index)
     model->item(row_index, cst_tbview_position_average_price)->setText(QString::number(after_average_price));
     model->item(row_index, cst_tbview_position_size)->setText(QString::number(total_qty));
     model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(avaliable_qty));
+}
+
+void TrainDlg::RecaculatePosTableViewItem(int row_index)
+{
+    QTableView &tbv = *ui.table_view_position;
+    QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
+     
+    QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
+    RecaculatePosTableViewItem(ids, row_index);
 }
 
 // ps: auto set  profit ui item
@@ -1023,15 +1038,11 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
         ids.push_back(pos_atom->trade_id);
         var_ids.setValue(ids);
         model->item(row_index, cst_tbview_position_id)->setData(var_ids);
-
-        //std::unordered_map<int, unsigned int> pos_ids_sizes = account_info_.position.LongPosSizeInfo(POSITION_STATUS_ALL);
-
-        //auto amount_qty = get_total_amount_qty(account_info_.position, ids);
-        //double total_amount = std::get<0>(amount_qty);
-        unsigned int total_qty = account_info_.position.LongPosQty(POSITION_STATUS_ALL);
+         
+        unsigned int total_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_ALL) : account_info_.position.ShortPosQty(POSITION_STATUS_ALL);
         assert(total_qty > 0); 
         unsigned int ava_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
-        double avarege_price = pos_atom->is_long ? account_info_.position.LongAveragePrice() : account_info_.position.ShortAveragePirce();
+        double avarege_price = is_long ? account_info_.position.LongAveragePrice() : account_info_.position.ShortAveragePirce();
         model->item(row_index, cst_tbview_position_average_price)->setText(QString::number(avarege_price));
         model->item(row_index, cst_tbview_position_size)->setText(QString::number(total_qty));
         model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(ava_qty));

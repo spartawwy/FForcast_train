@@ -77,7 +77,7 @@ enum OrderAction : unsigned char
 struct OrderInfo
 {
     OrderAction  action;
-    PositionType position_type;
+    PositionType position_type; // target position type
     double price;
     unsigned int qty;
     int fake_id;

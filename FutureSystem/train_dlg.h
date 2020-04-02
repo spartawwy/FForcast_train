@@ -32,6 +32,7 @@ public:
     const T_StockHisDataItem & CurHisStockDataItem();
 
 public slots:
+
     void OnTblHangonOrdersRowDoubleClicked(const QModelIndex &);
     void OnScrollTrainTimeMoved(int);
     void OnStartTrain();
@@ -66,7 +67,6 @@ private:
 
     unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
 
-    double RecaculatePosTableViewFloatProfit(double cur_price);
 
     void UpdateOrders2KlineWalls();
 
@@ -83,6 +83,8 @@ private:
     void RefreshCapitalUi();
     void RemoveInPositionTableView(int position_id, PositionType position_type);
     void RecaculatePosTableViewItem(QVector<int> &ids, int row_index);
+    void RecaculatePosTableViewItem(int row_index);
+    double RecaculatePosTableViewFloatProfit(double cur_price);
 
 private:
 
