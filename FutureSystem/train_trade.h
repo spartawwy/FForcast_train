@@ -96,6 +96,13 @@ public:
 
     unsigned int qty_all(){ return qty_available + qty_frozen(); }
     unsigned int qty_frozen();
+
+    void ClearAvaliable(){ qty_available = 0; }
+    void DecreaseAvaliable(unsigned int qty)
+    {
+        assert(qty_available >= qty);
+        qty_available -= qty;
+    }
     void Freeze(int fake_id, unsigned qty)
     { 
         assert(qty_available >= qty);

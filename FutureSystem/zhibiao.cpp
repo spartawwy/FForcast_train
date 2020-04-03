@@ -7,7 +7,7 @@
 
 double EmaShort(const unsigned int zb_index, T_HisDataItemContainer &items, int index)
 { 
-    assert(items.size() > index );
+    assert(items.size() > (unsigned int)index );
     assert( items.at(0)->zhibiao_atoms.size() > zb_index );
 
     const int x = 12;
@@ -28,8 +28,8 @@ double EmaShort(const unsigned int zb_index, T_HisDataItemContainer &items, int 
 }
 
 double EmaLong(const unsigned int zb_index, T_HisDataItemContainer &items, int index)
-{ 
-    assert(items.size() > index );
+{  
+    assert(items.size() > (unsigned int)index );
     assert( items.at(0)->zhibiao_atoms.size() > zb_index );
 
     const int x = 26;
@@ -53,7 +53,7 @@ double EmaDea(const unsigned int zb_index, T_HisDataItemContainer &items, int in
 { 
     // DIF:EMA(CLOSE,SHORT) - EMA(CLOSE,LONG); { 白线 快线}
     // DEA:EMA(DIF,MID);  { 黄线 慢线}
-    assert(items.size() > index );
+    assert(items.size() > (unsigned int)index );
     assert( items.at(0)->zhibiao_atoms.size() > zb_index );
 
     const int x = 9;
@@ -80,7 +80,7 @@ double Macd(const unsigned int zb_index, T_HisDataItemContainer &items, int inde
     // DIF:EMA(CLOSE,SHORT) - EMA(CLOSE,LONG); { 白线 快线}
     // DEA:EMA(DIF,MID);  { 黄线 慢线}
     // MACD:(DIF-DEA)*2 * 3.12
-    assert(items.size() > index );
+    assert(items.size() > (unsigned int)index );
     assert( items.at(0)->zhibiao_atoms.size() > zb_index );
 
     double dif = items.at(index)->zhibiao_atoms[zb_index]->val0() - items.at(index)->zhibiao_atoms[zb_index]->val1();
@@ -93,7 +93,7 @@ void MomentumZhibiao::Caculate(T_HisDataItemContainer &data_items_in_container)
 {
     // MACD:(DIF-DEA)*2 * 3.12
     // zhibiao have to caculate count larger than 100 , then will be accuracy
-    for( int i = 0; i < data_items_in_container.size(); ++i )
+    for( unsigned int i = 0; i < data_items_in_container.size(); ++i )
     { 
         double st = EmaShort(MOMENTUM_POS, data_items_in_container, i);
         double lg = EmaLong(MOMENTUM_POS, data_items_in_container, i);

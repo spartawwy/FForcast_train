@@ -16,6 +16,10 @@
 
 #include "train_trade_dlg.h"
 
+#define ORDER_TYPE_HANGON  1
+#define ORDER_TYPE_STOPPROFITLOSS  2
+#define ORDER_TYPE_CONDITION  3
+#define ORDER_TYPE_ALL  4
  
 class KLineWall;
 class MainWindow;
@@ -38,7 +42,7 @@ public slots:
     void OnStartTrain();
     void OnStopTrain();
 
-    void OnMoveToNextK();
+    //void OnMoveToNextK();
     //void OnMoveToPreK();
 
     void OnNextStep();
@@ -65,9 +69,10 @@ private:
     bool AddOpenOrder(double price, unsigned int quantity, bool is_long);
     bool AddCloseOrder(double price, unsigned int quantity, bool is_long);
 
+    std::vector<TradeRecordAtom> DoIfStopProfitLoss(double o_price, double c_price, double h_price, double l_price, std::vector<int> &ret_pos_ids, double &ret_profit);
     unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
 
-    void UpdateOrders2KlineWalls();
+    void UpdateOrders2KlineWalls(int type);
 
     //int QtyInHangonOrderInfo();
     int TblHangonOrdersRowCount();

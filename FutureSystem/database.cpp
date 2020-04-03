@@ -240,7 +240,7 @@ bool DataBase::GetHisKBars(const std::string &code, bool is_index, int nmarket, 
             item.vol = boost::lexical_cast<double>(*(vals + 6)); 
             items.push_back(item);
              
-        }catch(boost::exception& e)
+        }catch(boost::exception& )
         {
             return 0;
         } 
@@ -273,7 +273,7 @@ bool DataBase::GetHisKBarDateRange(const std::string &code, bool is_index, TypeP
         {
             eldest_date =  boost::lexical_cast<int>(*(vals)); 
             eldest_time =  boost::lexical_cast<int>(*(vals + 1)); 
-        }catch(boost::exception& e)
+        }catch(boost::exception& )
         {
             return 0;
         } 
@@ -290,7 +290,7 @@ bool DataBase::GetHisKBarDateRange(const std::string &code, bool is_index, TypeP
         {
             latest_date =  boost::lexical_cast<int>(*(vals)); 
             latest_time =  boost::lexical_cast<int>(*(vals + 1)); 
-        }catch(boost::exception& e)
+        }catch(boost::exception& )
         {
             return 0;
         } 
