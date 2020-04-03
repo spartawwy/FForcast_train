@@ -35,6 +35,17 @@ static const int cst_tbview_hangonorder_price = 3;
 static const int cst_tbview_hangonorder_qty = 4;
 static const int cst_tbview_hangonorder_col_count = 5;
 
+static const int cst_tbview_trades_id = 0;
+static const int cst_tbview_trades_bs = 1;
+static const int cst_tbview_trades_oc = 2;
+static const int cst_tbview_trades_price = 3;
+static const int cst_tbview_trades_qty = 4;
+static const int cst_tbview_trades_profit = 5;
+static const int cst_tbview_trades_fee = 6;
+static const int cst_tbview_trades_time = 7;
+static const int cst_tbview_trades_col_count = 8;
+
+
 static int find_model_first_fit_index(QStandardItemModel& model, bool is_long_pos);
 static std::tuple<double, unsigned int> get_total_amount_qty(PositionInfo &position, QVector<int> &ids);
 
@@ -165,7 +176,35 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ui.table_view_order_hangon->setColumnWidth(cst_tbview_hangonorder_price, cst_small_width);
     ret = connect(ui.table_view_order_hangon, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(OnTblHangonOrdersRowDoubleClicked(const QModelIndex &)));
     assert(ret);
-    //------------------table position
+    //------------------table trades----------
+    ui.table_view_trades->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    model = new QStandardItemModel(0, cst_tbview_trades_col_count, this);
+    model->setHorizontalHeaderItem(cst_tbview_trades_id, new QStandardItem(QString::fromLocal8Bit("ID")));
+    model->horizontalHeaderItem(cst_tbview_trades_id)->setTextAlignment(Qt::AlignCenter);
+    model->setHorizontalHeaderItem(cst_tbview_trades_bs, new QStandardItem(QString::fromLocal8Bit("买卖")));
+    model->horizontalHeaderItem(cst_tbview_trades_bs)->setTextAlignment(Qt::AlignCenter);
+    model->setHorizontalHeaderItem(cst_tbview_trades_oc, new QStandardItem(QString::fromLocal8Bit("开平")));
+    model->horizontalHeaderItem(cst_tbview_trades_oc)->setTextAlignment(Qt::AlignCenter);
+    model->setHorizontalHeaderItem(cst_tbview_trades_price, new QStandardItem(QString::fromLocal8Bit("价格")));
+    model->horizontalHeaderItem(cst_tbview_trades_price)->setTextAlignment(Qt::AlignCenter);
+    model->setHorizontalHeaderItem(cst_tbview_trades_qty, new QStandardItem(QString::fromLocal8Bit("数量")));
+    model->horizontalHeaderItem(cst_tbview_trades_qty)->setTextAlignment(Qt::AlignCenter);
+    model->setHorizontalHeaderItem(cst_tbview_trades_profit, new QStandardItem(QString::fromLocal8Bit("盈亏")));
+    model->horizontalHeaderItem(cst_tbview_trades_profit)->setTextAlignment(Qt::AlignCenter);
+    model->setHorizontalHeaderItem(cst_tbview_trades_fee, new QStandardItem(QString::fromLocal8Bit("手续费")));
+    model->horizontalHeaderItem(cst_tbview_trades_fee)->setTextAlignment(Qt::AlignCenter);
+    model->setHorizontalHeaderItem(cst_tbview_trades_time, new QStandardItem(QString::fromLocal8Bit("时间")));
+    model->horizontalHeaderItem(cst_tbview_trades_time)->setTextAlignment(Qt::AlignCenter);
+    ui.table_view_trades->setModel(model);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_id, cst_small_width/2);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_bs, cst_small_width/2);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_oc, cst_small_width/2);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_price, cst_small_width);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_qty, cst_small_width);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_profit, cst_small_width);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_fee, cst_small_width);
+    ui.table_view_trades->setColumnWidth(cst_tbview_trades_time, cst_small_width);
+    // cst_tbview_trades_id 
 
     OnStopTrain();
 
@@ -466,7 +505,7 @@ void TrainDlg::OnNextStep()
     T_StockHisDataItem item;
     if( main_win_->SubKlineWall() )
         item = main_win_->SubKlineWall()->Train_NextStep();
-        parent_->Train_NextStep(item);
+    parent_->Train_NextStep(item);
 
     const T_StockHisDataItem & stock_item = CurHisStockDataItem();
     if( stock_item.date == 0 )
@@ -523,6 +562,7 @@ void TrainDlg::OnNextStep()
             trade_item.profit = total_profit; //
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             trade_record_atoms.push_back(trade_item);
+            Append2TblTrades(trade_item);
 
             double capital_ret = cst_margin_capital * total_decrease_size + trade_item.profit - trade_item.fee;
             account_info_.capital.frozen -= cst_margin_capital * total_decrease_size;
@@ -716,6 +756,36 @@ void TrainDlg::RemoveFromTblHangonOrderByFakeId(int fake_id)
             break;
         }
     }
+}
+
+void TrainDlg::Append2TblTrades(TradeRecordAtom &trade)
+{
+    auto model = (QStandardItemModel*)ui.table_view_trades->model();
+    model->insertRow(model->rowCount());
+    unsigned int row_index = model->rowCount() - 1;
+    auto item = new QStandardItem(QString::number(trade.trade_id));
+    model->setItem(row_index, cst_tbview_trades_id, item);
+
+    item = new QStandardItem(trade.pos_type == PositionType::POS_LONG ? QString::fromLocal8Bit("买") : QString::fromLocal8Bit("卖"));
+    model->setItem(row_index, cst_tbview_trades_bs, item);
+
+    item = new QStandardItem(trade.action == OrderAction::OPEN ? QString::fromLocal8Bit("开") : QString::fromLocal8Bit("平"));
+    model->setItem(row_index, cst_tbview_trades_oc, item);
+
+    item = new QStandardItem(QString::number(trade.price));
+    model->setItem(row_index, cst_tbview_trades_price, item);
+
+    item = new QStandardItem(QString::number(trade.quantity));
+    model->setItem(row_index, cst_tbview_trades_qty, item);
+
+    item = new QStandardItem(QString::number(trade.fee));
+    model->setItem(row_index, cst_tbview_trades_fee, item);
+
+    item = new QStandardItem(QString::number(trade.profit));
+    model->setItem(row_index, cst_tbview_trades_profit, item);
+
+    item = new QStandardItem(QString::number(trade.hhmm));
+    model->setItem(row_index, cst_tbview_trades_time, item);
 }
 
 void TrainDlg::RefreshCapitalUi()
@@ -1009,9 +1079,11 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
     pos_atom->is_long = is_long;
     pos_atom->price = price;
     pos_atom->qty_available = qty;
-    //pos_atom->stop_profit_price = stop_profit_price;
-    //pos_atom->stop_loss_price = stop_loss_price;
-
+   /* if( auto_stop_profit_ticks_ > 0 )
+        pos_atom->stop_profit_price = is_long ? (para_price + cst_per_tick * auto_stop_profit_ticks_) : (para_price - cst_per_tick * auto_stop_profit_ticks_);
+    if( auto_stop_loss_ticks_ > 0 )
+        pos_atom->stop_loss_price = is_long ? (para_price - cst_per_tick * auto_stop_loss_ticks_) : (para_price + cst_per_tick * auto_stop_loss_ticks_);
+*/
     account_info_.position.PushBack(is_long, pos_atom);
 
     TradeRecordAtom  trade_item;
@@ -1024,6 +1096,7 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
     trade_item.price = pos_atom->price;
     trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
     trade_records_.push_back(trade_item);
+    Append2TblTrades(trade_item);
 
     // fill or ajust position table view -------------
     QTableView &tbv = *ui.table_view_position;
@@ -1143,36 +1216,17 @@ void TrainDlg::CloseInputSizePosition(double para_price, bool is_long)
     if( ids_after.empty() )
         model->removeRow(row_index);
     else
-    {
-#if 1 
-        RecaculatePosTableViewItem(ids_after, row_index);
-#else
-        QVariant var_data;
-        var_data.setValue(ids_after);
-        model->item(row_index, cst_tbview_position_id)->setData(var_data);
-        //recaculate average open price-------
-        double total_amount = 0.0;
-        unsigned int total_qty = 0;
-        for( int i = 0; i < ids_after.size(); ++i )
-        {
-            auto pos_item = account_info_.position.FindPositionAtom(ids_after[i]);
-            if( pos_item )
-            {
-                total_amount += pos_item->qty * pos_item->price;
-                total_qty += pos_item->qty;
-            }
-        }
-        assert(total_qty > 0);
-        double after_average_price = ProcDecimal(total_amount/total_qty, DEFAULT_DECIMAL + 1);
-
-        model->item(row_index, cst_tbview_position_average_price)->setText(QString::number(after_average_price));
-        model->item(row_index, cst_tbview_position_size)->setText(QString::number(total_qty));
-        model->item(row_index, cst_tbview_position_avaliable)->setText(QString::number(total_qty));
-#endif
+    { 
+        RecaculatePosTableViewItem(ids_after, row_index); 
     }
     double cur_quote = ui.lab_quote->text().toDouble();
     double total_profit = RecaculatePosTableViewFloatProfit(cur_quote);
     account_info_.capital.float_profit = ProcDecimal(total_profit, 0);
+
+    std::for_each(std::begin(trade_record_atoms), std::end(trade_record_atoms),[this](TradeRecordAtom &trade_atom)
+    {
+        Append2TblTrades(trade_atom);
+    });
 }
 
 bool TrainDlg::AddOpenOrder(double price, unsigned int quantity, bool is_long)

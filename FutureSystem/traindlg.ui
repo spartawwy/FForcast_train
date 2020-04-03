@@ -371,7 +371,7 @@
       <enum>QTabWidget::South</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_position">
       <attribute name="title">
@@ -438,6 +438,16 @@
       <attribute name="title">
        <string>成交记录</string>
       </attribute>
+      <widget class="QTableView" name="table_view_trades">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>421</width>
+         <height>291</height>
+        </rect>
+       </property>
+      </widget>
      </widget>
      <widget class="QWidget" name="tab_condition_order">
       <attribute name="title">

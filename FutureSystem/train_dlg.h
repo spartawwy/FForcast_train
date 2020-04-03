@@ -67,14 +67,11 @@ private:
 
     unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
 
-
     void UpdateOrders2KlineWalls();
 
     //int QtyInHangonOrderInfo();
     int TblHangonOrdersRowCount();
-    void Append2TblHangonOrders(OrderInfo &order_info);
-    void RemoveFromTblHangonOrderByFakeId(int fake_id);
-
+    
     // UI -----
     void SetStatusBar(const QString & val)
     {
@@ -85,6 +82,11 @@ private:
     void RecaculatePosTableViewItem(QVector<int> &ids, int row_index);
     void RecaculatePosTableViewItem(int row_index);
     double RecaculatePosTableViewFloatProfit(double cur_price);
+
+    void Append2TblHangonOrders(OrderInfo &order_info);
+    void RemoveFromTblHangonOrderByFakeId(int fake_id);
+
+    void Append2TblTrades(TradeRecordAtom &trade);
 
 private:
 

@@ -65,6 +65,7 @@ public:
     QPushButton *pbtn_clear_close;
     QTableView *table_view_order_hangon;
     QWidget *tab_fill;
+    QTableView *table_view_trades;
     QWidget *tab_condition_order;
     QCheckBox *checkb_follow_market;
     QWidget *tab_account;
@@ -210,6 +211,9 @@ public:
         tab_detail->addTab(tab_position, QString());
         tab_fill = new QWidget();
         tab_fill->setObjectName(QStringLiteral("tab_fill"));
+        table_view_trades = new QTableView(tab_fill);
+        table_view_trades->setObjectName(QStringLiteral("table_view_trades"));
+        table_view_trades->setGeometry(QRect(0, 0, 421, 291));
         tab_detail->addTab(tab_fill, QString());
         tab_condition_order = new QWidget();
         tab_condition_order->setObjectName(QStringLiteral("tab_condition_order"));
@@ -276,7 +280,7 @@ public:
         retranslateUi(TrainDlgForm);
 
         tabwid_main->setCurrentIndex(0);
-        tab_detail->setCurrentIndex(0);
+        tab_detail->setCurrentIndex(1);
 
 
         QMetaObject::connectSlotsByName(TrainDlgForm);

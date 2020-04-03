@@ -518,7 +518,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, doub
         item.date = 0;
         item.hhmm = 0;
         item.action = OrderAction::CLOSE;
-        item.pos_type = target_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+        item.pos_type = target_long ? PositionType::POS_SHORT : PositionType::POS_LONG;
         item.quantity = this_qty;
         item.price = price;
         item.profit = this_profit;
