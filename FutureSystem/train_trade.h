@@ -205,6 +205,7 @@ public:
     PositionAtom * PopBack(bool is_long);
 
     PositionAtom * FindPositionAtom(int id);
+    std::shared_ptr<PositionAtom> FindPositionAtomSharedPointer(int id);
     TradeRecordAtom  ClosePositionAtom(int id, double price, double *capital_ret);
     void RemoveAtom(int id);
 

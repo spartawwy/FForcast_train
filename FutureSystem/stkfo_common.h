@@ -75,7 +75,8 @@ enum OrderAction : unsigned char
 enum OrderType : unsigned char
 {
     HANGON = 0,
-    STOPPROFITLOSS,
+    STOPPROFIT,
+    STOPLOSS,
     CONDITION,
     //UNFREEZE, // only related to stock, this action is in the front of current day's other action
 };

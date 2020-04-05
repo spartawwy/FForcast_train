@@ -537,7 +537,7 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, doub
         item.date = 0;
         item.hhmm = 0;
         item.action = OrderAction::CLOSE;
-        item.pos_type = target_long ? PositionType::POS_SHORT : PositionType::POS_LONG;
+        item.pos_type = target_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
         item.quantity = this_qty;
         item.price = price;
         item.profit = this_profit;
@@ -586,6 +586,15 @@ PositionAtom * PositionInfo::FindPositionAtom(int id)
     auto iter = position_holder_.find(id);
     if( iter != position_holder_.end() )
         return iter->second.get();
+    else
+        return nullptr;
+}
+
+std::shared_ptr<PositionAtom> PositionInfo::FindPositionAtomSharedPointer(int id)
+{ 
+    auto iter = position_holder_.find(id);
+    if( iter != position_holder_.end() )
+        return iter->second;
     else
         return nullptr;
 }

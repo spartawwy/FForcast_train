@@ -90,7 +90,7 @@ public:
     {
         if (TrainDlgForm->objectName().isEmpty())
             TrainDlgForm->setObjectName(QStringLiteral("TrainDlgForm"));
-        TrainDlgForm->resize(624, 581);
+        TrainDlgForm->resize(621, 449);
         label_2 = new QLabel(TrainDlgForm);
         label_2->setObjectName(QStringLiteral("label_2"));
         label_2->setGeometry(QRect(0, 30, 61, 21));
@@ -103,7 +103,7 @@ public:
         pbtnNextK->setFont(font);
         table_view_record = new QTableView(TrainDlgForm);
         table_view_record->setObjectName(QStringLiteral("table_view_record"));
-        table_view_record->setGeometry(QRect(10, 530, 601, 21));
+        table_view_record->setGeometry(QRect(20, 500, 601, 21));
         label_5 = new QLabel(TrainDlgForm);
         label_5->setObjectName(QStringLiteral("label_5"));
         label_5->setGeometry(QRect(10, 451, 61, 21));
@@ -128,10 +128,10 @@ public:
 
         plain_te_record = new QPlainTextEdit(TrainDlgForm);
         plain_te_record->setObjectName(QStringLiteral("plain_te_record"));
-        plain_te_record->setGeometry(QRect(10, 481, 601, 41));
+        plain_te_record->setGeometry(QRect(10, 481, 601, 16));
         lab_status = new QLabel(TrainDlgForm);
         lab_status->setObjectName(QStringLiteral("lab_status"));
-        lab_status->setGeometry(QRect(10, 580, 601, 20));
+        lab_status->setGeometry(QRect(0, 430, 601, 20));
         lab_status->setFont(font);
         hScrollBar_TrainTimeRange = new QScrollBar(TrainDlgForm);
         hScrollBar_TrainTimeRange->setObjectName(QStringLiteral("hScrollBar_TrainTimeRange"));

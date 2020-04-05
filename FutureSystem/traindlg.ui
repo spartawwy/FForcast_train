@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>619</width>
-    <height>422</height>
+    <width>621</width>
+    <height>449</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -52,8 +52,8 @@
   <widget class="QTableView" name="table_view_record">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>530</y>
+     <x>20</x>
+     <y>500</y>
      <width>601</width>
      <height>21</height>
     </rect>
@@ -119,15 +119,15 @@
      <x>10</x>
      <y>481</y>
      <width>601</width>
-     <height>41</height>
+     <height>16</height>
     </rect>
    </property>
   </widget>
   <widget class="QLabel" name="lab_status">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>580</y>
+     <x>0</x>
+     <y>430</y>
      <width>601</width>
      <height>20</height>
     </rect>

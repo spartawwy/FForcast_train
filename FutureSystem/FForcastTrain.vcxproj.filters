@@ -107,9 +107,6 @@
     <ClCompile Include="train_dlg.cpp">
       <Filter>win</Filter>
     </ClCompile>
-    <ClCompile Include="train_trade_dlg.cpp">
-      <Filter>win</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_code_list_wall.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
@@ -132,12 +129,6 @@
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Release\moc_train_dlg.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_train_trade_dlg.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_train_trade_dlg.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_kline_wall.cpp">
@@ -200,6 +191,15 @@
     <ClCompile Include="tdx_exhq_wrapper.cpp">
       <Filter>tdx</Filter>
     </ClCompile>
+    <ClCompile Include="cfg_stop_profitloss_dlg.cpp">
+      <Filter>win</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_cfg_stop_profitloss_dlg.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_cfg_stop_profitloss_dlg.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.ui">
@@ -223,9 +223,6 @@
     <CustomBuild Include="traindlg.ui">
       <Filter>Form</Filter>
     </CustomBuild>
-    <CustomBuild Include="traintrade.ui">
-      <Filter>Form</Filter>
-    </CustomBuild>
     <CustomBuild Include="code_list_wall.h">
       <Filter>win</Filter>
     </CustomBuild>
@@ -236,9 +233,6 @@
       <Filter>moudle</Filter>
     </CustomBuild>
     <CustomBuild Include="train_dlg.h">
-      <Filter>win</Filter>
-    </CustomBuild>
-    <CustomBuild Include="train_trade_dlg.h">
       <Filter>win</Filter>
     </CustomBuild>
     <CustomBuild Include="kline_wall.h">
@@ -268,6 +262,12 @@
     <CustomBuild Include="cfgtrain.ui">
       <Filter>Form</Filter>
     </CustomBuild>
+    <CustomBuild Include="cfgstopprofitdlg.ui">
+      <Filter>Form</Filter>
+    </CustomBuild>
+    <CustomBuild Include="cfg_stop_profitloss_dlg.h">
+      <Filter>win</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h">
@@ -286,9 +286,6 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_traindlg.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GeneratedFiles\ui_traintrade.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="futures_forecast_app.h">
@@ -325,6 +322,9 @@
       <Filter>tdx</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_cfgtrain.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_cfgstopprofitdlg.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

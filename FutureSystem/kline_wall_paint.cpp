@@ -962,13 +962,13 @@ void KLineWall::paintEvent(QPaintEvent*)
     pen.setColor(Qt::lightGray);
     pen.setWidth(1);
     painter.setPen(pen);  
-    std::list<OrderInfo> *order_cotainer_array[] = {&hangon_order_infos_, &stop_order_infos_, &condition_order_infos_};
+    std::list<OrderInfo> *order_cotainer_array[] = {&hangon_order_infos_, &stop_profit_order_infos_, &stop_loss_order_infos_, &condition_order_infos_};
     for( int i = 0; i < sizeof(order_cotainer_array)/sizeof(order_cotainer_array[0]); ++i )
     {
         std::for_each(std::begin(*order_cotainer_array[i]), std::end(*order_cotainer_array[i]), [&painter, &pen, this, mm_w, k_mm_h, price_per_len](OrderInfo &entry)
         {
             QString info_tag;
-            if( entry.type == OrderType::STOPPROFITLOSS )
+            if( entry.type == OrderType::STOPPROFIT || entry.type == OrderType::STOPLOSS )
             {
                 assert( entry.action == OrderAction::CLOSE );
                 info_tag = QString::fromLocal8Bit(entry.position_type == PositionType::POS_LONG ? "Âô" : "Âò");

@@ -14,13 +14,13 @@
 #include "stkfo_common.h"
 #include "train_trade.h"
 
-#include "train_trade_dlg.h"
-
 #define ORDER_TYPE_HANGON  1
-#define ORDER_TYPE_STOPPROFITLOSS  2
-#define ORDER_TYPE_CONDITION  3
-#define ORDER_TYPE_ALL  4
+#define ORDER_TYPE_STOPPROFIT 2
+#define ORDER_TYPE_STOPLOSS 3
+#define ORDER_TYPE_CONDITION  4
+#define ORDER_TYPE_ALL  5
  
+class CfgStopProfitLossDlg;
 class KLineWall;
 class MainWindow;
 class TrainDlg : public QWidget
@@ -37,24 +37,23 @@ public:
 
 public slots:
 
+    void DoTblPosDbClick(const QModelIndex &);
     void OnTblHangonOrdersRowDoubleClicked(const QModelIndex &);
     void OnScrollTrainTimeMoved(int);
     void OnStartTrain();
     void OnStopTrain();
 
     void OnCloseAllUnfrozenPos();
-    //void OnMoveToNextK();
-    //void OnMoveToPreK();
 
     void OnNextStep();
-
-    /*void OnOpenOpenWin();
-    void OnOpenCloseWin();*/
-
-    void OnTrade();
+     
     void OnBuy();
     void OnSell();
     
+    double cur_quote(){ return cur_quote_; }
+
+    void SaveStopProfitLoss(std::vector<PositionAtom> &pos_atoms);
+
 protected:
 
     virtual void closeEvent(QCloseEvent *) override;
@@ -97,12 +96,11 @@ private:
 private:
 
     Ui::TrainDlgForm ui;
-     
-    TrainTradeDlg  trade_dlg_;
 
     KLineWall *parent_;
     MainWindow *main_win_;
-     
+    CfgStopProfitLossDlg *cfg_stop_profitloss_dlg_;
+
     bool is_started_;
     
     AccountInfo  account_info_;
@@ -114,7 +112,8 @@ private:
      
     std::vector<TradeRecordAtom>  trade_records_;
     std::list<OrderInfo> hangon_order_infos_;
-    std::list<OrderInfo> stop_order_infos_; 
+    std::list<OrderInfo> stop_profit_order_infos_; 
+    std::list<OrderInfo> stop_loss_order_infos_; 
     std::list<OrderInfo> condition_order_infos_; 
 
     T_DateRange  hisk_date_range_;
@@ -127,6 +126,7 @@ private:
     unsigned int auto_stop_loss_ticks_;
 
     unsigned int cur_train_step_;
+    double cur_quote_;
 };
 
 #endif // TRAIN_DLG_SDFS23343543_H_
