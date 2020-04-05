@@ -72,23 +72,31 @@ enum OrderAction : unsigned char
     CLOSE,
     //UNFREEZE, // only related to stock, this action is in the front of current day's other action
 };
-
+enum OrderType : unsigned char
+{
+    HANGON = 0,
+    STOPPROFITLOSS,
+    CONDITION,
+    //UNFREEZE, // only related to stock, this action is in the front of current day's other action
+};
 //there is 3 order types : 1. hang on orders 2. auto stop profit/loss orders 3.condition orders
 struct OrderInfo
 {
+    OrderType  type;
     OrderAction  action;
     PositionType position_type; // target position type
     double price;
     unsigned int qty;
     int fake_id;
     int rel_position_id;    // when auto stop profit/loss type(action is close); -1 means no relate 
-    //bool is_condition_order;// when price fit then send
     //(position atom id, frozend size)
     std::unordered_map<int, unsigned int> help_contain;
 
-    OrderInfo() : action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
+    OrderInfo(OrderType para_type) : type(para_type), action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
         , fake_id(-1), rel_position_id(-1){}
-    OrderInfo(const OrderInfo &lh) : action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty)
+    OrderInfo() : type(OrderType::HANGON), action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
+        , fake_id(-1), rel_position_id(-1){}
+    OrderInfo(const OrderInfo &lh) : type(lh.type), action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty)
         , fake_id(lh.fake_id), rel_position_id(lh.rel_position_id), help_contain(lh.help_contain){}
 };
 
@@ -397,6 +405,7 @@ KGreenRedType KGGetGreenRedType(const T_StockHisDataItem &item, TypePeriod type_
 
 #define  DEFAULT_MAINKWALL_TYPE_PERIOD TypePeriod::PERIOD_5M //TypePeriod::PERIOD_1M 
 #define  DEFAULT_SUBKWALL_TYPE_PERIOD  TypePeriod::PERIOD_1M
+#define  DEFAULT_ORI_STEP_TYPE_PERIOD  TypePeriod::PERIOD_1M
 
 #define COMBO_PERIOD_1M_INDEX    0
 #define COMBO_PERIOD_5M_INDEX    1

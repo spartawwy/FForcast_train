@@ -68,7 +68,7 @@ ToolBar::ToolBar(QWidget *parent)
     train_model_btn->setFixedSize(54, 22);
     //train_model_btn->setCheckable(true);
 
-    show_sub_kwall_btn_ = new QPushButton(QString::fromLocal8Bit("联动子窗"));
+    show_sub_kwall_btn_ = new QPushButton(QString::fromLocal8Bit("联动窗口"));
     show_sub_kwall_btn_->setFixedSize(54, 22);
     show_sub_kwall_btn_->setCheckable(true);
 

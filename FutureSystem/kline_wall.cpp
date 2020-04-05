@@ -496,8 +496,51 @@ int FindKRendIndex(T_HisDataItemContainer *p_hisdata_container, int date_val, in
         }
         else if( iter->get()->stk_item.date < date_val )
         {
+           /* near_span = date_val - iter->get()->stk_item.date;
+            near_j = j;*/
+            near_j = j - 1; // edit 20200405
+            break;
+        }
+
+    }
+    if( is_find )
+        return j;
+    else
+        return near_j;
+}
+
+
+// ps: from p_hisdata_container back to front
+int FindKRendIndexInHighPeriodContain(T_HisDataItemContainer *p_hisdata_container, int date_val, int hhmm)
+{
+    bool is_find = false;
+    int j = 0;
+    int near_span = 99999;
+    int near_j = -1;
+    for( auto iter = p_hisdata_container->rbegin();
+        iter != p_hisdata_container->rend(); 
+        ++iter, ++j )
+    { 
+        bool pre_item_exist = (iter + 1) != p_hisdata_container->rend();
+        if( iter->get()->stk_item.date == date_val && iter->get()->stk_item.hhmmss == hhmm )
+        {
+            is_find = true;
+            break;
+        }else if( iter->get()->stk_item.date == date_val 
+            && ( pre_item_exist
+                    && ( 
+                         ((iter + 1)->get()->stk_item.date == date_val && ((iter + 1)->get()->stk_item.hhmmss < hhmm && hhmm <= iter->get()->stk_item.hhmmss) )
+                            || (iter + 1)->get()->stk_item.date < date_val 
+                        )
+                )
+           ) 
+        {
+            is_find = true;
+            break;
+        }else if( iter->get()->stk_item.date < date_val )
+        {
             near_span = date_val - iter->get()->stk_item.date;
-            near_j = j;
+            near_j = j - 1;
             break;
         }
 

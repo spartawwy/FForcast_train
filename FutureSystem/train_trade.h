@@ -176,10 +176,10 @@ public:
     // ret <low, high>
     std::tuple<double, double> GetForceClosePrices(double capital);
 
-    std::vector<TradeRecordAtom> DoIfStopProfitLongPos(int date, int hhmm, double h_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
-    std::vector<TradeRecordAtom> DoIfStopProfitShortPos(int date, int hhmm, double l_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
-    std::vector<TradeRecordAtom> DoIfStopLossLongPos(int date, int hhmm, double l_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
-    std::vector<TradeRecordAtom> DoIfStopLossShortPos(int date, int hhmm, double h_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
+    std::vector<TradeRecordAtom> DoIfStopProfitLongPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
+    std::vector<TradeRecordAtom> DoIfStopProfitShortPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
+    std::vector<TradeRecordAtom> DoIfStopLossLongPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
+    std::vector<TradeRecordAtom> DoIfStopLossShortPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit);
 #if 0
     std::vector<TradeRecordAtom> DoIfStopProfit(int date, int hhmm, double h_price, double l_price, double *p_profit);
     std::vector<TradeRecordAtom> DoIfStopLoss(int date, int hhmm, double h_price, double l_price, double *p_profit);

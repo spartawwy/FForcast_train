@@ -42,6 +42,7 @@ public slots:
     void OnStartTrain();
     void OnStopTrain();
 
+    void OnCloseAllUnfrozenPos();
     //void OnMoveToNextK();
     //void OnMoveToPreK();
 
@@ -69,7 +70,7 @@ private:
     bool AddOpenOrder(double price, unsigned int quantity, bool is_long);
     bool AddCloseOrder(double price, unsigned int quantity, bool is_long);
 
-    std::vector<TradeRecordAtom> DoIfStopProfitLoss(double o_price, double c_price, double h_price, double l_price, std::vector<int> &ret_pos_ids, double &ret_profit);
+    std::vector<TradeRecordAtom> DoIfStopProfitLoss(const T_StockHisDataItem &k_item, std::vector<int> &ret_pos_ids, double &ret_profit);
     unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
 
     void UpdateOrders2KlineWalls(int type);
@@ -105,6 +106,7 @@ private:
     bool is_started_;
     
     AccountInfo  account_info_;
+    double ori_capital_;
     double force_close_low_;
     double force_close_high_;
 
@@ -124,6 +126,7 @@ private:
     unsigned int auto_stop_profit_ticks_;
     unsigned int auto_stop_loss_ticks_;
 
+    unsigned int cur_train_step_;
 };
 
 #endif // TRAIN_DLG_SDFS23343543_H_

@@ -133,6 +133,7 @@ T_Quote_Data  MockTradeDlg::QuoteData()
 
 void MockTradeDlg::slotHandleQuote(double cur_price, double sell1, double buy1, int vol, int sell_vol, int buy_vol)
 {
+#if 0
     if( !main_win_->is_mock_trade() )
         return;
 
@@ -173,35 +174,41 @@ void MockTradeDlg::slotHandleQuote(double cur_price, double sell1, double buy1, 
         //   do force stop profit or loss ---------- 
         int today = TSystem::Today();
         int hhmm = cur_hhmm();
+        T_StockHisDataItem k_item;
+        k_item.date = today;
+        k_item.hhmmss = hhmm;
+        k_item.open_price = k_item.close_price = k_item.high_price = k_item.low_price = cur_price_;
         double profit = 0.0;
+        double capital_ret = 0.0;
         bool has_trade = false;
 
         double profit_long_pos = 0.0;
         std::vector<int> stop_profit_long_ids;
         double capital_ret_stop_profit_long = 0.0, capital_ret_stop_loss_short = 0.0, capital_ret_stop_profit_short = 0.0, capital_ret_stop_loss_long = 0.0;
-        std::vector<TradeRecordAtom> trades_stop_profit_long = account_info_.position.DoIfStopProfitLongPos(today, hhmm, cur_price_, capital_ret_stop_profit_long, stop_profit_long_ids, &cur_price_, &profit_long_pos);
+        std::vector<TradeRecordAtom> trades_stop_profit_long = account_info_.position.DoIfStopProfitLongPos(k_item, capital_ret_stop_profit_long, stop_profit_long_ids, &cur_price_, &profit_long_pos);
         has_trade = (has_trade || !trades_stop_profit_long.empty());
         trade_records_.insert(trade_records_.end(), trades_stop_profit_long.begin(), trades_stop_profit_long.end());
         
         double loss_short_pos = 0.0;
         std::vector<int> stop_loss_short_ids;
-        std::vector<TradeRecordAtom> trades_stop_loss_short = account_info_.position.DoIfStopLossShortPos(today, hhmm, cur_price_, capital_ret_stop_loss_short, stop_loss_short_ids, &cur_price_, &loss_short_pos);
+        std::vector<TradeRecordAtom> trades_stop_loss_short = account_info_.position.DoIfStopLossShortPos(k_item, capital_ret_stop_loss_short, stop_loss_short_ids, &cur_price_, &loss_short_pos);
         has_trade = (has_trade || !trades_stop_loss_short.empty());
         trade_records_.insert(trade_records_.end(), trades_stop_loss_short.begin(), trades_stop_loss_short.end());
 
         double profit_short_pos = 0.0;
         std::vector<int> stop_profit_short_ids;
-        std::vector<TradeRecordAtom> trades_stop_profit_short = account_info_.position.DoIfStopProfitShortPos(today, hhmm, cur_price_, capital_ret_stop_profit_short, stop_profit_short_ids, &cur_price_, &profit_short_pos);
+        std::vector<TradeRecordAtom> trades_stop_profit_short = account_info_.position.DoIfStopProfitShortPos(k_item, capital_ret_stop_profit_short, stop_profit_short_ids, &cur_price_, &profit_short_pos);
         has_trade = (has_trade || !trades_stop_profit_short.empty());
         trade_records_.insert(trade_records_.end(), trades_stop_profit_short.begin(), trades_stop_profit_short.end());
         
         double loss_long_pos = 0.0;
         std::vector<int> stop_loss_long_ids;
-        std::vector<TradeRecordAtom> trades_stop_loss_long = account_info_.position.DoIfStopLossLongPos(today, hhmm, cur_price_, capital_ret_stop_loss_long, stop_loss_long_ids, &cur_price_, &loss_long_pos);
+        std::vector<TradeRecordAtom> trades_stop_loss_long = account_info_.position.DoIfStopLossLongPos(k_item, capital_ret_stop_loss_long, stop_loss_long_ids, &cur_price_, &loss_long_pos);
         has_trade = (has_trade || !trades_stop_loss_long.empty());
         trade_records_.insert(trade_records_.end(), trades_stop_loss_long.begin(), trades_stop_loss_long.end());
 
         profit = profit_long_pos + loss_short_pos + profit_short_pos + loss_long_pos;
+ 
         std::unordered_map<int, bool> ret_ids;
         if( has_trade )
         {
@@ -238,6 +245,7 @@ void MockTradeDlg::slotHandleQuote(double cur_price, double sell1, double buy1, 
             }
         } // for
     }
+#endif
 }
 
 void MockTradeDlg::slotBtnInit()
@@ -294,6 +302,13 @@ void MockTradeDlg::slotBtnCondition()
 
 }
 
+//ps: auto ajust account_info_.capital
+std::vector<TradeRecordAtom> MockTradeDlg::DoIfStopProfitLoss(const T_StockHisDataItem &k_item, std::vector<int> &ret_pos_ids, double &ret_profit)
+{
+    std::vector<TradeRecordAtom>  records;
+     
+    return records;
+}
 void MockTradeDlg::_OpenBuySell(bool is_buy)
 {
     if( ui.le_qty->text().isEmpty() || !IsNumber(ui.le_qty->text().trimmed().toLocal8Bit().data()) )

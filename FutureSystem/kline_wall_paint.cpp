@@ -74,7 +74,6 @@ KLineWall::KLineWall(FuturesForecastApp *app, QWidget *parent, int index, TypePe
     , right_clicked_k_date_(0)
     , right_clicked_k_hhmm_(0)
     , train_step_type_(TypePeriod::PERIOD_1M)
-    , cur_train_step_(0)
 {
     ui.setupUi(this);
     ResetDrawState(DrawAction::NO_ACTION); 
@@ -968,7 +967,18 @@ void KLineWall::paintEvent(QPaintEvent*)
     {
         std::for_each(std::begin(*order_cotainer_array[i]), std::end(*order_cotainer_array[i]), [&painter, &pen, this, mm_w, k_mm_h, price_per_len](OrderInfo &entry)
         {
-            auto info_tag = QString::fromLocal8Bit(entry.position_type == PositionType::POS_LONG ? "Âò" : "Âô");
+            QString info_tag;
+            if( entry.type == OrderType::STOPPROFITLOSS )
+            {
+                assert( entry.action == OrderAction::CLOSE );
+                info_tag = QString::fromLocal8Bit(entry.position_type == PositionType::POS_LONG ? "Âô" : "Âò");
+            }else
+            {
+                if( entry.action == OrderAction::CLOSE )
+                    info_tag = QString::fromLocal8Bit(entry.position_type == PositionType::POS_LONG ? "Âô" : "Âò");
+                else
+                    info_tag = QString::fromLocal8Bit(entry.position_type == PositionType::POS_LONG ? "Âò" : "Âô");
+            }
             info_tag += QString::fromLocal8Bit(entry.action == OrderAction::OPEN ? "¿ª" : "Æ½");
             double pos_y = get_price_y(entry.price, k_mm_h);
             painter.drawLine(0.0, pos_y, double(mm_w - 2*right_w_), pos_y);
@@ -1849,7 +1859,8 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
     T_StockHisDataItem* ret_item = nullptr;
     const int old_rend_index = k_rend_index_;
     const int old_k_num = k_num_;
-    int target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
+    //int target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
+    int target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, date, hhmm);
     if( target_r_end_index > -1 )
     {
         k_rend_index_ = target_r_end_index; 
@@ -1869,7 +1880,8 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
             start_date = qdate_obj.addDays( -1 * 3 ).toString("yyyyMMdd").toInt();
 
         AppendPreData(start_date);
-        target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
+        //target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
+        target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, date, hhmm);
         if( target_r_end_index > -1 )
         {
             k_rend_index_ = target_r_end_index; 
@@ -1923,24 +1935,24 @@ std::tuple<int, int> KLineWall::MoveRightEndToNextK()
 
  
 T_StockHisDataItem KLineWall::Train_NextStep()
-{
-    //auto ret_prices = std::make_tuple(MAGIC_STOP_PRICE, MAGIC_STOP_PRICE, MAGIC_STOP_PRICE, MAGIC_STOP_PRICE);
+{ 
     T_StockHisDataItem  ret_item;
     if( p_hisdata_container_->empty() || k_rend_index_for_train_ <= 0 )
-        return ret_item;// std::make_tuple(0, 0);
-    ++cur_train_step_;
+        return ret_item;// std::make_tuple(0, 0); 
     const int old_k_rend_index = k_rend_index_; 
     const int old_date = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.date;
     const int old_hhmm = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.hhmmss;
     
-    auto update_next_step = [this, old_k_rend_index]()->T_StockHisDataItem
+    /*auto update_next_step = [this, old_k_rend_index]()->T_StockHisDataItem
     {
-            k_rend_index_for_train_ = k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0;
-            T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
-            k_cur_train_date_ = target_item->stk_item.date;
-            k_cur_train_hhmm_ = target_item->stk_item.hhmmss; 
-            k_rend_index_ = k_rend_index_for_train_;
-            if( old_k_rend_index != k_rend_index_ )
+        k_rend_index_for_train_ = k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0;
+        T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
+        k_cur_train_date_ = target_item->stk_item.date;
+        k_cur_train_hhmm_ = target_item->stk_item.hhmmss; 
+        k_rend_index_ = k_rend_index_for_train_;
+        if( old_k_rend_index != k_rend_index_ )
+        {
+            if( wall_index_ != (int)WallIndex::ORISTEP )
             {
                 const unsigned int left_index = p_hisdata_container_->size() - k_rend_index_for_train_ - 1;
                 app_->stock_data_man().ReCaculateZhibiao(*p_hisdata_container_, left_index);
@@ -1948,59 +1960,122 @@ T_StockHisDataItem KLineWall::Train_NextStep()
                 UpdatePosDatas();
                 update();
             }
-            return target_item->stk_item;
-     };
-    if( k_type_ == TypePeriod::PERIOD_1M )
+        }
+        return target_item->stk_item;
+     };*/
+    if( k_type_ == DEFAULT_ORI_STEP_TYPE_PERIOD )
     {
-        return update_next_step();
+        //return update_next_step();
+        k_rend_index_for_train_ = k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0;
+        T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
+        k_cur_train_date_ = target_item->stk_item.date;
+        k_cur_train_hhmm_ = target_item->stk_item.hhmmss; 
+        k_rend_index_ = k_rend_index_for_train_;
+        if( old_k_rend_index != k_rend_index_ )
+        {
+            if( wall_index_ != (int)WallIndex::ORISTEP )
+            {
+                const unsigned int left_index = p_hisdata_container_->size() - k_rend_index_for_train_ - 1;
+                app_->stock_data_man().ReCaculateZhibiao(*p_hisdata_container_, left_index);
+                UpdateKwallMinMaxPrice();
+                UpdatePosDatas();
+                update();
+            }
+        }
+        return target_item->stk_item;
     }
     
     return ret_item; // std::make_tuple(k_cur_train_date_, k_cur_train_hhmm_);
 }
 
-void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
+void KLineWall::Train_NextStep(T_StockHisDataItem & input_item, unsigned int cur_train_step)
 { 
+    auto do_move_train_to_next = [this](T_StockHisDataItem & input_item, bool is_to_cover) // ps: not allow static auto
+    {
+        k_rend_index_for_train_ = k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0;
+        T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
+
+        k_cur_train_date_ = target_item->stk_item.date; //ndchk
+        k_cur_train_hhmm_ = target_item->stk_item.hhmmss; //ndchk
+        if( is_to_cover )
+        {
+            target_item->stk_item.open_price = input_item.open_price;
+            target_item->stk_item.close_price = input_item.close_price;
+            target_item->stk_item.high_price = input_item.high_price;
+            target_item->stk_item.low_price = input_item.low_price;
+            target_item->stk_item.vol = input_item.vol;
+        }
+
+        k_rend_index_ = k_rend_index_for_train_;
+    };
+
     if( p_hisdata_container_->empty() || k_rend_index_for_train_ <= 0 )
-        return;// std::make_tuple(0, 0);
-    ++cur_train_step_;
-    const double input_o = input_item.open_price;
+        return; 
+
+    /*const double input_o = input_item.open_price;
     const double input_c = input_item.close_price;
     const int old_k_rend_index = k_rend_index_; 
     const int old_date = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.date;
     const int old_hhmm = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.hhmmss;
-    const int old_vol = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.vol;
+    const int old_vol = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.vol;*/
     
-    if( k_type_ == TypePeriod::PERIOD_5M )
+    if( k_type_ == DEFAULT_ORI_STEP_TYPE_PERIOD )
+    {
+        do_move_train_to_next(input_item, false);
+
+    }else 
     {
         T_HisDataItemContainer::reference cur_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
-        
-        if( cur_train_step_ % 5 == 1 ) // move to next
-        {  
-            k_rend_index_for_train_ = k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0;
-            T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
-            
-            k_cur_train_date_ = target_item->stk_item.date; //ndchk
-            k_cur_train_hhmm_ = target_item->stk_item.hhmmss; //ndchk
+        bool is_to_move = false;
+        switch( k_type_ )
+        {
+        case TypePeriod::PERIOD_5M: 
+            //is_to_move = cur_train_step % 5 == 1;  
+            //break;
+        case TypePeriod::PERIOD_15M: 
+        case TypePeriod::PERIOD_30M:  
+        case TypePeriod::PERIOD_HOUR:  
+        case TypePeriod::PERIOD_DAY:  
+            {
+                int old_k_rend_index_for_train = k_rend_index_for_train_;
+                int target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, input_item.date, input_item.hhmmss);
+                if( target_r_end_index > -1 )
+                { 
+                    if( old_k_rend_index_for_train != target_r_end_index )
+                    {
+                        k_rend_index_ = k_rend_index_for_train_ = target_r_end_index;
+                        T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
 
-            target_item->stk_item = input_item;
-
-            k_rend_index_ = k_rend_index_for_train_;
-            
-        }else{
-            // update cur item
-            cur_item->stk_item.hhmmss = input_item.hhmmss;
-            cur_item->stk_item.close_price = input_item.close_price;
-            if( input_item.high_price > cur_item->stk_item.high_price ) cur_item->stk_item.high_price = input_item.high_price;
-            if( input_item.low_price < cur_item->stk_item.low_price ) cur_item->stk_item.low_price = input_item.low_price;
-            cur_item->stk_item.vol += input_item.vol;
-            //--------------
+                        k_cur_train_date_ = target_item->stk_item.date; //ndchk
+                        k_cur_train_hhmm_ = target_item->stk_item.hhmmss; //ndchk
+                        target_item->stk_item.open_price = input_item.open_price;
+                        target_item->stk_item.close_price = input_item.close_price;
+                        target_item->stk_item.high_price = input_item.high_price;
+                        target_item->stk_item.low_price = input_item.low_price;
+                        target_item->stk_item.vol = input_item.vol;
+                    }else
+                    {
+                        // update cur item
+                        cur_item->stk_item.close_price = input_item.close_price;
+                        if( input_item.high_price > cur_item->stk_item.high_price ) cur_item->stk_item.high_price = input_item.high_price;
+                        if( input_item.low_price < cur_item->stk_item.low_price ) cur_item->stk_item.low_price = input_item.low_price;
+                        cur_item->stk_item.vol += input_item.vol;
+                    }
+                }
+                 
+            }
+        default: break;
         }
+         
+    } 
+    if( wall_index_ != (int)WallIndex::ORISTEP )
+    {
         const unsigned int left_index = p_hisdata_container_->size() - k_rend_index_for_train_ - 1;
         app_->stock_data_man().ReCaculateZhibiao(*p_hisdata_container_, left_index);
         UpdateKwallMinMaxPrice();
         UpdatePosDatas();
         update();
-    } 
+    }
 }
 
 // move to target k( date, hhmm )

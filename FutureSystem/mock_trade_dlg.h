@@ -2,6 +2,7 @@
 #define MOCK_TRADE_DLG_DSFS3SDFSD_H_
 
 #include <mutex>
+#include <vector>
 
 #include <QtWidgets/QWidget>
 
@@ -51,6 +52,8 @@ private:
     void closeEvent(QCloseEvent * /*event*/) override;
 
     void ResetUi();
+
+    std::vector<TradeRecordAtom> DoIfStopProfitLoss(const T_StockHisDataItem &k_item, std::vector<int> &ret_pos_ids, double &ret_profit);
 
     void _OpenBuySell(bool is_buy);
 

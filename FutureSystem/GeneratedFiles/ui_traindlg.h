@@ -82,13 +82,15 @@ public:
     QLabel *label_11;
     QLabel *label_12;
     QLabel *label_float_profit;
+    QLabel *label_close_profit;
+    QLabel *label_13;
     QPushButton *pbtn_config;
 
     void setupUi(QWidget *TrainDlgForm)
     {
         if (TrainDlgForm->objectName().isEmpty())
             TrainDlgForm->setObjectName(QStringLiteral("TrainDlgForm"));
-        TrainDlgForm->resize(626, 609);
+        TrainDlgForm->resize(624, 581);
         label_2 = new QLabel(TrainDlgForm);
         label_2->setObjectName(QStringLiteral("label_2"));
         label_2->setGeometry(QRect(0, 30, 61, 21));
@@ -101,10 +103,10 @@ public:
         pbtnNextK->setFont(font);
         table_view_record = new QTableView(TrainDlgForm);
         table_view_record->setObjectName(QStringLiteral("table_view_record"));
-        table_view_record->setGeometry(QRect(10, 560, 601, 20));
+        table_view_record->setGeometry(QRect(10, 530, 601, 21));
         label_5 = new QLabel(TrainDlgForm);
         label_5->setObjectName(QStringLiteral("label_5"));
-        label_5->setGeometry(QRect(10, 430, 61, 21));
+        label_5->setGeometry(QRect(10, 451, 61, 21));
         label_5->setFont(font);
         layoutWidget = new QWidget(TrainDlgForm);
         layoutWidget->setObjectName(QStringLiteral("layoutWidget"));
@@ -126,7 +128,7 @@ public:
 
         plain_te_record = new QPlainTextEdit(TrainDlgForm);
         plain_te_record->setObjectName(QStringLiteral("plain_te_record"));
-        plain_te_record->setGeometry(QRect(10, 460, 601, 101));
+        plain_te_record->setGeometry(QRect(10, 481, 601, 41));
         lab_status = new QLabel(TrainDlgForm);
         lab_status->setObjectName(QStringLiteral("lab_status"));
         lab_status->setGeometry(QRect(10, 580, 601, 20));
@@ -268,10 +270,16 @@ public:
         label_11->setGeometry(QRect(120, 10, 51, 16));
         label_12 = new QLabel(group_box_capital);
         label_12->setObjectName(QStringLiteral("label_12"));
-        label_12->setGeometry(QRect(270, 10, 51, 16));
+        label_12->setGeometry(QRect(390, 10, 51, 16));
         label_float_profit = new QLabel(group_box_capital);
         label_float_profit->setObjectName(QStringLiteral("label_float_profit"));
-        label_float_profit->setGeometry(QRect(330, 10, 61, 16));
+        label_float_profit->setGeometry(QRect(450, 10, 61, 16));
+        label_close_profit = new QLabel(group_box_capital);
+        label_close_profit->setObjectName(QStringLiteral("label_close_profit"));
+        label_close_profit->setGeometry(QRect(310, 10, 61, 16));
+        label_13 = new QLabel(group_box_capital);
+        label_13->setObjectName(QStringLiteral("label_13"));
+        label_13->setGeometry(QRect(250, 10, 51, 16));
         pbtn_config = new QPushButton(TrainDlgForm);
         pbtn_config->setObjectName(QStringLiteral("pbtn_config"));
         pbtn_config->setGeometry(QRect(300, 0, 75, 23));
@@ -280,7 +288,7 @@ public:
         retranslateUi(TrainDlgForm);
 
         tabwid_main->setCurrentIndex(0);
-        tab_detail->setCurrentIndex(1);
+        tab_detail->setCurrentIndex(0);
 
 
         QMetaObject::connectSlotsByName(TrainDlgForm);
@@ -291,7 +299,7 @@ public:
         TrainDlgForm->setWindowTitle(QApplication::translate("TrainDlgForm", "\350\256\255\347\273\203\346\250\241\345\274\217", 0));
         label_2->setText(QApplication::translate("TrainDlgForm", "\345\274\200\345\247\213\346\227\266\351\227\264:", 0));
         pbtnNextK->setText(QApplication::translate("TrainDlgForm", "\344\270\213\344\270\200\346\240\271=>", 0));
-        label_5->setText(QApplication::translate("TrainDlgForm", "\346\210\220\344\272\244\350\256\260\345\275\225", 0));
+        label_5->setText(QApplication::translate("TrainDlgForm", "\350\256\260\345\275\225", 0));
         pbtnStop->setText(QApplication::translate("TrainDlgForm", "\347\273\223\346\235\237", 0));
         pbtnStart->setText(QApplication::translate("TrainDlgForm", "\345\274\200\345\247\213", 0));
         lab_status->setText(QApplication::translate("TrainDlgForm", "status", 0));
@@ -324,6 +332,8 @@ public:
         label_11->setText(QApplication::translate("TrainDlgForm", "\345\212\250\346\200\201\346\235\203\347\233\212:", 0));
         label_12->setText(QApplication::translate("TrainDlgForm", "\346\265\256\345\212\250\347\233\210\344\272\217:", 0));
         label_float_profit->setText(QApplication::translate("TrainDlgForm", "0", 0));
+        label_close_profit->setText(QApplication::translate("TrainDlgForm", "0", 0));
+        label_13->setText(QApplication::translate("TrainDlgForm", "\347\233\210\344\272\217:", 0));
         pbtn_config->setText(QApplication::translate("TrainDlgForm", "\350\256\276\347\275\256", 0));
     } // retranslateUi
 

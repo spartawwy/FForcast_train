@@ -209,15 +209,14 @@ std::tuple<double, double> PositionInfo::GetForceClosePrices(double capital)
 }
 
 // return profit of close action; if p_cur_price not null use it as trade price;
-std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitLongPos(int date, int hhmm, double h_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
+std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitLongPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
 {
-    //assert(date > 0);
-    assert(h_price > EPSINON);
+    //assert(k_item.date > 0);
+    assert(k_item.high_price > EPSINON);
 
     std::vector<TradeRecordAtom> ret;
     double profit = 0.0;
     capital_ret = 0.0;
-    //for( int i = long_positions_.size() - 1; !long_positions_.empty() && i >= 0 ; --i ) 
     for( auto iter = long_positions_.begin(); iter != long_positions_.end(); )
     {
         if( (*iter)->qty_available == 0 )
@@ -225,19 +224,20 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitLongPos(int date, int h
             ++iter;
             continue;
         }
-        if( (*iter)->stop_profit_price > EPSINON && h_price > (*iter)->stop_profit_price - EPSINON ) // >= stop profit price
+        if( (*iter)->stop_profit_price > EPSINON && k_item.high_price > (*iter)->stop_profit_price - EPSINON ) // >= stop profit price
         {
             TradeRecordAtom  trade_item;
             trade_item.trade_id = GenerateTradeId();
-            trade_item.date = date;
-            trade_item.hhmm = hhmm;
+            trade_item.date = k_item.date;
+            trade_item.hhmm = k_item.hhmmss;
             trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_LONG;
             trade_item.quantity = (*iter)->qty_available;
             if( p_cur_price )
                 trade_item.price = *p_cur_price - cst_per_tick;
             else
-                trade_item.price = (*iter)->stop_profit_price - cst_per_tick;
+                trade_item.price = (k_item.open_price > (*iter)->stop_profit_price ? k_item.open_price : (*iter)->stop_profit_price);
+
             trade_item.profit = (trade_item.price - (*iter)->price) / cst_per_tick * cst_per_tick_capital;
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
@@ -255,14 +255,13 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitLongPos(int date, int h
 }
 
 // return profit of close action; if p_cur_price not null use it as trade price
-std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitShortPos(int date, int hhmm, double l_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
+std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitShortPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
 {
-    assert(l_price > EPSINON);
+    assert(k_item.low_price > EPSINON);
 
     std::vector<TradeRecordAtom> ret;
     double profit = 0.0;
-    capital_ret = 0.0;
-    //for( int i = short_positions_.size() - 1; !short_positions_.empty() && i >= 0 ; --i ) 
+    capital_ret = 0.0; 
     for( auto iter = short_positions_.begin(); iter != short_positions_.end(); )
     {
         if( (*iter)->qty_available == 0 )
@@ -270,19 +269,20 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitShortPos(int date, int 
             ++iter;
             continue;
         }
-        if( (*iter)->stop_profit_price > EPSINON && l_price < (*iter)->stop_profit_price + EPSINON ) // <= profit price
+        if( (*iter)->stop_profit_price > EPSINON && k_item.low_price < (*iter)->stop_profit_price + EPSINON ) // <= profit price
         {
             TradeRecordAtom  trade_item;
             trade_item.trade_id = GenerateTradeId();
-            trade_item.date = date;
-            trade_item.hhmm = hhmm;
+            trade_item.date = k_item.date;
+            trade_item.hhmm = k_item.hhmmss;
             trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = (*iter)->qty_available;
             if( p_cur_price )
                 trade_item.price = *p_cur_price + cst_per_tick;
             else
-                trade_item.price = (*iter)->stop_profit_price + cst_per_tick;
+                trade_item.price = (k_item.open_price < (*iter)->stop_profit_price ? k_item.open_price : (*iter)->stop_profit_price);
+
             trade_item.profit = ((*iter)->price - trade_item.price) / cst_per_tick * cst_per_tick_capital;
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
@@ -300,14 +300,13 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitShortPos(int date, int 
 }
 
 // return profit of close action ; if p_cur_price not null use it as trade price
-std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossLongPos(int date, int hhmm, double l_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
+std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossLongPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
 {
-    assert(l_price > EPSINON); 
+    assert(k_item.low_price > EPSINON); 
 
     std::vector<TradeRecordAtom> ret;
     double profit = 0.0;
     capital_ret = 0.0;
-    //for( int i = long_positions_.size() - 1; !long_positions_.empty() && i >= 0 ; --i ) 
     for( auto iter = long_positions_.begin(); iter != long_positions_.end(); )
     {
         if( (*iter)->qty_available == 0 )
@@ -315,19 +314,19 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossLongPos(int date, int hhm
             ++iter;
             continue;
         }
-        if( l_price < (*iter)->stop_loss_price + EPSINON ) // <= stop loss price
+        if( k_item.low_price < (*iter)->stop_loss_price + EPSINON ) // <= stop loss price
         {
             TradeRecordAtom  trade_item;
             trade_item.trade_id = GenerateTradeId();
-            trade_item.date = date;
-            trade_item.hhmm = hhmm;
+            trade_item.date = k_item.date;
+            trade_item.hhmm = k_item.hhmmss;
             trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_LONG;
             trade_item.quantity = (*iter)->qty_available;
             if( p_cur_price )
                 trade_item.price = *p_cur_price - cst_per_tick;
             else
-                trade_item.price = (*iter)->stop_loss_price - cst_per_tick;
+                trade_item.price = (k_item.open_price < (*iter)->stop_loss_price ? k_item.open_price : (*iter)->stop_loss_price - cst_per_tick);
             trade_item.profit = (trade_item.price - (*iter)->price) / cst_per_tick * cst_per_tick_capital;
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
@@ -345,14 +344,13 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossLongPos(int date, int hhm
 }
 
 // return profit(include fee) of close action ; if p_cur_price not null use it as trade price
-std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossShortPos(int date, int hhmm, double h_price, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
+std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossShortPos(const T_StockHisDataItem &k_item, double &capital_ret, std::vector<int> &ret_ids, double *p_cur_price, double *p_profit)
 {
-    assert(h_price > EPSINON);  
+    assert(k_item.high_price > EPSINON);  
 
     std::vector<TradeRecordAtom> ret;
     double profit = 0.0;
     capital_ret = 0.0;
-    //for( int i = short_positions_.size() - 1; !short_positions_.empty() && i >= 0 ; --i ) 
     for( auto iter = short_positions_.begin(); iter != short_positions_.end(); )
     {
         if( (*iter)->qty_available == 0 )
@@ -360,19 +358,19 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossShortPos(int date, int hh
             ++iter;
             continue;
         }
-        if( (*iter)->stop_loss_price > EPSINON && h_price + EPSINON > (*iter)->stop_loss_price )
+        if( (*iter)->stop_loss_price > EPSINON && k_item.high_price + EPSINON > (*iter)->stop_loss_price )
         {
             TradeRecordAtom  trade_item;
             trade_item.trade_id = GenerateTradeId();
-            trade_item.date = date;
-            trade_item.hhmm = hhmm;
+            trade_item.date = k_item.date;
+            trade_item.hhmm = k_item.hhmmss;
             trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = (*iter)->qty_available;
             if( p_cur_price )
                 trade_item.price = *p_cur_price + cst_per_tick;
             else
-                trade_item.price = (*iter)->stop_loss_price + cst_per_tick;
+                trade_item.price = (k_item.open_price > (*iter)->stop_loss_price ? k_item.open_price : (*iter)->stop_loss_price + cst_per_tick);
             trade_item.profit = ((*iter)->price - trade_item.price) / cst_per_tick * cst_per_tick_capital;
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item); 

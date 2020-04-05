@@ -42,8 +42,9 @@ MainWindow::MainWindow(FuturesForecastApp *app, QWidget *parent) :
     , app_(app)
     , tool_bar_(nullptr)
     , title_(nullptr)
-    , kline_wall_main(nullptr)
-    , kline_wall_sub(nullptr)
+    , kline_wall_ori_step_(nullptr)
+    , kline_wall_main_(nullptr)
+    , kline_wall_sub_(nullptr)
     , code_list_wall_(nullptr)
     , cur_kline_index_(WallIndex::MAIN)
     , stock_input_dlg_(this, app->data_base())
@@ -97,28 +98,37 @@ bool MainWindow::Initialize()
     ret = connect(tool_bar_->sub_cycle_comb(), SIGNAL(currentIndexChanged(int)), this, SLOT(onSubKwallCycleChange(int)));
     ret = ret;
 
+    kline_wall_ori_step_ = new KLineWall(app_, this, (int)WallIndex::ORISTEP, DEFAULT_ORI_STEP_TYPE_PERIOD);
+    if( !kline_wall_ori_step_->Init() )
+        return false;
+    kline_wall_ori_step_->setMouseTracking(true); 
+    kline_wall_ori_step_->setFocusPolicy(Qt::StrongFocus);
+    //view_layout->addWidget(kline_wall_sub_);
+    kline_wall_ori_step_->setVisible(false);
+
     // view area ----------
     QHBoxLayout * view_layout = new QHBoxLayout;
     view_layout->setContentsMargins(0,0,0,0);  
     view_layout->setSpacing(1);  
 
-    kline_wall_main = new KLineWall(app_, this, (int)WallIndex::MAIN, DEFAULT_MAINKWALL_TYPE_PERIOD);
-    if( !kline_wall_main->Init() )
+    kline_wall_main_ = new KLineWall(app_, this, (int)WallIndex::MAIN, DEFAULT_MAINKWALL_TYPE_PERIOD);
+    if( !kline_wall_main_->Init() )
         return false;
-    kline_wall_main->setMouseTracking(true);
-    //kline_wall_main->ResetTypePeriod(DEFAULT_MAINKWALL_TYPE_PERIOD);
-    kline_wall_main->setFocusPolicy(Qt::StrongFocus);
-    view_layout->addWidget(kline_wall_main);
+    kline_wall_main_->setMouseTracking(true);
+    //kline_wall_main_->ResetTypePeriod(DEFAULT_MAINKWALL_TYPE_PERIOD);
+    kline_wall_main_->setFocusPolicy(Qt::StrongFocus);
+    view_layout->addWidget(kline_wall_main_);
+     
 #ifdef MAKE_SUB_WALL
-    kline_wall_sub = new KLineWall(app_, this, (int)WallIndex::SUB, DEFAULT_SUBKWALL_TYPE_PERIOD);
-    if( !kline_wall_sub->Init() )
+    kline_wall_sub_ = new KLineWall(app_, this, (int)WallIndex::SUB, DEFAULT_SUBKWALL_TYPE_PERIOD);
+    if( !kline_wall_sub_->Init() )
         return false;
-    kline_wall_sub->setMouseTracking(true);
-    //kline_wall_sub->ResetTypePeriod(DEFAULT_SUBKWALL_TYPE_PERIOD);
-    kline_wall_sub->setFocusPolicy(Qt::StrongFocus);
-    view_layout->addWidget(kline_wall_sub);
+    kline_wall_sub_->setMouseTracking(true);
+    //kline_wall_sub_->ResetTypePeriod(DEFAULT_SUBKWALL_TYPE_PERIOD);
+    kline_wall_sub_->setFocusPolicy(Qt::StrongFocus);
+    view_layout->addWidget(kline_wall_sub_);
 
-    kline_wall_sub->setVisible(false);
+    kline_wall_sub_->setVisible(false);
 #endif
     // end of view area-------
      
@@ -134,7 +144,7 @@ bool MainWindow::Initialize()
     wd->setLayout(layout_all);  
     this->setCentralWidget(wd);  
 
-    train_dlg_ = new TrainDlg(kline_wall_main, this);
+    train_dlg_ = new TrainDlg(kline_wall_main_, this);
     train_dlg_->setWindowFlags(train_dlg_->windowFlags() | Qt::WindowStaysOnTopHint/*Qt::Dialog*/ );
     train_dlg_->hide();
 
@@ -149,7 +159,7 @@ bool MainWindow::Initialize()
     timer = new QTimer(this);
     timer->setInterval(1000);
     connect(timer, SIGNAL(timeout()), this, SLOT(onTimer()));
-    timer->start();
+    //timer->start();
        
 #ifdef USE_STATUS_BAR
     
@@ -184,17 +194,17 @@ void MainWindow::SetCurKlineWallIndex(WallIndex index)
 
 void MainWindow::SetMainView(WallType wall_type)
 {
-    kline_wall_main->hide();
+    kline_wall_main_->hide();
     switch(wall_type)
     {    
     case WallType::KLINE: 
         code_list_wall_->hide();
-        if( kline_wall_sub )
-            kline_wall_sub->hide();
-        kline_wall_main->show(); 
+        if( kline_wall_sub_ )
+            kline_wall_sub_->hide();
+        kline_wall_main_->show(); 
         break;
     case WallType::CODE_LIST: 
-        kline_wall_main->hide();
+        kline_wall_main_->hide();
         code_list_wall_->show(); 
         break;
     default:break;
@@ -203,7 +213,7 @@ void MainWindow::SetMainView(WallType wall_type)
 
 void MainWindow::ResetKLineWallCode(const QString &code, const QString &cn_name, bool is_index, int nmarket)
 {
-    kline_wall_main->ResetStock(code, cn_name, is_index, nmarket);
+    kline_wall_main_->ResetStock(code, cn_name, is_index, nmarket);
 }
  
 void MainWindow::closeEvent(QCloseEvent * event)
@@ -273,24 +283,24 @@ void MainWindow::StockInputDlgRet()
     int nmakert = maket.toInt();
     stock_code_changed = stock_code.toLocal8Bit().data();
 
-    kline_wall_main->ResetStock(stock_code_changed, stock_name, is_index, nmakert);
-    if( kline_wall_sub )
-        kline_wall_sub->ResetStock(stock_code_changed, stock_name, is_index, nmakert);
+    kline_wall_main_->ResetStock(stock_code_changed, stock_name, is_index, nmakert);
+    if( kline_wall_sub_ )
+        kline_wall_sub_->ResetStock(stock_code_changed, stock_name, is_index, nmakert);
 }
  
 void MainWindow::UpdateStockData(int target_date, int cur_hhmm)
 {
-    if( kline_wall_main )
-        kline_wall_main->UpdateIfNecessary(target_date, cur_hhmm);
-    if( kline_wall_sub )
-        kline_wall_sub->UpdateIfNecessary(target_date, cur_hhmm);
+    if( kline_wall_main_ )
+        kline_wall_main_->UpdateIfNecessary(target_date, cur_hhmm);
+    if( kline_wall_sub_ )
+        kline_wall_sub_->UpdateIfNecessary(target_date, cur_hhmm);
 }
 
 // ps : cause 1m is updated high frequent, so only update main k line wall
 void MainWindow::UpdateStockQuote()
 {
-    if( kline_wall_main )
-        kline_wall_main->UpdateStockQuote();
+    if( kline_wall_main_ )
+        kline_wall_main_->UpdateStockQuote();
 }
 
 void MainWindow::PopTrainDlg()
@@ -343,7 +353,7 @@ void MainWindow::changeEvent(QEvent *e)
  
 bool MainWindow::eventFilter(QObject *o, QEvent *e)
 { 
-    if( o == kline_wall_main )
+    if( o == kline_wall_main_ )
     {
         switch ( e->type() )
         {
@@ -367,27 +377,27 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
     {
         case Qt::Key_F3:
         { 
-            /*kline_wall_main->ResetStock("999999", QString::fromLocal8Bit("上证指数"), true);
-            if( kline_wall_sub )
+            /*kline_wall_main_->ResetStock("999999", QString::fromLocal8Bit("上证指数"), true);
+            if( kline_wall_sub_ )
             {
-                kline_wall_sub->ResetStock("999999", QString::fromLocal8Bit("上证指数"), true);
-                if( kline_wall_sub->isVisible() )
+                kline_wall_sub_->ResetStock("999999", QString::fromLocal8Bit("上证指数"), true);
+                if( kline_wall_sub_->isVisible() )
                 {
-                    kline_wall_main->update();
-                    kline_wall_sub->update();
+                    kline_wall_main_->update();
+                    kline_wall_sub_->update();
                 }
             }*/
         } break;
         case Qt::Key_F5:
         {
-            kline_wall_main->show();
+            kline_wall_main_->show();
             code_list_wall_->hide();
         } break;
         case Qt::Key_F6:
         {
-            kline_wall_main->hide();
-            if( kline_wall_sub )
-                kline_wall_sub->hide();
+            kline_wall_main_->hide();
+            if( kline_wall_sub_ )
+                kline_wall_sub_->hide();
             code_list_wall_->show();
         } break;
         case Qt::Key_0: case Qt::Key_1: case Qt::Key_2: case Qt::Key_3: case Qt::Key_4:  
@@ -429,16 +439,7 @@ void MainWindow::onTimer()
     int min_5_amain_second = (5 - (hh * 60 + mm) % 5) * 60 - ss; 
     int min_15_amain_second = (15 - (hh * 60 + mm) % 15) * 60 - ss; 
 
-    
-    /*if( hh > 9 )
-    {
-        amain_second = (5 - ((hh - 9) * 60 + mm) % 5) * 60 - ss; 
-
-    }else
-    {
-        amain_second = (5 - ((hh - 9) * 60 + mm) % 5) * 60 - ss; 
-    }
-*/
+     
     //hhmm / 100 * 60 - 9 * 60
     QString content = QString("%1                                         %2                 5M: %3     \t\t     15M: %4")
         .arg(QDateTime::currentDateTime().toString("yyyyMMdd hh:mm:ss"))
@@ -465,30 +466,37 @@ void MainWindow::updateDateTime()
   
 void MainWindow::onMainKwallCycleChange(int /*index*/)
 {
-    assert(kline_wall_main);
+    assert(kline_wall_main_);
     tool_bar_->main_cycle_comb()->clearFocus();
-    kline_wall_main->ResetTypePeriod( TypePeriod(tool_bar_->main_cycle_comb()->currentData().toInt()) );
+    kline_wall_main_->ResetTypePeriod( TypePeriod(tool_bar_->main_cycle_comb()->currentData().toInt()) );
 }
 
 void MainWindow::onSubKwallCycleChange(int /*index*/)
 {
-    if( !kline_wall_sub )
+    if( !kline_wall_sub_ )
         return;
     tool_bar_->sub_cycle_comb()->clearFocus();
-    if( is_train_mode() && tool_bar_->sub_cycle_comb()->currentIndex() >= COMBO_PERIOD_5M_INDEX )
+    
+    kline_wall_sub_->ResetTypePeriod( TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt()) );
+    if( is_train_mode() )
     {
-        tool_bar_->sub_cycle_comb()->setCurrentIndex(COMBO_PERIOD_1M_INDEX);
-        return;
+        if( kline_wall_ori_step_->k_cur_train_date() > 0 )
+        {
+            kline_wall_sub_->ShowDurationKlines(kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm());
+            kline_wall_sub_->SetTrainStartDateTime(TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt())
+                , kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm());
+        }
+
     }else
     {
-        kline_wall_sub->ResetTypePeriod( TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt()) );
-        if( kline_wall_main->k_cur_train_date() > 0 )
+        if( kline_wall_main_->k_cur_train_date() > 0 )
         {
-            kline_wall_sub->ShowDurationKlines(kline_wall_main->k_cur_train_date(), kline_wall_main->k_cur_train_hhmm());
-            kline_wall_sub->SetTrainStartDateTime(TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt())
-                , kline_wall_main->k_cur_train_date(), kline_wall_main->k_cur_train_hhmm());
+            kline_wall_sub_->ShowDurationKlines(kline_wall_main_->k_cur_train_date(), kline_wall_main_->k_cur_train_hhmm());
+            kline_wall_sub_->SetTrainStartDateTime(TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt())
+                , kline_wall_main_->k_cur_train_date(), kline_wall_main_->k_cur_train_hhmm());
         }
     }
+        
 }
 
 

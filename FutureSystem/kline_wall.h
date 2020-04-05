@@ -81,14 +81,12 @@ public:
     void UpdateIfNecessary(int target_date, int cur_hhmm);
     // train mode --------
     TypePeriod  train_step_type_;
-    unsigned int cur_train_step_;
-    unsigned int cur_train_step(){ return cur_train_step_; }
-    void cur_train_step(unsigned int val) { cur_train_step_ = val; }
+    
     T_StockHisDataItem* SetTrainStartDateTime(TypePeriod tp_period, int date, int hhmm);
     std::tuple<int, int> MoveRightEndToNextK();
     void MoveRightEndToNextK(int date, int hhmm);
     T_StockHisDataItem Train_NextStep();
-    void Train_NextStep(T_StockHisDataItem & input_item);
+    void Train_NextStep(T_StockHisDataItem & input_item, unsigned int cur_train_step);
 
     void MoveRightEndToPreDayK();
     const T_StockHisDataItem & CurTrainStockDataItem();
@@ -279,4 +277,5 @@ int GetKDataTargetStartTime(TypePeriod type_period, int hhmm);
 
 int FindKRendIndex(T_HisDataItemContainer *p_hisdata_container, int date_val, int hhmm);
 
+int FindKRendIndexInHighPeriodContain(T_HisDataItemContainer *p_hisdata_container, int date_val, int hhmm);
 #endif // K_LINE_WALL_SDF32DSF_

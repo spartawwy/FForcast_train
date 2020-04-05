@@ -14,6 +14,7 @@ enum class WallIndex : unsigned char
 {
     MAIN,
     SUB,
+    ORISTEP,
 };
 
 namespace Ui 
@@ -46,11 +47,12 @@ public:
     ToolBar* tool_bar() { return tool_bar_; }
 
     void SetCurKlineWallIndex(WallIndex index);
-    KLineWall * MainKlineWall() { return kline_wall_main; }
-    KLineWall * SubKlineWall() { return kline_wall_sub; }
-    KLineWall * CurKlineWall() { if( cur_kline_index_ == WallIndex::MAIN ) return kline_wall_main; else return kline_wall_sub; }
+    KLineWall * OriStepKlineWall() { return kline_wall_ori_step_; }
+    KLineWall * MainKlineWall() { return kline_wall_main_; }
+    KLineWall * SubKlineWall() { return kline_wall_sub_; }
+    KLineWall * CurKlineWall() { if( cur_kline_index_ == WallIndex::MAIN ) return kline_wall_main_; else return kline_wall_sub_; }
     //void DoCurKlineWallIndexChange();
-    //KLineWall * kline_wall(WallIndex index) { if( index == WallIndex::MAIN ) return kline_wall_main; else return kline_wall_sub; }
+    //KLineWall * kline_wall(WallIndex index) { if( index == WallIndex::MAIN ) return kline_wall_main_; else return kline_wall_sub_; }
 
     void SetMainView(WallType wall_type);
     void ResetKLineWallCode(const QString &code, const QString &cn_name, bool is_index, int nmarket);
@@ -115,8 +117,9 @@ private:
     // cutomer qt controler --------
     ToolBar        *tool_bar_;
     TitleBar       *title_;
-    KLineWall      *kline_wall_main;
-    KLineWall      *kline_wall_sub;
+    KLineWall      *kline_wall_ori_step_; // this wall is hide, only for train dlg's next step
+    KLineWall      *kline_wall_main_;
+    KLineWall      *kline_wall_sub_;
     CodeListWall   *code_list_wall_;
     //DayKLineDialog *dayKLineDialog;
     WallIndex cur_kline_index_;
