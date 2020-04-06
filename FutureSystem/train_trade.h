@@ -184,21 +184,19 @@ public:
     std::vector<TradeRecordAtom> DoIfStopProfit(int date, int hhmm, double h_price, double l_price, double *p_profit);
     std::vector<TradeRecordAtom> DoIfStopLoss(int date, int hhmm, double h_price, double l_price, double *p_profit);
 #endif
-
-    /*std::vector<PositionAtom *> FrozeLongPosWhichUnfrozen(unsigned int qty);
-    std::vector<PositionAtom *> FrozeShortPosWhichUnfrozen(unsigned int qty);*/
+     
     // return trades
-    std::vector<TradeRecordAtom> CloseAvaliableLong(double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr)
+    std::vector<TradeRecordAtom> CloseAvaliableLong(double price, unsigned int qty, double &margin_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr)
     {
-        return CloseAvaliable(true, price, qty, capital_ret, p_profit, p_ret_close_ids);
+        return CloseAvaliable(true, price, qty, margin_ret, p_profit, p_ret_close_ids);
     }
     // return trades
-    std::vector<TradeRecordAtom> CloseAvaliableShort(double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr)
+    std::vector<TradeRecordAtom> CloseAvaliableShort(double price, unsigned int qty, double &margin_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr)
     {
-        return CloseAvaliable(false, price, qty, capital_ret, p_profit, p_ret_close_ids);
+        return CloseAvaliable(false, price, qty, margin_ret, p_profit, p_ret_close_ids);
     }
     // return trades
-    std::vector<TradeRecordAtom> CloseAvaliable(bool target_long, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
+    std::vector<TradeRecordAtom> CloseAvaliable(bool target_long, double price, unsigned int qty, double &margin_ret, double *p_profit, std::vector<int> *p_ret_close_ids=nullptr);
 
     void PushBack(bool is_long, std::shared_ptr<PositionAtom> &item);
 

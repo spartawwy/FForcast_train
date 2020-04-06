@@ -80,10 +80,12 @@ bool FuturesForecastApp::Init()
             if( exit_flag_ )
                 break;
             //if( ++count % 5 == 0 )
-            if( ++count % 4 == 0 ) // 
-                this->UpdateStockData();
-            this->UpdateStockQuote();
-
+            if( !this->main_window_->is_train_mode() )
+            {
+                if( ++count % 4 == 0 ) // 
+                    this->UpdateStockData();
+                this->UpdateStockQuote();
+            }
         }
     });
     return true;

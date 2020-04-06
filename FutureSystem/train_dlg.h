@@ -1,7 +1,6 @@
 #ifndef TRAIN_DLG_SDFS23343543_H_
 #define TRAIN_DLG_SDFS23343543_H_
-
-//#include <unordered_map>
+ 
 #include <cassert>
 #include <vector>
 #include <list>
@@ -23,6 +22,7 @@
 class CfgStopProfitLossDlg;
 class KLineWall;
 class MainWindow;
+class QTimer;
 class TrainDlg : public QWidget
 {
     Q_OBJECT
@@ -37,20 +37,23 @@ public:
 
 public slots:
 
+    void OnStepTimer();
+
     void DoTblPosDbClick(const QModelIndex &);
     void OnTblHangonOrdersRowDoubleClicked(const QModelIndex &);
     void OnScrollTrainTimeMoved(int);
+
     void OnStartTrain();
     void OnStopTrain();
-
-    void OnCloseAllUnfrozenPos();
-
+    
+    void OnControl();
     void OnNextStep();
      
     void OnBuy();
     void OnSell();
-    
-    double cur_quote(){ return cur_quote_; }
+    void OnCloseAllUnfrozenPos();
+
+    double cur_quote(){ return cur_kdata_item_.close_price; }
 
     void SaveStopProfitLoss(std::vector<PositionAtom> &pos_atoms);
 
@@ -64,7 +67,8 @@ private:
     
     //void OpenPosition(double para_price, bool is_long);
     void OpenPosition(double para_price, unsigned int qty, bool is_long);
-    void CloseInputSizePosition(double para_price, bool is_long);
+    void ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info=nullptr);
+    void CloseInputSizePosition(double para_price, bool is_long, const T_StockHisDataItem &fake_k_item);
 
     bool AddOpenOrder(double price, unsigned int quantity, bool is_long);
     bool AddCloseOrder(double price, unsigned int quantity, bool is_long);
@@ -78,6 +82,7 @@ private:
     int TblHangonOrdersRowCount();
     
     // UI -----
+    void SetMainWinStatusBar(const T_StockHisDataItem &k_item);
     void SetStatusBar(const QString & val)
     {
         ui.lab_status->setText(val);
@@ -100,9 +105,7 @@ private:
     KLineWall *parent_;
     MainWindow *main_win_;
     CfgStopProfitLossDlg *cfg_stop_profitloss_dlg_;
-
-    bool is_started_;
-    
+     
     AccountInfo  account_info_;
     double ori_capital_;
     double force_close_low_;
@@ -126,7 +129,13 @@ private:
     unsigned int auto_stop_loss_ticks_;
 
     unsigned int cur_train_step_;
-    double cur_quote_;
+    //double cur_quote_;
+    T_StockHisDataItem cur_kdata_item_;
+
+    QTimer *step_timer_;
+    bool is_started_;
+    bool is_running_;
+    std::mutex stepping_mutex_;
 };
 
 #endif // TRAIN_DLG_SDFS23343543_H_

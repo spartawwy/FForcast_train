@@ -477,18 +477,25 @@ void MainWindow::onSubKwallCycleChange(int /*index*/)
         return;
     tool_bar_->sub_cycle_comb()->clearFocus();
     
-    kline_wall_sub_->ResetTypePeriod( TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt()) );
+    TypePeriod target_type_period = TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt());
+    
     if( is_train_mode() )
     {
+        kline_wall_sub_->ResetTypePeriodTrain(target_type_period, kline_wall_ori_step_->train_start_date(), kline_wall_ori_step_->train_end_date());
         if( kline_wall_ori_step_->k_cur_train_date() > 0 )
         {
-            kline_wall_sub_->ShowDurationKlines(kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm());
-            kline_wall_sub_->SetTrainStartDateTime(TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt())
-                , kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm());
+            if( kline_wall_sub_->k_type() == kline_wall_ori_step_->k_type() )
+                kline_wall_sub_->SetTrainByRendIndex(kline_wall_ori_step_->k_rend_index_for_train());
+            else
+            {
+                kline_wall_sub_->SetTrainStartDateTime(target_type_period, kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm());
+                kline_wall_sub_->SetTrainEndDateTime(target_type_period, kline_wall_ori_step_->train_end_date(), 1500);
+            }
         }
 
     }else
     {
+        kline_wall_sub_->ResetTypePeriod(target_type_period);
         if( kline_wall_main_->k_cur_train_date() > 0 )
         {
             kline_wall_sub_->ShowDurationKlines(kline_wall_main_->k_cur_train_date(), kline_wall_main_->k_cur_train_hhmm());

@@ -52,6 +52,14 @@ struct T_StockHisDataItem
     T_StockHisDataItem(const T_StockHisDataItem &lh):date(lh.date), hhmmss(lh.hhmmss)
                         , close_price(lh.close_price), high_price(lh.high_price), low_price(lh.low_price), open_price(lh.open_price)
                         , /*pre_close_price(lh.pre_close_price),*/ vol(lh.vol), capital(lh.capital){}
+    T_StockHisDataItem & operator = (const T_StockHisDataItem&lh)
+    {
+        date = lh.date;hhmmss = lh.hhmmss; 
+        close_price = lh.close_price; high_price = lh.high_price;
+        low_price = lh.low_price; open_price = lh.open_price;
+        vol = lh.vol; capital = lh.capital;
+        return *this;
+    }
 };
 
 extern "C" int STKQUOTER_IMEXPORT StkQuoteGetQuote(char stocks[][16], const unsigned int size, T_StockPriceInfo price_info[]/*, unsigned int *ret_size*/);

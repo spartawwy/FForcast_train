@@ -31,24 +31,6 @@
     <string>开始时间:</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pbtnNextK">
-   <property name="geometry">
-    <rect>
-     <x>520</x>
-     <y>310</y>
-     <width>61</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>下一根=&gt;</string>
-   </property>
-  </widget>
   <widget class="QTableView" name="table_view_record">
    <property name="geometry">
     <rect>
@@ -175,7 +157,7 @@
     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QPushButton" name="pbtnNextStep">
+  <widget class="QPushButton" name="pbtnControl">
    <property name="geometry">
     <rect>
      <x>450</x>
@@ -190,7 +172,7 @@
     </font>
    </property>
    <property name="text">
-    <string>步进</string>
+    <string>运行</string>
    </property>
   </widget>
   <widget class="QTabWidget" name="tabwid_main">

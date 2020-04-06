@@ -46,7 +46,7 @@ void KLineWall::AppendPreData(int date)
 {
     assert( date > 19800000 && date < 20500000 );
 
-    int oldest_day = QDateTime::currentDateTime().toString("yyyyMMdd").toInt();
+    int oldest_day = QDateTime::currentDateTime().toString("yyyyMMdd").toInt(); //default 
     if( !p_hisdata_container_->empty() )
         oldest_day = p_hisdata_container_->front()->stk_item.date;
 
@@ -54,12 +54,32 @@ void KLineWall::AppendPreData(int date)
         return; 
     app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, date, oldest_day, is_index_);
 }
+ 
+void KLineWall::AppendData(int date)
+{
+    assert( date > 19800000 && date < 20500000 );
+
+    int today = QDateTime::currentDateTime().toString("yyyyMMdd").toInt(); //default 
+    int back_date = app_->exchange_calendar()->PreTradeDate(today, 5);
+    if( !p_hisdata_container_->empty() )
+        back_date = p_hisdata_container_->back()->stk_item.date;
+
+    if( back_date > date )
+        return; 
+    app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, back_date, date, is_index_);
+}
 
 void KLineWall::ResetTypePeriod(TypePeriod  type)
 { 
     if( k_type_ == type )
         return;
     ResetStock(stock_code_.c_str(), type, is_index_, nmarket_);
+}
+
+void KLineWall::ResetTypePeriodTrain(TypePeriod  type, int start_date, int end_date)
+{
+    //Reset_Stock_Train(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int start_date, int end_date)
+    Reset_Stock_Train(stock_code_.c_str(), type, is_index_, nmarket_, start_date, end_date);
 }
 
 void KLineWall::UpdateKwallMinMaxPrice()

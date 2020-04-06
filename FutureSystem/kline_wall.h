@@ -79,14 +79,20 @@ public:
     void ShowDurationKlines(int date, int hhmm);
 
     void UpdateIfNecessary(int target_date, int cur_hhmm);
-    // train mode --------
-    TypePeriod  train_step_type_;
-    
+    // train mode ----------------------
+    TypePeriod train_step_type(){ return train_step_type_; } 
+    int train_start_date(){ return train_start_date_;}
+    int train_end_date(){ return train_end_date_; }
+
+    void ResetTypePeriodTrain(TypePeriod  type, int start_date, int end_date);
     T_StockHisDataItem* SetTrainStartDateTime(TypePeriod tp_period, int date, int hhmm);
+    T_StockHisDataItem* SetTrainEndDateTime(TypePeriod tp_period, int date, int hhmm);
+
+    T_StockHisDataItem* SetTrainByRendIndex(int rend_index);
     std::tuple<int, int> MoveRightEndToNextK();
     void MoveRightEndToNextK(int date, int hhmm);
     T_StockHisDataItem Train_NextStep();
-    void Train_NextStep(T_StockHisDataItem & input_item, unsigned int cur_train_step);
+    void Train_NextStep(T_StockHisDataItem & input_item);
 
     void MoveRightEndToPreDayK();
     const T_StockHisDataItem & CurTrainStockDataItem();
@@ -94,7 +100,9 @@ public:
     void right_clicked_k_hhmm(int hhmm){ right_clicked_k_hhmm_ = hhmm; }
     int k_cur_train_date() { return k_cur_train_date_; }
     int k_cur_train_hhmm() { return k_cur_train_hhmm_; }
+    int  k_rend_index_for_train() { return  k_rend_index_for_train_; }
 
+    //------------------
     void Set_Cursor(Qt::CursorShape sp);
 
     //void IncreaseRendIndex() { ++k_rend_index_; }
@@ -133,8 +141,10 @@ private slots:
 private: 
       
     bool Reset_Stock(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int oldest_date);
+    bool Reset_Stock_Train(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int start_date, int end_date);
     void AppendData();
     void AppendPreData(int date);
+    void AppendData(int date);
     
 
     void Draw2pDownForcast(QPainter &, const int mm_h, double item_w);
@@ -257,11 +267,15 @@ private:
     int  right_clicked_k_hhmm_; // right mouse click
      
     StatisticDlg  statistic_dlg_;
-     
+    // train related
     std::list<OrderInfo> hangon_order_infos_;
     std::list<OrderInfo> stop_profit_order_infos_; 
     std::list<OrderInfo> stop_loss_order_infos_; 
     std::list<OrderInfo> condition_order_infos_; 
+
+    TypePeriod  train_step_type_;
+    int train_start_date_;
+    int train_end_date_;
 
     friend class ZhibiaoWindow;
     friend class VolZhibiaoWin;

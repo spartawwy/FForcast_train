@@ -474,8 +474,8 @@ bool MockTradeDlg::JudgeDoForceClose(double price)
         auto long_pos = account_info_.position.LongPosQty();
         if( long_pos > 0 )
         {
-            double capital_ret = 0.0;
-            std::vector<TradeRecordAtom> trades_close_long = account_info_.position.CloseAvaliableLong(/*today, hhmm, */force_close_low_, unsigned int(long_pos), capital_ret, &profit_close_long);
+            double margin_ret = 0.0;
+            std::vector<TradeRecordAtom> trades_close_long = account_info_.position.CloseAvaliableLong(/*today, hhmm, */force_close_low_, unsigned int(long_pos), margin_ret, &profit_close_long);
             AppendTradesToRecordsUi(trades_close_long);
             trade_records_.insert(trade_records_.end(), trades_close_long.begin(), trades_close_long.end());
         }
@@ -484,8 +484,8 @@ bool MockTradeDlg::JudgeDoForceClose(double price)
         auto short_pos = account_info_.position.ShortPosQty();
         if( short_pos > 0 )
         {
-            double capital_ret = 0.0;
-            std::vector<TradeRecordAtom> trades_close_short = account_info_.position.CloseAvaliableShort(/*today, hhmm, */force_close_low_, unsigned int(short_pos), capital_ret, &profit_close_short);
+            double margin_ret = 0.0;
+            std::vector<TradeRecordAtom> trades_close_short = account_info_.position.CloseAvaliableShort(/*today, hhmm, */force_close_low_, unsigned int(short_pos), margin_ret, &profit_close_short);
             AppendTradesToRecordsUi(trades_close_short);
             trade_records_.insert(trade_records_.end(), trades_close_short.begin(), trades_close_short.end());
         }

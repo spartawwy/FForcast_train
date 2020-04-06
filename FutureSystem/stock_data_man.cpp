@@ -174,6 +174,7 @@ T_HisDataItemContainer* StockDataMan::FindStockData(PeriodType period_type, cons
 }
 
 // date is save from older(smaller) date to newer(bigger). ps: data in container is series trade date time
+// it invoker traverse caculate fenxin and zhibiao
 T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, int nmarket, const std::string &stk_code, int start_date, int end_date, bool is_index)
 {
     assert( !stk_code.empty() );

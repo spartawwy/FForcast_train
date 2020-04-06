@@ -237,8 +237,8 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitLongPos(const T_StockHi
                 trade_item.price = *p_cur_price - cst_per_tick;
             else
                 trade_item.price = (k_item.open_price > (*iter)->stop_profit_price ? k_item.open_price : (*iter)->stop_profit_price);
-
-            trade_item.profit = (trade_item.price - (*iter)->price) / cst_per_tick * cst_per_tick_capital;
+            
+            trade_item.profit = (*iter)->PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
             capital_ret += cst_margin_capital * trade_item.quantity;
@@ -282,8 +282,8 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfitShortPos(const T_StockH
                 trade_item.price = *p_cur_price + cst_per_tick;
             else
                 trade_item.price = (k_item.open_price < (*iter)->stop_profit_price ? k_item.open_price : (*iter)->stop_profit_price);
-
-            trade_item.profit = ((*iter)->price - trade_item.price) / cst_per_tick * cst_per_tick_capital;
+             
+            trade_item.profit = (*iter)->PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
             capital_ret += cst_margin_capital * trade_item.quantity;
@@ -327,7 +327,8 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossLongPos(const T_StockHisD
                 trade_item.price = *p_cur_price - cst_per_tick;
             else
                 trade_item.price = (k_item.open_price < (*iter)->stop_loss_price ? k_item.open_price : (*iter)->stop_loss_price - cst_per_tick);
-            trade_item.profit = (trade_item.price - (*iter)->price) / cst_per_tick * cst_per_tick_capital;
+            
+            trade_item.profit = (*iter)->PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
             capital_ret += cst_margin_capital * trade_item.quantity;
@@ -371,7 +372,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLossShortPos(const T_StockHis
                 trade_item.price = *p_cur_price + cst_per_tick;
             else
                 trade_item.price = (k_item.open_price > (*iter)->stop_loss_price ? k_item.open_price : (*iter)->stop_loss_price + cst_per_tick);
-            trade_item.profit = ((*iter)->price - trade_item.price) / cst_per_tick * cst_per_tick_capital;
+            trade_item.profit = (*iter)->PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item); 
             capital_ret += cst_margin_capital * trade_item.quantity;
@@ -408,6 +409,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfit(int date, int hhmm, do
             trade_item.quantity = long_positions_.at(i).qty;
             trade_item.price = long_positions_.at(i).stop_profit_price - cst_per_tick;
             trade_item.profit = (trade_item.price - long_positions_.at(i).price) / cst_per_tick * cst_per_tick_capital;
+            trade_item.profit = long_positions_.at(i).PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
             profit += trade_item.profit - trade_item.fee;
@@ -425,7 +427,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopProfit(int date, int hhmm, do
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = short_positions_.at(i).qty;
             trade_item.price = short_positions_.at(i).stop_profit_price + cst_per_tick;
-            trade_item.profit = (short_positions_.at(i).price - trade_item.price) / cst_per_tick * cst_per_tick_capital;
+            trade_item.profit = short_positions_.at(i).PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
             profit += trade_item.profit - trade_item.fee;
@@ -454,7 +456,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLoss(int date, int hhmm, doub
             trade_item.pos_type = PositionType::POS_LONG;
             trade_item.quantity = long_positions_.at(i).qty;
             trade_item.price = long_positions_.at(i).stop_loss_price - cst_per_tick;
-            trade_item.profit = (trade_item.price - long_positions_.at(i).price) / cst_per_tick * cst_per_tick_capital;
+            trade_item.profit = long_positions_.at(i).PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
             profit += trade_item.profit - trade_item.fee;
@@ -472,7 +474,7 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLoss(int date, int hhmm, doub
             trade_item.pos_type = PositionType::POS_SHORT;
             trade_item.quantity = short_positions_.at(i).qty;
             trade_item.price = short_positions_.at(i).stop_loss_price + cst_per_tick;
-            trade_item.profit = (short_positions_.at(i).price - trade_item.price) / cst_per_tick * cst_per_tick_capital;
+            trade_item.profit = short_positions_.at(i).PartProfit(trade_item.price, trade_item.quantity); 
             trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
             ret.push_back(trade_item);
             profit += trade_item.profit - trade_item.fee;
@@ -484,7 +486,8 @@ std::vector<TradeRecordAtom> PositionInfo::DoIfStopLoss(int date, int hhmm, doub
 }
 #endif 
 
-std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, double price, unsigned int qty, double &capital_ret, double *p_profit, std::vector<int> *p_ret_close_ids)
+// ps: will erase qty_all zero position atom
+std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, double price, unsigned int qty, double &margin_ret, double *p_profit, std::vector<int> *p_ret_close_ids)
 {
     std::vector<TradeRecordAtom> ret;
     assert( qty > 0 );
@@ -493,8 +496,9 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, doub
     unsigned int pos_quantity = target_long ? LongPosQty() : ShortPosQty();
     assert( pos_quantity >= remain_tgt_qty );
 
-    double profit = 0.0;
-    capital_ret = 0.0;
+    double total_profit = 0.0;
+    margin_ret = 0.0;
+    // for each position atom
     for( auto iter = p_positions->begin(); iter != p_positions->end(); )
     {
         if( (*iter)->qty_available == 0 )
@@ -507,8 +511,9 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, doub
         if( (*iter)->qty_available >= remain_tgt_qty )
         {
             this_qty = remain_tgt_qty;
-            this_profit = (price - (*iter)->price) / cst_per_tick * cst_per_tick_capital * remain_tgt_qty;
-            capital_ret += cst_margin_capital * remain_tgt_qty;
+            assert((*iter)->is_long == target_long);
+            this_profit = (*iter)->PartProfit(price, this_qty);
+            margin_ret += cst_margin_capital * this_qty;
             if( (*iter)->qty_available == remain_tgt_qty )
             {
                 if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
@@ -523,34 +528,37 @@ std::vector<TradeRecordAtom> PositionInfo::CloseAvaliable(bool target_long, doub
         }else
         {
             this_qty = (*iter)->qty_available;
-            this_profit = (price - (*iter)->price) / cst_per_tick * cst_per_tick_capital * this_qty;
             remain_tgt_qty -= this_qty;
-            capital_ret += cst_margin_capital * this_qty;
+            assert((*iter)->is_long == target_long);
+            this_profit = (*iter)->PartProfit(price, this_qty);
+            margin_ret += cst_margin_capital * this_qty;
             if( p_ret_close_ids ) p_ret_close_ids->push_back((*iter)->trade_id);
             if( (*iter)->qty_frozen() == 0 ) iter = p_positions->erase(iter);
             else ++iter;
         }
-        profit += this_profit;
-
-        TradeRecordAtom item;
-        item.trade_id = GenerateTradeId();
-        item.date = 0;
-        item.hhmm = 0;
-        item.action = OrderAction::CLOSE;
-        item.pos_type = target_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
-        item.quantity = this_qty;
-        item.price = price;
-        item.profit = this_profit;
-        item.fee = CalculateFee(item.quantity, price, true);
-        ret.push_back(item);
-        profit -= item.fee;
+        total_profit += this_profit;
+        if( this_qty > 0)
+        {
+            TradeRecordAtom item;
+            item.trade_id = GenerateTradeId();
+            item.date = 0;
+            item.hhmm = 0;
+            item.action = OrderAction::CLOSE;
+            item.pos_type = target_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+            item.quantity = this_qty;
+            item.price = price;
+            item.profit = ProcDecimal(this_profit, 0);
+            item.fee = CalculateFee(item.quantity, price, true);
+            ret.push_back(item);
+            total_profit -= item.fee;
+        }
 
         if( remain_tgt_qty == 0 )
             break;
-    } // for 
+    } // for each position atom 
 
     if( p_profit )
-        *p_profit = profit;
+        *p_profit = ProcDecimal(total_profit, 0);
     return ret;
 }
  
@@ -646,7 +654,7 @@ TradeRecordAtom  PositionInfo::ClosePositionAtom(int id, double price, double *c
         trade_item.pos_type = pos_type;
         trade_item.price = price;
         trade_item.quantity = (*iter)->qty_all();  // close all position of this record 
-        trade_item.profit =(*iter)->FloatProfit(trade_item.price);
+        trade_item.profit = (*iter)->FloatProfit(trade_item.price);
 
         trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
          

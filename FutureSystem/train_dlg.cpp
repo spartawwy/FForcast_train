@@ -3,6 +3,7 @@
 #include <QtWidgets/QComboBox>
 #include <QMessageBox>
 #include <QStatusBar>
+#include <QTimer>
 #include <QDebug>
 
 #include <TLib/core/tsystem_utility_functions.h>
@@ -18,7 +19,8 @@
 
 #include "train_trade.h"
 
-//static const int cst_period_day_index = 4;
+static const int cst_step_timer_inter_val = 3000;
+ 
 static const int cst_small_width = 60;
 
 static const int cst_tbview_position_id = 0;
@@ -61,7 +63,6 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , parent_(parent)
     , main_win_(main_win)
     , cfg_stop_profitloss_dlg_(nullptr)
-    , is_started_(false)
     , account_info_()
     , ori_capital_(cst_default_ori_capital)
     , force_close_low_(MAX_PRICE)
@@ -72,7 +73,9 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , auto_stop_profit_ticks_(10)
     , auto_stop_loss_ticks_(10)
     , cur_train_step_(0)
-    , cur_quote_(0.0)
+    , step_timer_(nullptr)
+    , is_started_(false)
+    , is_running_(false)
 {
     ui.setupUi(this);
 
@@ -84,8 +87,8 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ret = connect(ui.pbtnStart, SIGNAL(clicked()), this, SLOT(OnStartTrain()));
     ret = connect(ui.pbtnStop, SIGNAL(clicked()), this, SLOT(OnStopTrain()));
 
-    ret = connect(ui.pbtnNextStep, SIGNAL(clicked()), this, SLOT(OnNextStep()));
-     
+    ret = connect(ui.pbtnControl, SIGNAL(clicked()), this, SLOT(OnControl()));
+    assert(ret);
     ret = connect(ui.pbtn_buy, SIGNAL(clicked()), this, SLOT(OnBuy()));
     ret = connect(ui.pbtn_sell, SIGNAL(clicked()), this, SLOT(OnSell()));
     ret = ret;
@@ -138,6 +141,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     assert(ret);
     //-----------------------------------------
     ret = connect(ui.pbtn_market_price_c, SIGNAL(clicked()), this, SLOT(OnCloseAllUnfrozenPos()));
+    assert(ret);
     //------------------table position
     ui.table_view_position->setEditTriggers(QAbstractItemView::NoEditTriggers);
     
@@ -217,6 +221,10 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ui.table_view_trades->setColumnWidth(cst_tbview_trades_fee, cst_small_width);
     ui.table_view_trades->setColumnWidth(cst_tbview_trades_time, cst_small_width);
     // cst_tbview_trades_id 
+      
+    step_timer_ = new QTimer(this); 
+    ret = connect(step_timer_, SIGNAL(timeout()), this, SLOT(OnStepTimer()));
+    assert(ret);
 
     OnStopTrain();
 
@@ -224,7 +232,6 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     account_info_.capital.frozen = 0.0;
     account_info_.capital.float_profit = 0.0;
     RefreshCapitalUi();
-    //ui.dbspbFeeRate->setValue(cst_default_fee_rate_percent);
 }
 
 const T_StockHisDataItem & TrainDlg::CurHisStockDataItem()
@@ -232,6 +239,13 @@ const T_StockHisDataItem & TrainDlg::CurHisStockDataItem()
     return parent_->CurTrainStockDataItem();
 }
                
+void TrainDlg::OnStepTimer()
+{
+    if( std::try_lock(stepping_mutex_) )
+        OnNextStep();
+    stepping_mutex_.unlock();
+}
+
 void TrainDlg::DoTblPosDbClick(const QModelIndex &index)
 {
     assert(cfg_stop_profitloss_dlg_);
@@ -318,6 +332,14 @@ void TrainDlg::closeEvent(QCloseEvent * /*event*/)
  
 void TrainDlg::OnStartTrain()
 { 
+    is_started_ = true;
+    ui.pbtnStart->setEnabled(false);
+    ui.pbtnStop->setEnabled(true);
+     
+    ui.pbtnControl->setText(QString::fromLocal8Bit("运行"));
+    ui.pbtnControl->setEnabled(true);
+
+#if 1 
     trade_records_.clear();
 
     account_info_.capital.avaliable = cst_default_ori_capital;
@@ -327,18 +349,9 @@ void TrainDlg::OnStartTrain()
 
     ui.le_cur_capital->setText(ToQString(account_info_.capital.avaliable + account_info_.capital.frozen));
     ui.lab_assets->setText(ToQString(account_info_.capital.avaliable + account_info_.capital.frozen));
-    //ui.le_long_pos->setText(ToQString(0));
-    //ui.le_short_pos->setText(ToQString(0));
-
+    
     ui.plain_te_record->clear();
-
-    //ui.dbspbBegCapital->setEnabled(false);
      
-    ui.pbtnStart->setEnabled(false);
-    ui.pbtnStop->setEnabled(true);
-
-    ui.pbtnNextK->setEnabled(true);
-      
     /*if( is_started_ )
     {   
          this->hide();
@@ -350,39 +363,49 @@ void TrainDlg::OnStartTrain()
          }
          this->showNormal();
     }*/
+#endif 
     assert(main_win_->OriStepKlineWall());
     assert(main_win_->SubKlineWall());
 
-    int start_day = ui.lab_start_date->text().toInt();
-    int start_time = 905;
-    //int date = ui.de_begin->date().toString("yyyyMMdd").toInt();
+    int end_date = std::get<2>(hisk_date_range_);
+    int end_time = 1500;
+    int start_date = ui.lab_start_date->text().toInt();
+    int start_time = 905; 
     cur_train_step_ = 0;
-    auto p_item = parent_->SetTrainStartDateTime(TypePeriod::PERIOD_5M, start_day, start_time);
-    if( p_item )
-        cur_train_step_= p_item->hhmmss % 5;
-    
-    main_win_->OriStepKlineWall()->SetTrainStartDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, start_day, start_time);
-    main_win_->OriStepKlineWall()->ShowDurationKlines(start_day, start_time);
+    auto p_item = parent_->SetTrainStartDateTime(TypePeriod::PERIOD_5M, start_date, start_time);
+    parent_->SetTrainEndDateTime(TypePeriod::PERIOD_5M, end_date, end_time);
+
+    auto p_ori_wall_item = main_win_->OriStepKlineWall()->SetTrainStartDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, start_date, start_time);
+    main_win_->OriStepKlineWall()->SetTrainEndDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, end_date, end_time);
 
     main_win_->SubKlineWall()->SetTrainStartDateTime(TypePeriod(main_win_->tool_bar_->sub_cycle_comb()->currentData().toInt())
-        , start_day, start_time);
-    main_win_->SubKlineWall()->right_clicked_k_date(start_day);
-    main_win_->SubKlineWall()->right_clicked_k_hhmm(start_time);
+                                                    , start_date, start_time);
+    main_win_->SubKlineWall()->SetTrainEndDateTime(TypePeriod(main_win_->tool_bar_->sub_cycle_comb()->currentData().toInt())
+                                                    , end_date, end_time);
 
-    main_win_->SubKlineWall()->slotOpenRelatedSubKwall(false);
-    
-    is_started_ = true;
+    main_win_->SubKlineWall()->setVisible(true);
+    main_win_->tool_bar()->SetShowSubKwallBtn(true);
+
+    if( p_ori_wall_item )
+        SetMainWinStatusBar(*p_ori_wall_item);
 }
 
 void TrainDlg::OnStopTrain()
 {
-    force_close_low_ = MAX_PRICE;
-    force_close_high_ = MIN_PRICE;
+    assert(step_timer_);
+    is_started_ = false;
 
+    step_timer_->stop();
+    is_running_ = false;
+    ui.pbtnControl->setText(QString::fromLocal8Bit("运行"));
+    ui.pbtnControl->setEnabled(false);
+
+    ui.pbtnStart->setText(QString::fromLocal8Bit("开始"));
     ui.pbtnStart->setEnabled(true);
     ui.pbtnStop->setEnabled(false);
 
-    ui.pbtnNextK->setEnabled(false);
+    force_close_low_ = MAX_PRICE;
+    force_close_high_ = MIN_PRICE;
 
     ui.le_cur_capital->setText(ToQString(account_info_.capital.avaliable));
     ui.lab_assets->setText(ToQString(account_info_.capital.avaliable));
@@ -390,7 +413,14 @@ void TrainDlg::OnStopTrain()
  
 void TrainDlg::OnCloseAllUnfrozenPos()
 {
-    // todo:
+    QString ret_info;
+    T_StockHisDataItem fake_item = cur_kdata_item_;
+    ClosePosition(cur_quote(), account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE), true, fake_item, &ret_info);
+    if( !ret_info.isEmpty() )
+        SetStatusBar(ret_info);
+    ClosePosition(cur_quote(), account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE), false, fake_item, &ret_info);
+    if( !ret_info.isEmpty() )
+        SetStatusBar(ret_info);
 }
 
 //ps: auto ajust account_info_.capital
@@ -470,6 +500,21 @@ std::vector<TradeRecordAtom> TrainDlg::DoIfStopProfitLoss(const T_StockHisDataIt
     return records;
 }
 
+void TrainDlg::OnControl()
+{
+    if( !is_running_ )
+    {
+        is_running_ = true;
+        ui.pbtnControl->setText(QString::fromLocal8Bit("暂停"));
+        step_timer_->start(cst_step_timer_inter_val);
+    }else
+    {
+        is_running_ = false;
+        ui.pbtnControl->setText(QString::fromLocal8Bit("运行"));
+        step_timer_->stop();
+    }
+}
+
 void TrainDlg::OnNextStep()
 {  
     static auto remove_pos_tableview_closed_atoms = [this](const std::vector<int> &pos_del_ids, bool is_long)
@@ -496,9 +541,9 @@ void TrainDlg::OnNextStep()
     
     //double close_price = MAGIC_STOP_PRICE;
     ++cur_train_step_;
-    T_StockHisDataItem item = main_win_->OriStepKlineWall()->Train_NextStep();
-    parent_->Train_NextStep(item, cur_train_step_);
-    main_win_->SubKlineWall()->Train_NextStep(item, cur_train_step_);
+    T_StockHisDataItem ori_cur_item = main_win_->OriStepKlineWall()->Train_NextStep();
+    parent_->Train_NextStep(ori_cur_item);
+    main_win_->SubKlineWall()->Train_NextStep(ori_cur_item);
 
     const T_StockHisDataItem & stock_item = CurHisStockDataItem();
     if( stock_item.date == 0 )
@@ -506,10 +551,10 @@ void TrainDlg::OnNextStep()
         SetStatusBar(QString::fromLocal8Bit("日期为0, 数据异常!"));
         return;
     }
-    cur_quote_ = item.close_price;
-    ui.lab_quote->setText(QString::number(item.close_price));
+    cur_kdata_item_ = ori_cur_item;
+    ui.lab_quote->setText(QString::number(ori_cur_item.close_price));
     if( ui.checkb_follow_market->isChecked() )
-        ui.dbspb_price->setValue(item.close_price);
+        ui.dbspb_price->setValue(ori_cur_item.close_price);
      
     //-------------------handle order infos--------------
     /* there are total 3 order types : 
@@ -524,7 +569,7 @@ void TrainDlg::OnNextStep()
        if( iter->action == OrderAction::CLOSE )
        {
            std::vector<int> pos_del_ids;
-           bool is_fit_price = iter->position_type == PositionType::POS_LONG ? (!(item.high_price < iter->price)) : (!(item.low_price > iter->price));
+           bool is_fit_price = iter->position_type == PositionType::POS_LONG ? (!(ori_cur_item.high_price < iter->price)) : (!(ori_cur_item.low_price > iter->price));
            if( !is_fit_price )
            {
                ++iter;
@@ -532,9 +577,9 @@ void TrainDlg::OnNextStep()
            }
            double filled_price = iter->price;
            if( iter->position_type == PositionType::POS_LONG )
-               filled_price = (item.open_price > iter->price ? item.open_price : iter->price);
+               filled_price = (ori_cur_item.open_price > iter->price ? ori_cur_item.open_price : iter->price);
            else
-               filled_price = (item.open_price < iter->price ? item.open_price : iter->price);
+               filled_price = (ori_cur_item.open_price < iter->price ? ori_cur_item.open_price : iter->price);
            fake_del_ids.push_back(iter->fake_id);
             // for each related position
             double total_profit = 0.0;
@@ -554,8 +599,8 @@ void TrainDlg::OnNextStep()
 
             TradeRecordAtom trade_item;
             trade_item.trade_id = account_info_.position.GenerateTradeId();
-            trade_item.date = item.date;
-            trade_item.hhmm = item.hhmmss;
+            trade_item.date = ori_cur_item.date;
+            trade_item.hhmm = ori_cur_item.hhmmss;
             trade_item.action = OrderAction::CLOSE;
             trade_item.pos_type = iter->position_type;
             trade_item.price =  filled_price;
@@ -587,14 +632,14 @@ void TrainDlg::OnNextStep()
 
        }else //open 
        {
-           bool is_fit_price = iter->position_type == PositionType::POS_LONG ? (!(item.low_price > iter->price)) : (!(item.high_price < iter->price));
+           bool is_fit_price = iter->position_type == PositionType::POS_LONG ? (!(ori_cur_item.low_price > iter->price)) : (!(ori_cur_item.high_price < iter->price));
            if( is_fit_price )
            { 
                double filled_price = iter->price;
                if( iter->position_type == PositionType::POS_LONG )
-                   filled_price = (item.open_price < iter->price ? item.open_price : iter->price);
+                   filled_price = (ori_cur_item.open_price < iter->price ? ori_cur_item.open_price : iter->price);
                else
-                   filled_price = (item.open_price > iter->price ? item.open_price : iter->price);
+                   filled_price = (ori_cur_item.open_price > iter->price ? ori_cur_item.open_price : iter->price);
                OpenPosition(filled_price, iter->qty, iter->position_type == PositionType::POS_LONG);
                RemoveFromTblHangonOrderByFakeId(iter->fake_id);
                hangon_order_infos_.erase(iter++);
@@ -608,7 +653,7 @@ void TrainDlg::OnNextStep()
     //-------for stop profit/loss ----------------
     std::vector<int> ret_position_ids;
     double profit = 0.0;
-    auto trade_items = DoIfStopProfitLoss(item, ret_position_ids, profit); // ps: auto ajust account_.capital
+    auto trade_items = DoIfStopProfitLoss(ori_cur_item, ret_position_ids, profit); // ps: auto ajust account_.capital
     if( !trade_items.empty() )
     {
         std::vector<int> long_zero_size_pos_ids;
@@ -637,20 +682,25 @@ void TrainDlg::OnNextStep()
 
     //-------------------
 
-    double total_profit = RecaculatePosTableViewFloatProfit(item.close_price);
+    double total_profit = RecaculatePosTableViewFloatProfit(ori_cur_item.close_price);
     account_info_.capital.float_profit = ProcDecimal(total_profit, 0);
 
     RefreshCapitalUi();
 
     // status bar ----------------------------
-    int hh = item.hhmmss/100;
-    int mm = item.hhmmss%100;
+    SetMainWinStatusBar(ori_cur_item);
+}
+
+void TrainDlg::SetMainWinStatusBar(const T_StockHisDataItem &k_item)
+{
+    int hh = k_item.hhmmss/100;
+    int mm = k_item.hhmmss%100;
     int ss = 0;
     int min_5_amain_second = (5 - (hh * 60 + mm) % 5) * 60 - ss; 
     int min_15_amain_second = (15 - (hh * 60 + mm) % 15) * 60 - ss; 
     QString content = QString("%1                                         %2                 5M: %3     \t\t     15M: %4")
         .arg(QString("%1:%2:00").arg(hh,2,10,QLatin1Char('0')).arg(mm,2,10,QLatin1Char('0')))
-        .arg(QString::number(item.close_price, 'f', 1))
+        .arg(QString::number(k_item.close_price, 'f', 1))
         .arg(min_5_amain_second)
         .arg(min_15_amain_second);
     main_win_->statusBar()->showMessage(content);
@@ -896,7 +946,7 @@ void TrainDlg::OnBuy()
     }else // buy to close short position
     {
         if( !(order_price < market_price) )
-            CloseInputSizePosition(market_price, false);
+            CloseInputSizePosition(market_price, false, cur_kdata_item_);
         else
             AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), false);
     }
@@ -922,7 +972,7 @@ void TrainDlg::OnSell()
     }else // sell to close long position
     {
         if( !(order_price > market_price) )
-            CloseInputSizePosition(market_price, true);
+            CloseInputSizePosition(market_price, true, cur_kdata_item_);
         else
             AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), true);
     }
@@ -987,9 +1037,9 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
     Append2TblTrades(trade_item);
 
     // fill or ajust position table view -------------
+    auto align_way = Qt::AlignCenter;
     QTableView &tbv = *ui.table_view_position;
     QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
-    auto align_way = Qt::AlignCenter;
     QVariant var_ids;
     QVector<int> ids;
     auto row_index = find_model_first_fit_index(*model, pos_atom->is_long);
@@ -1078,40 +1128,37 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
      
 }
 
-
-void TrainDlg::CloseInputSizePosition(double para_price, bool is_long)
+void TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info)
 {
-    int close_qty = ui.spb_order_num->value();
-    assert(close_qty > 0);
+    if( qty == 0 )
+        return;
+    //int date = 0;
+    //int hhmm = 0;//ndedt
     QTableView &tbv = *ui.table_view_position;
     QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
     auto row_index = find_model_first_fit_index(*model, is_long);
     if( row_index < 0 ) 
     { 
-        return SetStatusBar(is_long ? QString::fromLocal8Bit("无多头仓位可平!") : QString::fromLocal8Bit("无空头仓位可平!"));
+        if( p_ret_info ) *p_ret_info = (is_long ? QString::fromLocal8Bit("无多头仓位可平!") : QString::fromLocal8Bit("无空头仓位可平!"));
+        return;
     }
-     
-    auto total_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
-    if( (unsigned int)close_qty > total_qty )
-         return SetStatusBar(QString::fromLocal8Bit("平仓数量超过现有仓位!"));
-    QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
     
-    int date = 0;
-    int hhmm = 0;//ndedt
-    double capital_ret = 0.0;
+    QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
+    double margin_ret = 0.0;
     double profit_close = 0.0;
     std::vector<int> position_ids;
     std::vector<TradeRecordAtom> trade_record_atoms;
     if( is_long )
     {
-        trade_record_atoms = account_info_.position.CloseAvaliableLong(para_price, close_qty, capital_ret, &profit_close, &position_ids);
+        trade_record_atoms = account_info_.position.CloseAvaliableLong(para_price, qty, margin_ret, &profit_close, &position_ids);
     }else
     {
-        trade_record_atoms = account_info_.position.CloseAvaliableShort(para_price, close_qty, capital_ret, &profit_close, &position_ids);
+        trade_record_atoms = account_info_.position.CloseAvaliableShort(para_price, qty, margin_ret, &profit_close, &position_ids);
     }
     if( trade_record_atoms.empty() )
     {
-        return SetStatusBar(QString::fromLocal8Bit("此平仓失效!"));
+        if( p_ret_info ) *p_ret_info = QString::fromLocal8Bit("此平仓失效!");
+        return;
     }
     remove_container_items_by_pos_ids(stop_profit_order_infos_, (is_long ? &position_ids : nullptr), (is_long ? nullptr : &position_ids));
     remove_container_items_by_pos_ids(stop_loss_order_infos_, (is_long ? &position_ids : nullptr), (is_long ? nullptr : &position_ids));
@@ -1120,8 +1167,8 @@ void TrainDlg::CloseInputSizePosition(double para_price, bool is_long)
     UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
 
     //capital------------
-    account_info_.capital.frozen -= capital_ret;
-    account_info_.capital.avaliable += capital_ret + profit_close;
+    account_info_.capital.frozen -= margin_ret;
+    account_info_.capital.avaliable += margin_ret + profit_close;
 
     // reset position table view----------
     QVector<int> ids_after;
@@ -1137,7 +1184,7 @@ void TrainDlg::CloseInputSizePosition(double para_price, bool is_long)
     { 
         RecaculatePosTableViewItem(ids_after, row_index); 
     }
-     
+
     // recaculae float prift ------
     double cur_quote = ui.lab_quote->text().toDouble();
     double total_profit = RecaculatePosTableViewFloatProfit(cur_quote);
@@ -1148,6 +1195,30 @@ void TrainDlg::CloseInputSizePosition(double para_price, bool is_long)
     {
         Append2TblTrades(trade_atom);
     });
+}
+
+void TrainDlg::CloseInputSizePosition(double para_price, bool is_long, const T_StockHisDataItem &fake_k_item)
+{
+    assert(para_price > 0.1);
+    int close_qty = ui.spb_order_num->value();
+    assert(close_qty > 0);
+    QTableView &tbv = *ui.table_view_position;
+    QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
+    auto row_index = find_model_first_fit_index(*model, is_long);
+    if( row_index < 0 ) 
+    { 
+        return SetStatusBar(is_long ? QString::fromLocal8Bit("无多头仓位可平!") : QString::fromLocal8Bit("无空头仓位可平!"));
+    }
+     
+    auto total_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
+    if( (unsigned int)close_qty > total_qty )
+         return SetStatusBar(QString::fromLocal8Bit("平仓数量超过现有仓位!"));
+
+    //double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info
+    QString ret_info;
+    ClosePosition(para_price, close_qty, is_long, fake_k_item, &ret_info);
+    if( !ret_info.isEmpty() )
+        SetStatusBar(ret_info);
 }
 
 bool TrainDlg::AddOpenOrder(double price, unsigned int quantity, bool is_long)

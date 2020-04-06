@@ -35,7 +35,6 @@ class Ui_TrainDlgForm
 {
 public:
     QLabel *label_2;
-    QPushButton *pbtnNextK;
     QTableView *table_view_record;
     QLabel *label_5;
     QWidget *layoutWidget;
@@ -46,7 +45,7 @@ public:
     QLabel *lab_status;
     QScrollBar *hScrollBar_TrainTimeRange;
     QLabel *lab_start_date;
-    QPushButton *pbtnNextStep;
+    QPushButton *pbtnControl;
     QTabWidget *tabwid_main;
     QWidget *tab_trade;
     QLabel *lab_price;
@@ -97,10 +96,6 @@ public:
         QFont font;
         font.setPointSize(10);
         label_2->setFont(font);
-        pbtnNextK = new QPushButton(TrainDlgForm);
-        pbtnNextK->setObjectName(QStringLiteral("pbtnNextK"));
-        pbtnNextK->setGeometry(QRect(520, 310, 61, 23));
-        pbtnNextK->setFont(font);
         table_view_record = new QTableView(TrainDlgForm);
         table_view_record->setObjectName(QStringLiteral("table_view_record"));
         table_view_record->setGeometry(QRect(20, 500, 601, 21));
@@ -144,10 +139,10 @@ public:
         font1.setPointSize(12);
         lab_start_date->setFont(font1);
         lab_start_date->setAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter);
-        pbtnNextStep = new QPushButton(TrainDlgForm);
-        pbtnNextStep->setObjectName(QStringLiteral("pbtnNextStep"));
-        pbtnNextStep->setGeometry(QRect(450, 0, 75, 23));
-        pbtnNextStep->setFont(font);
+        pbtnControl = new QPushButton(TrainDlgForm);
+        pbtnControl->setObjectName(QStringLiteral("pbtnControl"));
+        pbtnControl->setGeometry(QRect(450, 0, 75, 23));
+        pbtnControl->setFont(font);
         tabwid_main = new QTabWidget(TrainDlgForm);
         tabwid_main->setObjectName(QStringLiteral("tabwid_main"));
         tabwid_main->setGeometry(QRect(0, 100, 621, 321));
@@ -298,13 +293,12 @@ public:
     {
         TrainDlgForm->setWindowTitle(QApplication::translate("TrainDlgForm", "\350\256\255\347\273\203\346\250\241\345\274\217", 0));
         label_2->setText(QApplication::translate("TrainDlgForm", "\345\274\200\345\247\213\346\227\266\351\227\264:", 0));
-        pbtnNextK->setText(QApplication::translate("TrainDlgForm", "\344\270\213\344\270\200\346\240\271=>", 0));
         label_5->setText(QApplication::translate("TrainDlgForm", "\350\256\260\345\275\225", 0));
         pbtnStop->setText(QApplication::translate("TrainDlgForm", "\347\273\223\346\235\237", 0));
         pbtnStart->setText(QApplication::translate("TrainDlgForm", "\345\274\200\345\247\213", 0));
         lab_status->setText(QApplication::translate("TrainDlgForm", "status", 0));
         lab_start_date->setText(QApplication::translate("TrainDlgForm", "0", 0));
-        pbtnNextStep->setText(QApplication::translate("TrainDlgForm", "\346\255\245\350\277\233", 0));
+        pbtnControl->setText(QApplication::translate("TrainDlgForm", "\350\277\220\350\241\214", 0));
         lab_price->setText(QApplication::translate("TrainDlgForm", "\344\273\267\346\240\274:", 0));
         lab_v->setText(QApplication::translate("TrainDlgForm", "\346\225\260\351\207\217:", 0));
         lab_h_line->setText(QApplication::translate("TrainDlgForm", "----------------------------------", 0));
