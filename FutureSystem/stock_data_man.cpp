@@ -142,9 +142,9 @@ T_HisDataItemContainer* StockDataMan::FindStockData(PeriodType period_type, cons
             break;
         case PeriodType::PERIOD_1M:
             if( real_start_date == start_date )
-                start_hhmm = 900; 
+                start_hhmm = 901; 
             else
-                start_hhmm = 2100; 
+                start_hhmm = 2101; 
             break;
     }
     if( real_start_date == real_end_date )

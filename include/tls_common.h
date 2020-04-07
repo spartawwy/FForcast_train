@@ -12,6 +12,8 @@
 #define    KTYPE_PERIOD_MON    8
 #define    KTYPE_PERIOD_YEAR   9
 
+#define MAGIC_STOP_PRICE (-1.0f)
+
 // equal to kbar type
 enum TlsTypePeriod  
 {

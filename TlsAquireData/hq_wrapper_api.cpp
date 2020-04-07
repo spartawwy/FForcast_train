@@ -482,6 +482,10 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         ++index;  
                         int minute = boost::lexical_cast<int>(match_result[index]);
                         k_data->hhmmss = hour * 100 + minute;
+                        // debug----------
+                        if( k_data->date == 20191211 && k_data->hhmmss == 30 )
+                            k_data->date = k_data->date;
+                        // end-----------
 #if 1
                         if( k_data->hhmmss > 2100 )
                         {
@@ -493,10 +497,7 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         k_data->date = boost::lexical_cast<int>(match_result[index]);
                         k_data->hhmmss = 0;
                     }
-                    // debug----------
-                    if( k_data->date == 0 )
-                        k_data->date = k_data->date;
-                    // end-----------
+                    
                     ++index;
                     k_data->open = boost::lexical_cast<double>(match_result[index]);
                     ++index;
@@ -512,6 +513,11 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                     ++index;
                     k_data->hold = boost::lexical_cast<double>(match_result[index]);
                     //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
+                    if( k_data->high > 1000.0 ) // bad price 20191211's dya 's 30m k price
+                    {
+                        // note to save bad price
+                        break;
+                    }
                     items.push_back(std::move(k_data));
 
                 }catch(boost::exception& e )
@@ -547,6 +553,10 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                             ++index;  
                             int minute = boost::lexical_cast<int>(match_result[index]);
                             k_data->hhmmss = hour * 100 + minute;
+                            // debug----------
+                            if( k_data->date == 20191211 && k_data->hhmmss == 30 )
+                                k_data->date = k_data->date;
+                            // end-----------
                             if( k_data->hhmmss > 2100 )
                             {
                                 k_data->date = exchange_calendar_->PreTradeDate(k_data->date, 1);
@@ -575,6 +585,11 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         ++index;
                         k_data->hold = boost::lexical_cast<double>(match_result[index]);
                         //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
+                         if( k_data->high > 1000.0 || k_data->high < 0.01  || k_data->low < 0.01 ) // bad price 20191211's dya 's 30m k price
+                        {
+                            // note to save bad price
+                            break;
+                        }
                         items.push_back(std::move(k_data));
 
                     }catch(boost::exception& e )

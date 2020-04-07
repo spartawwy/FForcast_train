@@ -95,7 +95,7 @@ int ExchangeCalendar::PreTradeDate(int date, unsigned int n)
     {
         while( count < n )
         {
-            a = DateAddDays(date, i);  
+            a = DateAddDays(date, -1 * i);  
             if( a > max_trade_date_ )
                 return 0;
             auto iter = date_map_opend.find(a);
@@ -103,7 +103,7 @@ int ExchangeCalendar::PreTradeDate(int date, unsigned int n)
                 ++count;
             ++i;
         }
-    }else
+    }else // n == 0
     {
         if( IsTradeDate(date) )
             a = date;
