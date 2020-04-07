@@ -336,9 +336,7 @@ void TrainDlg::OnStartTrain()
     ui.pbtnStart->setEnabled(false);
     ui.pbtnStop->setEnabled(true);
      
-    ui.pbtnControl->setText(QString::fromLocal8Bit("运行"));
-    ui.pbtnControl->setEnabled(true);
-
+    ui.pbtnStart->setText(QString::fromLocal8Bit("数据加载中..."));
 #if 1 
     trade_records_.clear();
 
@@ -388,6 +386,10 @@ void TrainDlg::OnStartTrain()
 
     if( p_ori_wall_item )
         SetMainWinStatusBar(*p_ori_wall_item);
+
+    ui.pbtnStart->setText(QString::fromLocal8Bit("开始"));
+    ui.pbtnControl->setText(QString::fromLocal8Bit("运行"));
+    ui.pbtnControl->setEnabled(true);
 }
 
 void TrainDlg::OnStopTrain()
@@ -421,6 +423,7 @@ void TrainDlg::OnCloseAllUnfrozenPos()
     ClosePosition(cur_quote(), account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE), false, fake_item, &ret_info);
     if( !ret_info.isEmpty() )
         SetStatusBar(ret_info);
+    RefreshCapitalUi();
 }
 
 //ps: auto ajust account_info_.capital

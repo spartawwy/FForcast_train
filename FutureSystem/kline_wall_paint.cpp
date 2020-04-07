@@ -1001,15 +1001,9 @@ void KLineWall::paintEvent(QPaintEvent*)
 
         double item_w = double(mm_w - empty_right_w_ - right_w_) / double(k_num_ + 1) ;
         
-#ifdef DRAW_FROM_LEFT
-    int j = 0;
-	for( auto iter = p_hisdata_container_->begin();
-		iter != p_hisdata_container_->end() && j < k_num_; 
-		++iter, ++j)
-    { 
-#else
+#if 1
         // for fengxin line and every k line--------------
-        
+        bool is_first_fenxin_in_r_side = true;
         assert( p_hisdata_container_->size() > k_rend_index_ );
         int j = k_num_;
         for( auto iter = p_hisdata_container_->rbegin() + k_rend_index_;
@@ -1069,7 +1063,14 @@ void KLineWall::paintEvent(QPaintEvent*)
 
         // ------------fengxin relate ------------------- 
         if( (*iter)->type != (int)FractalType::UNKNOW_FRACTAL )
-        {
+        {   
+            do
+            { 
+                if( main_win_->is_train_mode() && is_first_fenxin_in_r_side ) 
+                {
+                    is_first_fenxin_in_r_side = false;
+                    break;
+                }
             QPen fractal_pen;
             fractal_pen.setStyle(Qt::SolidLine);
             fractal_pen.setColor(QColor(0,0,255));
@@ -1095,6 +1096,7 @@ void KLineWall::paintEvent(QPaintEvent*)
                     painter.drawLine(pos_data.top.x(), pos_data.top.y(), left_pos_data->bottom.x(), left_pos_data->bottom.y());
             }
 
+            }while(0);
         }// if fenxin
         //----------------draw signal -----------------------
 #if 1 

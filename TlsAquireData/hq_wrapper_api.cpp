@@ -513,11 +513,13 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                     ++index;
                     k_data->hold = boost::lexical_cast<double>(match_result[index]);
                     //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
-                    if( k_data->high > 1000.0 ) // bad price 20191211's dya 's 30m k price
+                    if( k_data->high > 1000.0 || k_data->low < 0.1) // bad price 20191211's dya 's 30m k price
                     {
                         // note to save bad price
-                        break;
-                    }
+                        WriteLog("get %s type:%d %d-%d ret bad o:%.2f c:%.2f h:%.2f l:%.2f ", code, kbar_type, k_data->date, k_data->hhmmss
+                             , k_data->open, k_data->close, k_data->high, k_data->low);
+                        continue;
+                    } 
                     items.push_back(std::move(k_data));
 
                 }catch(boost::exception& e )
@@ -585,11 +587,12 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         ++index;
                         k_data->hold = boost::lexical_cast<double>(match_result[index]);
                         //k_data.capital = boost::lexical_cast<double>(match_result[index]); // 结算价
-                         if( k_data->high > 1000.0 || k_data->high < 0.01  || k_data->low < 0.01 ) // bad price 20191211's dya 's 30m k price
-                        {
-                            // note to save bad price
-                            break;
-                        }
+                        if( k_data->high > 1000.0 || k_data->low < 0.1) // bad price 20191211's dya 's 30m k price
+                        {   // note to save bad price
+                            WriteLog("get %s type:%d %d-%d ret bad o:%.2f c:%.2f h:%.2f l:%.2f ", code, kbar_type, k_data->date, k_data->hhmmss
+                                , k_data->open, k_data->close, k_data->high, k_data->low);
+                            continue;
+                        } 
                         items.push_back(std::move(k_data));
 
                     }catch(boost::exception& e )
