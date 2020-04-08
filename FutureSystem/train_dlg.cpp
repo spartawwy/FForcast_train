@@ -99,7 +99,8 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     assert(ret);
     ret = connect(ui.pbtn_buy, SIGNAL(clicked()), this, SLOT(OnBuy()));
     ret = connect(ui.pbtn_sell, SIGNAL(clicked()), this, SLOT(OnSell()));
-    ret = ret;
+    assert(ret);
+     
     // set his k date range info----------------
     T_DateRange  date_rage_5m;
     bool result = main_win_->app_->data_base()->GetHisKBarDateRange(DEFAULT_CODE, false, TypePeriod::PERIOD_5M, date_rage_5m);
@@ -413,8 +414,8 @@ void TrainDlg::OnStartTrain()
 
     int end_date = std::get<2>(hisk_date_range_);
     int end_time = 1500;
-    int start_date = ui.lab_start_date->text().toInt();
-    int start_time = 905; 
+    int start_date = ui.lab_start_date->text().toInt(); 
+    int start_time = 905; //2340; //
     cur_train_step_ = 0;
     auto p_item = parent_->SetTrainStartDateTime(TypePeriod::PERIOD_5M, start_date, start_time);
     parent_->SetTrainEndDateTime(TypePeriod::PERIOD_5M, end_date, end_time);
@@ -555,7 +556,7 @@ void TrainDlg::OnControl()
     {
         is_running_ = true;
         ui.pbtnControl->setText(QString::fromLocal8Bit("ÔÝÍ£"));
-        step_timer_->start(cst_step_timer_inter_val);
+        step_timer_->start(cst_step_timer_inter_val);//step_timer_->start(500);
     }else
     {
         is_running_ = false;

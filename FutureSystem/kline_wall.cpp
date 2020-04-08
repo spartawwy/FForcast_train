@@ -531,21 +531,57 @@ int FindKRendIndex(T_HisDataItemContainer *p_hisdata_container, int date_val, in
 
 
 // ps: from p_hisdata_container back to front
-int FindKRendIndexInHighPeriodContain(T_HisDataItemContainer *p_hisdata_container, int date_val, int hhmm)
+int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm)
 {
+    static auto find_over_day_index = [](T_HisDataItemContainer &hisdata_container, int target_day)
+    {
+        bool is_find = false;
+        int j = 0;
+        int near_span = 99999;
+        int near_j = -1;
+        for( auto iter = hisdata_container.rbegin();
+            iter != hisdata_container.rend(); 
+            ++iter, ++j )
+        { 
+            if( target_day == iter->get()->stk_item.date && iter->get()->stk_item.hhmmss == 0 )
+                return j;
+        }
+        return -1;
+    };
+    int over_day_point = 0;
+    switch(tp_period)
+    {
+    case TypePeriod::PERIOD_5M: over_day_point = 2355; break;
+    case TypePeriod::PERIOD_15M: over_day_point = 2345; break;
+    case TypePeriod::PERIOD_30M: over_day_point = 2330; break;
+    case TypePeriod::PERIOD_HOUR: over_day_point = 2300; break;
+    case TypePeriod::PERIOD_1M: 
+    case TypePeriod::PERIOD_DAY: 
+    case TypePeriod::PERIOD_WEEK: 
+    case TypePeriod::PERIOD_MON: 
+        over_day_point = hhmm + 1; break;
+    default: break;
+    }
     bool is_find = false;
     int j = 0;
     int near_span = 99999;
     int near_j = -1;
-    for( auto iter = p_hisdata_container->rbegin();
-        iter != p_hisdata_container->rend(); 
+    for( auto iter = p_hisdata_container.rbegin();
+        iter != p_hisdata_container.rend(); 
         ++iter, ++j )
     { 
-        bool pre_item_exist = (iter + 1) != p_hisdata_container->rend();
+        bool pre_item_exist = (iter + 1) != p_hisdata_container.rend();
         if( iter->get()->stk_item.date == date_val && iter->get()->stk_item.hhmmss == hhmm )
         {
             is_find = true;
             break;
+        }else if( hhmm > over_day_point )
+        {
+            int target_day = calender.NextTradeDate(date_val, 1);
+            
+            int targ_index = find_over_day_index(p_hisdata_container, target_day);
+            return targ_index;
+
         }else if( iter->get()->stk_item.date == date_val 
             && ( pre_item_exist
                     && ( 

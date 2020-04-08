@@ -26,6 +26,7 @@
 
 typedef std::tuple<QPointF, std::string> T_TuplePointStr;
 
+class ExchangeCalendar;
 class FuturesForecastApp;
 class MainWindow;
 class DataBase;
@@ -292,5 +293,5 @@ int GetKDataTargetStartTime(TypePeriod type_period, int hhmm);
 
 int FindKRendIndex(T_HisDataItemContainer *p_hisdata_container, int date_val, int hhmm);
 
-int FindKRendIndexInHighPeriodContain(T_HisDataItemContainer *p_hisdata_container, int date_val, int hhmm);
+int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm);
 #endif // K_LINE_WALL_SDF32DSF_

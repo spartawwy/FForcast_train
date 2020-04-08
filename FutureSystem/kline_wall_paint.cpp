@@ -1957,7 +1957,7 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
     const int old_rend_index = k_rend_index_;
     const int old_k_num = k_num_;
     //int target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
-    int target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, date, hhmm);
+    int target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
     if( target_r_end_index > -1 )
     {
         k_rend_index_ = target_r_end_index; 
@@ -1980,7 +1980,7 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
         start_date = app_->exchange_calendar()->PreTradeDate(date, date_span);
         AppendPreData(start_date);
         //target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
-        target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, date, hhmm);
+        target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
         if( target_r_end_index > -1 )
         {
             k_rend_index_ = target_r_end_index; 
@@ -2015,14 +2015,14 @@ T_StockHisDataItem* KLineWall::SetTrainEndDateTime(TypePeriod tp_period, int dat
 {
     T_StockHisDataItem* ret_item = nullptr;
      
-    int target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, date, hhmm);
+    int target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
     if( target_r_end_index > -1 )
     { 
         ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
     }else
     {  
         AppendData(date); 
-        target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, date, hhmm);
+        target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
         if( target_r_end_index > -1 )
         { 
             //k_num_ = WOKRPLACE_DEFUALT_K_NUM;
@@ -2156,7 +2156,7 @@ void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
         case TypePeriod::PERIOD_DAY:  
             {
                 int old_k_rend_index_for_train = k_rend_index_for_train_;
-                int target_r_end_index = FindKRendIndexInHighPeriodContain(p_hisdata_container_, input_item.date, input_item.hhmmss);
+                int target_r_end_index = FindKRendIndexInHighPeriodContain(k_type_, *p_hisdata_container_, *app_->exchange_calendar(), input_item.date, input_item.hhmmss);
                 if( target_r_end_index > -1 )
                 { 
                     if( old_k_rend_index_for_train != target_r_end_index )
