@@ -14,6 +14,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
@@ -66,6 +67,18 @@ public:
     QWidget *tab_fill;
     QTableView *table_view_trades;
     QWidget *tab_condition_order;
+    QTableView *table_view_condition;
+    QPushButton *pbtn_add_condition;
+    QComboBox *cmb_condition_bs;
+    QDoubleSpinBox *dbspb_condition_price;
+    QLabel *lab_price_2;
+    QLabel *lab_price_3;
+    QLabel *lab_price_4;
+    QComboBox *cmb_conditioin_compare_char;
+    QLabel *lab_price_5;
+    QSpinBox *spb_condition_qty;
+    QSpinBox *spb_cond_stop_profit_tick;
+    QSpinBox *spb_cond_stop_loss_tick;
     QCheckBox *checkb_follow_market;
     QWidget *tab_account;
     QLabel *label_8;
@@ -214,6 +227,55 @@ public:
         tab_detail->addTab(tab_fill, QString());
         tab_condition_order = new QWidget();
         tab_condition_order->setObjectName(QStringLiteral("tab_condition_order"));
+        table_view_condition = new QTableView(tab_condition_order);
+        table_view_condition->setObjectName(QStringLiteral("table_view_condition"));
+        table_view_condition->setGeometry(QRect(0, 10, 401, 151));
+        pbtn_add_condition = new QPushButton(tab_condition_order);
+        pbtn_add_condition->setObjectName(QStringLiteral("pbtn_add_condition"));
+        pbtn_add_condition->setGeometry(QRect(330, 250, 51, 23));
+        pbtn_add_condition->setFont(font);
+        cmb_condition_bs = new QComboBox(tab_condition_order);
+        cmb_condition_bs->setObjectName(QStringLiteral("cmb_condition_bs"));
+        cmb_condition_bs->setGeometry(QRect(150, 180, 51, 31));
+        dbspb_condition_price = new QDoubleSpinBox(tab_condition_order);
+        dbspb_condition_price->setObjectName(QStringLiteral("dbspb_condition_price"));
+        dbspb_condition_price->setGeometry(QRect(80, 180, 71, 31));
+        dbspb_condition_price->setFont(font1);
+        dbspb_condition_price->setMinimum(0.1);
+        dbspb_condition_price->setMaximum(999.99);
+        lab_price_2 = new QLabel(tab_condition_order);
+        lab_price_2->setObjectName(QStringLiteral("lab_price_2"));
+        lab_price_2->setGeometry(QRect(0, 180, 31, 31));
+        lab_price_3 = new QLabel(tab_condition_order);
+        lab_price_3->setObjectName(QStringLiteral("lab_price_3"));
+        lab_price_3->setGeometry(QRect(210, 180, 41, 31));
+        lab_price_4 = new QLabel(tab_condition_order);
+        lab_price_4->setObjectName(QStringLiteral("lab_price_4"));
+        lab_price_4->setGeometry(QRect(310, 180, 41, 31));
+        cmb_conditioin_compare_char = new QComboBox(tab_condition_order);
+        cmb_conditioin_compare_char->setObjectName(QStringLiteral("cmb_conditioin_compare_char"));
+        cmb_conditioin_compare_char->setGeometry(QRect(30, 180, 41, 31));
+        lab_price_5 = new QLabel(tab_condition_order);
+        lab_price_5->setObjectName(QStringLiteral("lab_price_5"));
+        lab_price_5->setGeometry(QRect(0, 220, 31, 31));
+        spb_condition_qty = new QSpinBox(tab_condition_order);
+        spb_condition_qty->setObjectName(QStringLiteral("spb_condition_qty"));
+        spb_condition_qty->setGeometry(QRect(40, 220, 71, 31));
+        spb_condition_qty->setFont(font1);
+        spb_condition_qty->setMinimum(1);
+        spb_condition_qty->setMaximum(10000);
+        spb_cond_stop_profit_tick = new QSpinBox(tab_condition_order);
+        spb_cond_stop_profit_tick->setObjectName(QStringLiteral("spb_cond_stop_profit_tick"));
+        spb_cond_stop_profit_tick->setGeometry(QRect(250, 180, 51, 31));
+        spb_cond_stop_profit_tick->setFont(font1);
+        spb_cond_stop_profit_tick->setMinimum(1);
+        spb_cond_stop_profit_tick->setMaximum(10000);
+        spb_cond_stop_loss_tick = new QSpinBox(tab_condition_order);
+        spb_cond_stop_loss_tick->setObjectName(QStringLiteral("spb_cond_stop_loss_tick"));
+        spb_cond_stop_loss_tick->setGeometry(QRect(350, 180, 51, 31));
+        spb_cond_stop_loss_tick->setFont(font1);
+        spb_cond_stop_loss_tick->setMinimum(1);
+        spb_cond_stop_loss_tick->setMaximum(10000);
         tab_detail->addTab(tab_condition_order, QString());
         checkb_follow_market = new QCheckBox(tab_trade);
         checkb_follow_market->setObjectName(QStringLiteral("checkb_follow_market"));
@@ -283,7 +345,7 @@ public:
         retranslateUi(TrainDlgForm);
 
         tabwid_main->setCurrentIndex(0);
-        tab_detail->setCurrentIndex(0);
+        tab_detail->setCurrentIndex(2);
 
 
         QMetaObject::connectSlotsByName(TrainDlgForm);
@@ -310,6 +372,11 @@ public:
         pbtn_clear_close->setText(QApplication::translate("TrainDlgForm", "\345\205\250\351\203\250\345\271\263\344\273\223", 0));
         tab_detail->setTabText(tab_detail->indexOf(tab_position), QApplication::translate("TrainDlgForm", "\346\214\201\344\273\223/\346\214\202\345\215\225", 0));
         tab_detail->setTabText(tab_detail->indexOf(tab_fill), QApplication::translate("TrainDlgForm", "\346\210\220\344\272\244\350\256\260\345\275\225", 0));
+        pbtn_add_condition->setText(QApplication::translate("TrainDlgForm", "\346\267\273\345\212\240", 0));
+        lab_price_2->setText(QApplication::translate("TrainDlgForm", "\344\273\267\346\240\274:", 0));
+        lab_price_3->setText(QApplication::translate("TrainDlgForm", "\346\255\242\350\265\242\347\202\271:", 0));
+        lab_price_4->setText(QApplication::translate("TrainDlgForm", "\346\255\242\346\215\237\347\202\271:", 0));
+        lab_price_5->setText(QApplication::translate("TrainDlgForm", "\346\225\260\351\207\217:", 0));
         tab_detail->setTabText(tab_detail->indexOf(tab_condition_order), QApplication::translate("TrainDlgForm", "\346\235\241\344\273\266\345\215\225", 0));
         checkb_follow_market->setText(QApplication::translate("TrainDlgForm", "\350\267\237\345\270\202", 0));
         tabwid_main->setTabText(tabwid_main->indexOf(tab_trade), QApplication::translate("TrainDlgForm", "\344\272\244\346\230\223", 0));

@@ -57,6 +57,8 @@ public slots:
 
     void SaveStopProfitLoss(std::vector<PositionAtom> &pos_atoms);
 
+    void OnAddConditionOrder();
+
 protected:
 
     virtual void closeEvent(QCloseEvent *) override;
@@ -127,6 +129,9 @@ private:
     bool auto_stop_loss_;
     unsigned int auto_stop_profit_ticks_;
     unsigned int auto_stop_loss_ticks_;
+
+    // condition open related -----
+    QStandardItemModel *condition_model_;
 
     unsigned int cur_train_step_;
     //double cur_quote_;

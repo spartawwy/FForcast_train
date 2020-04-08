@@ -49,6 +49,13 @@ static const int cst_tbview_trades_fee = 6;
 static const int cst_tbview_trades_time = 7;
 static const int cst_tbview_trades_col_count = 8;
 
+static const int cst_tbview_condition_bs = 0;
+static const int cst_tbview_condition_compare_type = 1;
+static const int cst_tbview_condition_price = 2;
+static const int cst_tbview_condition_qty = 3;
+static const int cst_tbview_condition_stop_profit = 4;
+static const int cst_tbview_condition_stop_loss = 5;
+static const int cst_tbview_condition_col_count = 6;
 
 static int find_model_first_fit_index(QStandardItemModel& model, bool is_long_pos);
 static std::tuple<double, unsigned int> get_total_amount_qty(PositionInfo &position, QVector<int> &ids);
@@ -72,6 +79,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , auto_stop_loss_(true)
     , auto_stop_profit_ticks_(10)
     , auto_stop_loss_ticks_(10)
+    , condition_model_(nullptr)
     , cur_train_step_(0)
     , step_timer_(nullptr)
     , is_started_(false)
@@ -220,12 +228,50 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ui.table_view_trades->setColumnWidth(cst_tbview_trades_profit, cst_small_width);
     ui.table_view_trades->setColumnWidth(cst_tbview_trades_fee, cst_small_width);
     ui.table_view_trades->setColumnWidth(cst_tbview_trades_time, cst_small_width);
-    // cst_tbview_trades_id 
+
+    //------------------condition orders ----------
+    ui.table_view_condition->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    model = new QStandardItemModel(0, cst_tbview_condition_col_count, this);
+    model->setHorizontalHeaderItem(cst_tbview_condition_bs, new QStandardItem(QString::fromLocal8Bit("ÂòÂô")));
+    model->horizontalHeaderItem(cst_tbview_condition_bs)->setTextAlignment(Qt::AlignCenter);
       
+    model->setHorizontalHeaderItem(cst_tbview_condition_qty, new QStandardItem(QString::fromLocal8Bit("ÊýÁ¿")));
+    model->horizontalHeaderItem(cst_tbview_condition_qty)->setTextAlignment(Qt::AlignCenter);
+
+    model->setHorizontalHeaderItem(cst_tbview_condition_compare_type, new QStandardItem(QString::fromLocal8Bit("Ìõ¼þ")));
+    model->horizontalHeaderItem(cst_tbview_condition_compare_type)->setTextAlignment(Qt::AlignCenter);
+
+    model->setHorizontalHeaderItem(cst_tbview_condition_price, new QStandardItem(QString::fromLocal8Bit("¼Û¸ñ")));
+    model->horizontalHeaderItem(cst_tbview_condition_price)->setTextAlignment(Qt::AlignCenter);
+
+    model->setHorizontalHeaderItem(cst_tbview_condition_stop_profit, new QStandardItem(QString::fromLocal8Bit("Ö¹Ó®")));
+    model->horizontalHeaderItem(cst_tbview_condition_stop_profit)->setTextAlignment(Qt::AlignCenter);
+
+    model->setHorizontalHeaderItem(cst_tbview_condition_stop_loss, new QStandardItem(QString::fromLocal8Bit("Ö¹Ëð")));
+    model->horizontalHeaderItem(cst_tbview_condition_stop_loss)->setTextAlignment(Qt::AlignCenter);
+    ui.table_view_condition->setModel(model);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_bs, cst_small_width/2);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_qty, cst_small_width/2);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_compare_type, cst_small_width/2);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_price, cst_small_width/2);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_stop_profit, cst_small_width/2);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_stop_loss, cst_small_width/2); 
+
+    
+    condition_model_ = model;
+    ret = connect(ui.pbtn_add_condition, SIGNAL(clicked()), this, SLOT(OnAddConditionOrder()));
+    assert(ret);
+
+    ui.cmb_conditioin_compare_char->addItem(">=");
+    ui.cmb_conditioin_compare_char->addItem("<="); 
+    ui.cmb_condition_bs->addItem(QString::fromLocal8Bit("Âò"), QVariant(true));
+    ui.cmb_condition_bs->addItem(QString::fromLocal8Bit("Âô"), QVariant(false));
+    // timer -----
     step_timer_ = new QTimer(this); 
     ret = connect(step_timer_, SIGNAL(timeout()), this, SLOT(OnStepTimer()));
     assert(ret);
 
+    //
     OnStopTrain();
 
     account_info_.capital.avaliable = ori_capital_;
@@ -1003,6 +1049,33 @@ void TrainDlg::SaveStopProfitLoss(std::vector<PositionAtom> &pos_atoms)
     }
     UpdateOrders2KlineWalls(ORDER_TYPE_STOPPROFIT);
     UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
+}
+
+void TrainDlg::OnAddConditionOrder()
+{
+    condition_model_->insertRow(condition_model_->rowCount());
+    int row_index = condition_model_->rowCount() - 1;
+
+    auto item = new QStandardItem(ui.cmb_condition_bs->currentData().toBool() ? QString::fromLocal8Bit("Âò") : QString::fromLocal8Bit("Âô"));
+    item->setData(ui.cmb_condition_bs->currentData());
+    condition_model_->setItem(row_index, cst_tbview_condition_bs, item);
+
+    item = new QStandardItem(QString::number(ui.spb_condition_qty->value()));
+    condition_model_->setItem(row_index, cst_tbview_condition_qty, item);
+
+    item = new QStandardItem( ui.cmb_conditioin_compare_char->currentText() );
+    item->setData(QVariant(ui.cmb_conditioin_compare_char->currentText() == ">=" ? (int)CompareType::BIGEQUAL : (int)CompareType::SMALLEQUAL));
+    condition_model_->setItem(row_index, cst_tbview_condition_compare_type, item);
+
+    item = new QStandardItem(QString::number(ui.dbspb_condition_price->value()));
+    condition_model_->setItem(row_index, cst_tbview_condition_price, item);
+
+    item = new QStandardItem(QString::number(ui.spb_cond_stop_profit_tick->value()));
+    condition_model_->setItem(row_index, cst_tbview_condition_stop_profit, item);
+
+    item = new QStandardItem(QString::number(ui.spb_cond_stop_loss_tick->value()));
+    condition_model_->setItem(row_index, cst_tbview_condition_stop_loss, item);
+     
 }
 
 void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)

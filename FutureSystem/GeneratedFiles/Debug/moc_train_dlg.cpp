@@ -19,8 +19,8 @@
 
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_TrainDlg_t {
-    QByteArrayData data[17];
-    char stringdata[243];
+    QByteArrayData data[18];
+    char stringdata[263];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -45,7 +45,8 @@ QT_MOC_LITERAL(12, 154, 21),
 QT_MOC_LITERAL(13, 176, 9),
 QT_MOC_LITERAL(14, 186, 18),
 QT_MOC_LITERAL(15, 205, 26),
-QT_MOC_LITERAL(16, 232, 9)
+QT_MOC_LITERAL(16, 232, 9),
+QT_MOC_LITERAL(17, 242, 19)
     },
     "TrainDlg\0OnStepTimer\0\0DoTblPosDbClick\0"
     "OnTblHangonOrdersRowDoubleClicked\0"
@@ -53,7 +54,7 @@ QT_MOC_LITERAL(16, 232, 9)
     "OnStopTrain\0OnControl\0OnNextStep\0OnBuy\0"
     "OnSell\0OnCloseAllUnfrozenPos\0cur_quote\0"
     "SaveStopProfitLoss\0std::vector<PositionAtom>&\0"
-    "pos_atoms\0"
+    "pos_atoms\0OnAddConditionOrder\0"
 };
 #undef QT_MOC_LITERAL
 
@@ -63,7 +64,7 @@ static const uint qt_meta_data_TrainDlg[] = {
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-      13,   14, // methods
+      14,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -71,19 +72,20 @@ static const uint qt_meta_data_TrainDlg[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    0,   79,    2, 0x0a,
-       3,    1,   80,    2, 0x0a,
-       4,    1,   83,    2, 0x0a,
-       5,    1,   86,    2, 0x0a,
-       6,    0,   89,    2, 0x0a,
-       7,    0,   90,    2, 0x0a,
-       8,    0,   91,    2, 0x0a,
-       9,    0,   92,    2, 0x0a,
-      10,    0,   93,    2, 0x0a,
-      11,    0,   94,    2, 0x0a,
-      12,    0,   95,    2, 0x0a,
-      13,    0,   96,    2, 0x0a,
-      14,    1,   97,    2, 0x0a,
+       1,    0,   84,    2, 0x0a,
+       3,    1,   85,    2, 0x0a,
+       4,    1,   88,    2, 0x0a,
+       5,    1,   91,    2, 0x0a,
+       6,    0,   94,    2, 0x0a,
+       7,    0,   95,    2, 0x0a,
+       8,    0,   96,    2, 0x0a,
+       9,    0,   97,    2, 0x0a,
+      10,    0,   98,    2, 0x0a,
+      11,    0,   99,    2, 0x0a,
+      12,    0,  100,    2, 0x0a,
+      13,    0,  101,    2, 0x0a,
+      14,    1,  102,    2, 0x0a,
+      17,    0,  105,    2, 0x0a,
 
  // slots: parameters
     QMetaType::Void,
@@ -99,6 +101,7 @@ static const uint qt_meta_data_TrainDlg[] = {
     QMetaType::Void,
     QMetaType::Double,
     QMetaType::Void, 0x80000000 | 15,   16,
+    QMetaType::Void,
 
        0        // eod
 };
@@ -122,6 +125,7 @@ void TrainDlg::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, vo
         case 11: { double _r = _t->cur_quote();
             if (_a[0]) *reinterpret_cast< double*>(_a[0]) = _r; }  break;
         case 12: _t->SaveStopProfitLoss((*reinterpret_cast< std::vector<PositionAtom>(*)>(_a[1]))); break;
+        case 13: _t->OnAddConditionOrder(); break;
         default: ;
         }
     }
@@ -152,13 +156,13 @@ int TrainDlg::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 13)
+        if (_id < 14)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 13;
+        _id -= 14;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 13)
+        if (_id < 14)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 13;
+        _id -= 14;
     }
     return _id;
 }

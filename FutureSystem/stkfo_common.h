@@ -80,6 +80,11 @@ enum OrderType : unsigned char
     CONDITION,
     //UNFREEZE, // only related to stock, this action is in the front of current day's other action
 };
+enum CompareType : unsigned char
+{
+    BIGEQUAL = 0,// >=
+    SMALLEQUAL,  // <=
+};
 //there is 3 order types : 1. hang on orders 2. auto stop profit/loss orders 3.condition orders
 struct OrderInfo
 {
@@ -90,15 +95,16 @@ struct OrderInfo
     unsigned int qty;
     int fake_id;
     int rel_position_id;    // when auto stop profit/loss type(action is close); -1 means no relate 
+    CompareType compare_type;
     //(position atom id, frozend size)
     std::unordered_map<int, unsigned int> help_contain;
 
     OrderInfo(OrderType para_type) : type(para_type), action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
-        , fake_id(-1), rel_position_id(-1){}
+        , fake_id(-1), compare_type(CompareType::BIGEQUAL), rel_position_id(-1){}
     OrderInfo() : type(OrderType::HANGON), action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
-        , fake_id(-1), rel_position_id(-1){}
+        , fake_id(-1), compare_type(CompareType::BIGEQUAL), rel_position_id(-1){}
     OrderInfo(const OrderInfo &lh) : type(lh.type), action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty)
-        , fake_id(lh.fake_id), rel_position_id(lh.rel_position_id), help_contain(lh.help_contain){}
+        , fake_id(lh.fake_id), rel_position_id(lh.rel_position_id), compare_type(lh.compare_type), help_contain(lh.help_contain){}
 };
 
 
