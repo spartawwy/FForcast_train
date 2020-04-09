@@ -49,15 +49,16 @@ static const int cst_tbview_trades_fee = 6;
 static const int cst_tbview_trades_time = 7;
 static const int cst_tbview_trades_col_count = 8;
 
-static const int cst_tbview_condition_bs = 0;
-static const int cst_tbview_condition_compare_type = 1;
-static const int cst_tbview_condition_price = 2;
-static const int cst_tbview_condition_qty = 3;
-static const int cst_tbview_condition_stop_profit = 4;
-static const int cst_tbview_condition_stop_loss = 5;
-static const int cst_tbview_condition_col_count = 6;
+static const int cst_tbview_condition_id = 0;
+static const int cst_tbview_condition_bs = 1;
+static const int cst_tbview_condition_compare_type = 2;
+static const int cst_tbview_condition_price = 3;
+static const int cst_tbview_condition_qty = 4;
+static const int cst_tbview_condition_stop_profit = 5;
+static const int cst_tbview_condition_stop_loss = 6;
+static const int cst_tbview_condition_col_count = 7;
 
-static int find_model_first_fit_index(QStandardItemModel& model, bool is_long_pos);
+static int find_model_first_fit_index(QStandardItemModel& model, int col_index, bool is_long_pos);
 static std::tuple<double, unsigned int> get_total_amount_qty(PositionInfo &position, QVector<int> &ids);
 
 static bool erase_rel_item_by_pos_ids(std::list<OrderInfo> &order_info, std::list<OrderInfo>::iterator &order_item, std::vector<int> &target_del_ids );
@@ -233,6 +234,9 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     //------------------condition orders ----------
     ui.table_view_condition->setEditTriggers(QAbstractItemView::NoEditTriggers);
     model = new QStandardItemModel(0, cst_tbview_condition_col_count, this);
+    model->setHorizontalHeaderItem(cst_tbview_condition_id, new QStandardItem(QString::fromLocal8Bit("ID")));
+    model->horizontalHeaderItem(cst_tbview_condition_id)->setTextAlignment(Qt::AlignCenter);
+
     model->setHorizontalHeaderItem(cst_tbview_condition_bs, new QStandardItem(QString::fromLocal8Bit("买卖")));
     model->horizontalHeaderItem(cst_tbview_condition_bs)->setTextAlignment(Qt::AlignCenter);
       
@@ -251,15 +255,17 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     model->setHorizontalHeaderItem(cst_tbview_condition_stop_loss, new QStandardItem(QString::fromLocal8Bit("止损")));
     model->horizontalHeaderItem(cst_tbview_condition_stop_loss)->setTextAlignment(Qt::AlignCenter);
     ui.table_view_condition->setModel(model);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_id, cst_small_width/2);
     ui.table_view_condition->setColumnWidth(cst_tbview_condition_bs, cst_small_width/2);
     ui.table_view_condition->setColumnWidth(cst_tbview_condition_qty, cst_small_width/2);
     ui.table_view_condition->setColumnWidth(cst_tbview_condition_compare_type, cst_small_width/2);
-    ui.table_view_condition->setColumnWidth(cst_tbview_condition_price, cst_small_width/2);
+    ui.table_view_condition->setColumnWidth(cst_tbview_condition_price, cst_small_width);
     ui.table_view_condition->setColumnWidth(cst_tbview_condition_stop_profit, cst_small_width/2);
     ui.table_view_condition->setColumnWidth(cst_tbview_condition_stop_loss, cst_small_width/2); 
-
-    
+     
     condition_model_ = model;
+    ret = connect(ui.table_view_condition, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(OnTblConditionsRowDoubleClicked(const QModelIndex&)));
+    assert(ret);
     ret = connect(ui.pbtn_add_condition, SIGNAL(clicked()), this, SLOT(OnAddConditionOrder()));
     assert(ret);
 
@@ -343,7 +349,7 @@ void TrainDlg::OnTblHangonOrdersRowDoubleClicked(const QModelIndex &index)
                         }
                     }
                 }
-                auto row_index = find_model_first_fit_index(*tbl_view_pos_model, iter->position_type == PositionType::POS_LONG);
+                auto row_index = find_model_first_fit_index(*tbl_view_pos_model, cst_tbview_position_bs, iter->position_type == PositionType::POS_LONG);
                 RecaculatePosTableViewItem(row_index);
             }
             hangon_order_infos_.erase(iter++);
@@ -354,6 +360,23 @@ void TrainDlg::OnTblHangonOrdersRowDoubleClicked(const QModelIndex &index)
     model->removeRow(index.row());
      
     UpdateOrders2KlineWalls(ORDER_TYPE_HANGON);
+}
+
+void TrainDlg::OnTblConditionsRowDoubleClicked(const QModelIndex&index)
+{ 
+    auto temp_order_id = condition_model_->item(index.row(), cst_tbview_condition_id)->text().toInt();
+    for( auto iter = condition_order_infos_.begin(); iter != condition_order_infos_.end(); )
+    {
+        if( iter->fake_id == temp_order_id )
+        { 
+            condition_order_infos_.erase(iter++);
+            break;
+        }
+        ++iter;
+    }
+    condition_model_->removeRow(index.row());
+
+    UpdateOrders2KlineWalls(ORDER_TYPE_CONDITION);
 }
 
 void TrainDlg::OnScrollTrainTimeMoved(int val)
@@ -573,7 +596,7 @@ void TrainDlg::OnNextStep()
             return;
         QTableView &tbv = *ui.table_view_position;
         QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
-        auto row_index = find_model_first_fit_index(*model, is_long);
+        auto row_index = find_model_first_fit_index(*model, cst_tbview_position_bs, is_long);
         assert(row_index > -1); 
         QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
         QVector<int> ids_after;
@@ -730,7 +753,7 @@ void TrainDlg::OnNextStep()
         UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
     } 
 
-    //---------for condition orders---------- 
+    //---------handle condition orders---------- 
     // -1 -- < low; 0--low~open;  1--open~high;  2-->high
     static auto in_which_k_part = [](/*double low, double open , double high,*/ const T_StockHisDataItem &k_item, double price)->int
     {
@@ -773,7 +796,7 @@ void TrainDlg::OnNextStep()
                 filled_price = ori_cur_item.open_price;
         }
         OpenPosition(filled_price, iter->qty, iter->position_type == PositionType::POS_LONG, std::addressof(iter->profit_stop_ticks), std::addressof(iter->loss_stop_ticks));
-        //RemoveFromTblHangonOrderByFakeId(iter->fake_id);
+        RemoveFromTblConditionOrderByFakeId(iter->fake_id);
         condition_order_infos_.erase(iter++);
         continue; 
     } // for each condition order
@@ -808,7 +831,7 @@ void TrainDlg::RemoveInPositionTableView(int position_id, PositionType position_
 {
     QTableView &tbv = *ui.table_view_position;
     QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
-    auto row_index = find_model_first_fit_index(*model, position_type == PositionType::POS_LONG);
+    auto row_index = find_model_first_fit_index(*model, cst_tbview_position_bs, position_type == PositionType::POS_LONG);
     QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
     auto target_item = std::find_if(std::begin(ids), std::end(ids),[position_id](int id){ return id == position_id; });
     //assert( target_item != std::end(ids) );
@@ -981,11 +1004,23 @@ void TrainDlg::RemoveFromTblHangonOrderByFakeId(int fake_id)
     }
 }
 
+void TrainDlg::RemoveFromTblConditionOrderByFakeId(int fake_id)
+{
+    for( int i = 0; i < condition_model_->rowCount(); ++i )
+    {
+        if( condition_model_->item(i, cst_tbview_condition_id)->text().toInt() == fake_id )
+        {
+            condition_model_->removeRow(i);
+            break;
+        }
+    }
+}
+
 void TrainDlg::Append2TblTrades(TradeRecordAtom &trade)
 {
     auto model = (QStandardItemModel*)ui.table_view_trades->model();
-    model->insertRow(model->rowCount());
-    unsigned int row_index = model->rowCount() - 1;
+    model->insertRow(0);
+    unsigned int row_index = 0;
     auto item = new QStandardItem(QString::number(trade.trade_id));
     model->setItem(row_index, cst_tbview_trades_id, item);
 
@@ -1103,11 +1138,13 @@ void TrainDlg::SaveStopProfitLoss(std::vector<PositionAtom> &pos_atoms)
 void TrainDlg::OnAddConditionOrder()
 {
     condition_model_->insertRow(condition_model_->rowCount());
-    int row_index = condition_model_->rowCount() - 1;
+    const int row_index = condition_model_->rowCount() - 1;
 
-    const double condition_price = ui.dbspb_condition_price->value();
+    auto item = new QStandardItem(QString::number(row_index));
+    condition_model_->setItem(row_index, cst_tbview_condition_id, item);
+    
     const CompareType comp_type = ui.cmb_conditioin_compare_char->currentText() == ">=" ? CompareType::BIGEQUAL : CompareType::SMALLEQUAL;
-    auto item = new QStandardItem(ui.cmb_condition_bs->currentData().toBool() ? QString::fromLocal8Bit("买") : QString::fromLocal8Bit("卖"));
+    item = new QStandardItem(ui.cmb_condition_bs->currentData().toBool() ? QString::fromLocal8Bit("买") : QString::fromLocal8Bit("卖"));
     item->setData(ui.cmb_condition_bs->currentData());
     condition_model_->setItem(row_index, cst_tbview_condition_bs, item);
 
@@ -1115,9 +1152,10 @@ void TrainDlg::OnAddConditionOrder()
     condition_model_->setItem(row_index, cst_tbview_condition_qty, item);
 
     item = new QStandardItem( ui.cmb_conditioin_compare_char->currentText() );
-    item->setData(QVariant(int(comp_type)));
+    //item->setData(QVariant(int(comp_type)));
     condition_model_->setItem(row_index, cst_tbview_condition_compare_type, item);
 
+    const double condition_price = ui.dbspb_condition_price->value();
     item = new QStandardItem(QString::number(condition_price));
     condition_model_->setItem(row_index, cst_tbview_condition_price, item);
 
@@ -1129,6 +1167,7 @@ void TrainDlg::OnAddConditionOrder()
 
     OrderInfo  order_info;
     order_info.type = OrderType::CONDITION;
+    order_info.fake_id = row_index;
     order_info.price = condition_price;
     order_info.compare_type = comp_type;
     order_info.action = OrderAction::OPEN;
@@ -1180,7 +1219,7 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, u
     QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
     QVariant var_ids;
     QVector<int> ids;
-    auto row_index = find_model_first_fit_index(*model, pos_atom->is_long);
+    auto row_index = find_model_first_fit_index(*model, cst_tbview_position_bs, pos_atom->is_long);
     if( row_index > -1 ) 
     {   // merge long position
         ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
@@ -1230,8 +1269,8 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, u
         model->item(row_index, cst_tbview_position_avaliable)->setTextAlignment(align_way);
     }
     // consider stop (profit/loss) order -------------------
-    // ps: set PositionAtom's stop profit/loss price
-    auto append_stop_order = [this](PositionAtom &pos_atom, double price, bool is_long, bool is_stop_loss)
+    // ps: set PositionAtom's stop profit/loss price which calculate from para price
+    auto append_stop_order_auto_calc_price = [this](PositionAtom &pos_atom, double price, bool is_long, bool is_stop_loss)
     {
         OrderInfo order(is_stop_loss ? OrderType::STOPLOSS : OrderType::STOPPROFIT);
         order.rel_position_id = pos_atom.trade_id;
@@ -1249,8 +1288,27 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, u
             order.price = is_long ? (price + cst_per_tick * (double)auto_stop_profit_ticks_) : (price - cst_per_tick * (double)auto_stop_profit_ticks_);
             pos_atom.stop_profit_price = order.price;
             stop_profit_order_infos_.push_back(order);
+        } 
+    };
+    // ps: set PositionAtom's stop profit/loss price  
+    auto append_stop_order = [this](PositionAtom &pos_atom, double stop_price, bool is_long, bool is_stop_loss)
+    {
+        OrderInfo order(is_stop_loss ? OrderType::STOPLOSS : OrderType::STOPPROFIT);
+        order.rel_position_id = pos_atom.trade_id;
+        order.action = OrderAction::CLOSE;
+        // target position type
+        order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+        order.qty = pos_atom.qty_available;
+        order.price = stop_price;
+        if( is_stop_loss )
+        {
+            pos_atom.stop_loss_price = order.price;
+            stop_loss_order_infos_.push_back(order);
+        }else
+        {
+            pos_atom.stop_profit_price = order.price;
+            stop_profit_order_infos_.push_back(order);
         }
-        
     };
     bool is_set_hand_stop = false;
     if( p_profit_stop_ticks && *p_profit_stop_ticks != 0 )
@@ -1263,21 +1321,21 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, u
     if( p_loss_stop_ticks && *p_loss_stop_ticks != 0 )
     {
         is_set_hand_stop = true;
-        double stop_loss_price = is_long ? (price - cst_per_tick * (*p_profit_stop_ticks)) : (price + cst_per_tick * (*p_profit_stop_ticks)); 
+        double stop_loss_price = is_long ? (price - cst_per_tick * (*p_loss_stop_ticks)) : (price + cst_per_tick * (*p_loss_stop_ticks)); 
         append_stop_order(*pos_atom, stop_loss_price, is_long, true);
-        UpdateOrders2KlineWalls(ORDER_TYPE_STOPPROFIT);
+        UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
     }
 
     if( !is_set_hand_stop ) // auto set
     {
         if( auto_stop_profit_ )
         {
-            append_stop_order(*pos_atom, price, is_long, false);
+            append_stop_order_auto_calc_price(*pos_atom, price, is_long, false);
             UpdateOrders2KlineWalls(ORDER_TYPE_STOPPROFIT);
         }
         if( auto_stop_loss_ )
         {
-            append_stop_order(*pos_atom, price, is_long, true); 
+            append_stop_order_auto_calc_price(*pos_atom, price, is_long, true); 
             UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
         }
     }
@@ -1291,7 +1349,7 @@ void TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, 
     //int hhmm = 0;//ndedt
     QTableView &tbv = *ui.table_view_position;
     QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
-    auto row_index = find_model_first_fit_index(*model, is_long);
+    auto row_index = find_model_first_fit_index(*model, cst_tbview_position_bs, is_long);
     if( row_index < 0 ) 
     { 
         if( p_ret_info ) *p_ret_info = (is_long ? QString::fromLocal8Bit("无多头仓位可平!") : QString::fromLocal8Bit("无空头仓位可平!"));
@@ -1359,7 +1417,7 @@ void TrainDlg::CloseInputSizePosition(double para_price, bool is_long, const T_S
     assert(close_qty > 0);
     QTableView &tbv = *ui.table_view_position;
     QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
-    auto row_index = find_model_first_fit_index(*model, is_long);
+    auto row_index = find_model_first_fit_index(*model, cst_tbview_position_bs, is_long);
     if( row_index < 0 ) 
     { 
         return SetStatusBar(is_long ? QString::fromLocal8Bit("无多头仓位可平!") : QString::fromLocal8Bit("无空头仓位可平!"));
@@ -1445,7 +1503,7 @@ bool TrainDlg::AddCloseOrder(double price, unsigned int quantity, bool is_long)
     // ----------update table_view_position 
     QTableView &tbv = *ui.table_view_position;
     QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
-    auto row_index = find_model_first_fit_index(*model, is_long);
+    auto row_index = find_model_first_fit_index(*model, cst_tbview_position_bs, is_long);
     if( row_index > -1 ) 
     {  
         unsigned int ava_qty = is_long ? account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
@@ -1517,11 +1575,11 @@ void remove_container_items_by_pos_ids(std::list<OrderInfo> &container, std::vec
     }
 }
 
-int find_model_first_fit_index(QStandardItemModel& model, bool is_long_pos)
+int find_model_first_fit_index(QStandardItemModel& model, int col_index, bool is_long_pos)
 {
     for(int j = 0; j < model.rowCount(); ++j )
     {
-        if( model.item(j, cst_tbview_position_bs)->data().toBool() == is_long_pos )
+        if( model.item(j, col_index)->data().toBool() == is_long_pos )
             return j;
     }
     return -1;

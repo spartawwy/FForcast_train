@@ -109,7 +109,7 @@ struct OrderInfo
     OrderInfo() : type(OrderType::HANGON), action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
         , fake_id(-1), compare_type(CompareType::BIGEQUAL), rel_position_id(-1), profit_stop_ticks(0), loss_stop_ticks(0){}
     OrderInfo(const OrderInfo &lh) : type(lh.type), action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty)
-        , fake_id(lh.fake_id), rel_position_id(lh.rel_position_id), compare_type(lh.compare_type), help_contain(lh.help_contain), profit_stop_ticks(0), loss_stop_ticks(0){}
+        , fake_id(lh.fake_id), rel_position_id(lh.rel_position_id), compare_type(lh.compare_type), help_contain(lh.help_contain), profit_stop_ticks(lh.profit_stop_ticks), loss_stop_ticks(lh.loss_stop_ticks){}
 };
  
 

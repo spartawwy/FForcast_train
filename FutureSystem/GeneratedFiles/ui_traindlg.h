@@ -268,14 +268,16 @@ public:
         spb_cond_stop_profit_tick->setObjectName(QStringLiteral("spb_cond_stop_profit_tick"));
         spb_cond_stop_profit_tick->setGeometry(QRect(250, 180, 51, 31));
         spb_cond_stop_profit_tick->setFont(font1);
-        spb_cond_stop_profit_tick->setMinimum(1);
+        spb_cond_stop_profit_tick->setMinimum(0);
         spb_cond_stop_profit_tick->setMaximum(10000);
+        spb_cond_stop_profit_tick->setValue(0);
         spb_cond_stop_loss_tick = new QSpinBox(tab_condition_order);
         spb_cond_stop_loss_tick->setObjectName(QStringLiteral("spb_cond_stop_loss_tick"));
         spb_cond_stop_loss_tick->setGeometry(QRect(350, 180, 51, 31));
         spb_cond_stop_loss_tick->setFont(font1);
-        spb_cond_stop_loss_tick->setMinimum(1);
+        spb_cond_stop_loss_tick->setMinimum(0);
         spb_cond_stop_loss_tick->setMaximum(10000);
+        spb_cond_stop_loss_tick->setValue(0);
         tab_detail->addTab(tab_condition_order, QString());
         checkb_follow_market = new QCheckBox(tab_trade);
         checkb_follow_market->setObjectName(QStringLiteral("checkb_follow_market"));

@@ -41,6 +41,7 @@ public slots:
 
     void DoTblPosDbClick(const QModelIndex &);
     void OnTblHangonOrdersRowDoubleClicked(const QModelIndex &);
+    void OnTblConditionsRowDoubleClicked(const QModelIndex&);
     void OnScrollTrainTimeMoved(int);
 
     void OnStartTrain();
@@ -97,6 +98,7 @@ private:
 
     void Append2TblHangonOrders(OrderInfo &order_info);
     void RemoveFromTblHangonOrderByFakeId(int fake_id);
+    void RemoveFromTblConditionOrderByFakeId(int fake_id);
 
     void Append2TblTrades(TradeRecordAtom &trade);
 
