@@ -85,6 +85,7 @@ enum CompareType : unsigned char
     BIGEQUAL = 0,// >=
     SMALLEQUAL,  // <=
 };
+ 
 //there is 3 order types : 1. hang on orders 2. auto stop profit/loss orders 3.condition orders
 struct OrderInfo
 {
@@ -94,19 +95,23 @@ struct OrderInfo
     double price;
     unsigned int qty;
     int fake_id;
-    int rel_position_id;    // when auto stop profit/loss type(action is close); -1 means no relate 
-    CompareType compare_type;
+    int rel_position_id;    // when auto stop profit/loss type(action is close); -1 means no relate  
     //(position atom id, frozend size)
     std::unordered_map<int, unsigned int> help_contain;
+    // condition order related  -----------
+    CompareType compare_type;
+    unsigned int profit_stop_ticks;
+    unsigned int loss_stop_ticks;
+    // ------------------------------------
 
     OrderInfo(OrderType para_type) : type(para_type), action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
-        , fake_id(-1), compare_type(CompareType::BIGEQUAL), rel_position_id(-1){}
+        , fake_id(-1), compare_type(CompareType::BIGEQUAL), rel_position_id(-1), profit_stop_ticks(0), loss_stop_ticks(0){}
     OrderInfo() : type(OrderType::HANGON), action(OrderAction::OPEN), position_type(PositionType::POS_LONG), price(MAGIC_STOP_PRICE), qty(0)
-        , fake_id(-1), compare_type(CompareType::BIGEQUAL), rel_position_id(-1){}
+        , fake_id(-1), compare_type(CompareType::BIGEQUAL), rel_position_id(-1), profit_stop_ticks(0), loss_stop_ticks(0){}
     OrderInfo(const OrderInfo &lh) : type(lh.type), action(lh.action), position_type(lh.position_type), price(lh.price), qty(lh.qty)
-        , fake_id(lh.fake_id), rel_position_id(lh.rel_position_id), compare_type(lh.compare_type), help_contain(lh.help_contain){}
+        , fake_id(lh.fake_id), rel_position_id(lh.rel_position_id), compare_type(lh.compare_type), help_contain(lh.help_contain), profit_stop_ticks(0), loss_stop_ticks(0){}
 };
-
+ 
 
 enum class TypePeriod : unsigned char
 {

@@ -730,8 +730,56 @@ void TrainDlg::OnNextStep()
         UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
     } 
 
-    //-------------------
+    //---------for condition orders---------- 
+    // -1 -- < low; 0--low~open;  1--open~high;  2-->high
+    static auto in_which_k_part = [](/*double low, double open , double high,*/ const T_StockHisDataItem &k_item, double price)->int
+    {
+        assert(k_item.low_price < k_item.open_price + EPSINON);
+        assert(k_item.open_price < k_item.high_price + EPSINON);
+        if( price < k_item.low_price ) return -1;
+        else if( price > k_item.low_price - EPSINON && price < k_item.open_price ) return 0;
+        else if( price > k_item.open_price - EPSINON && price < k_item.high_price + EPSINON ) return 1;
+        else return 2; 
+    };
+    for(auto iter = condition_order_infos_.begin(); iter != condition_order_infos_.end(); )
+    {
+        assert(iter->action == OrderAction::OPEN); 
+        double filled_price = 0.0;
+        if( iter->compare_type == CompareType::BIGEQUAL ) // >=
+        {
+            int pos_index = in_which_k_part(ori_cur_item, iter->price);
+            if( pos_index <= 0 ) // fit
+                filled_price = ori_cur_item.open_price;
+            else if( pos_index == 1 )
+                filled_price = iter->price;
+            else 
+            {
+                ++iter;
+                continue;
+            }
+             
+        }else 
+        {
+            assert(iter->compare_type == CompareType::SMALLEQUAL);
+            int pos_index = in_which_k_part(ori_cur_item, iter->price);
+            if( pos_index < 0 ) // fit
+            {
+                ++iter;
+                continue;
+            }
+            else if( pos_index == 0 )
+                filled_price = iter->price;
+            else if( pos_index <= 2 )
+                filled_price = ori_cur_item.open_price;
+        }
+        OpenPosition(filled_price, iter->qty, iter->position_type == PositionType::POS_LONG, std::addressof(iter->profit_stop_ticks), std::addressof(iter->loss_stop_ticks));
+        //RemoveFromTblHangonOrderByFakeId(iter->fake_id);
+        condition_order_infos_.erase(iter++);
+        continue; 
+    } // for each condition order
+    UpdateOrders2KlineWalls(ORDER_TYPE_CONDITION);
 
+    //--------------------
     double total_profit = RecaculatePosTableViewFloatProfit(ori_cur_item.close_price);
     account_info_.capital.float_profit = ProcDecimal(total_profit, 0);
 
@@ -1057,6 +1105,8 @@ void TrainDlg::OnAddConditionOrder()
     condition_model_->insertRow(condition_model_->rowCount());
     int row_index = condition_model_->rowCount() - 1;
 
+    const double condition_price = ui.dbspb_condition_price->value();
+    const CompareType comp_type = ui.cmb_conditioin_compare_char->currentText() == ">=" ? CompareType::BIGEQUAL : CompareType::SMALLEQUAL;
     auto item = new QStandardItem(ui.cmb_condition_bs->currentData().toBool() ? QString::fromLocal8Bit("Âò") : QString::fromLocal8Bit("Âô"));
     item->setData(ui.cmb_condition_bs->currentData());
     condition_model_->setItem(row_index, cst_tbview_condition_bs, item);
@@ -1065,10 +1115,10 @@ void TrainDlg::OnAddConditionOrder()
     condition_model_->setItem(row_index, cst_tbview_condition_qty, item);
 
     item = new QStandardItem( ui.cmb_conditioin_compare_char->currentText() );
-    item->setData(QVariant(ui.cmb_conditioin_compare_char->currentText() == ">=" ? (int)CompareType::BIGEQUAL : (int)CompareType::SMALLEQUAL));
+    item->setData(QVariant(int(comp_type)));
     condition_model_->setItem(row_index, cst_tbview_condition_compare_type, item);
 
-    item = new QStandardItem(QString::number(ui.dbspb_condition_price->value()));
+    item = new QStandardItem(QString::number(condition_price));
     condition_model_->setItem(row_index, cst_tbview_condition_price, item);
 
     item = new QStandardItem(QString::number(ui.spb_cond_stop_profit_tick->value()));
@@ -1076,10 +1126,21 @@ void TrainDlg::OnAddConditionOrder()
 
     item = new QStandardItem(QString::number(ui.spb_cond_stop_loss_tick->value()));
     condition_model_->setItem(row_index, cst_tbview_condition_stop_loss, item);
-     
+
+    OrderInfo  order_info;
+    order_info.type = OrderType::CONDITION;
+    order_info.price = condition_price;
+    order_info.compare_type = comp_type;
+    order_info.action = OrderAction::OPEN;
+    order_info.position_type = ui.cmb_condition_bs->currentData().toBool() ? PositionType::POS_LONG : PositionType::POS_SHORT;
+    order_info.qty = ui.spb_condition_qty->value();
+    order_info.profit_stop_ticks = ui.spb_cond_stop_profit_tick->value();
+    order_info.loss_stop_ticks = ui.spb_cond_stop_loss_tick->value();
+    condition_order_infos_.push_back(order_info);
+    UpdateOrders2KlineWalls(ORDER_TYPE_CONDITION);
 }
 
-void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
+void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, unsigned int *p_profit_stop_ticks, unsigned int *p_loss_stop_ticks)
 { 
     assert(qty > 0);
     double price = para_price; 
@@ -1103,8 +1164,8 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
 
     TradeRecordAtom  trade_item;
     trade_item.trade_id = pos_atom->trade_id;
-    trade_item.date = 0;
-    trade_item.hhmm = 0;
+    trade_item.date = cur_kdata_item_.date;   // ndchk
+    trade_item.hhmm = cur_kdata_item_.hhmmss; // ndchk
     trade_item.action = OrderAction::OPEN;
     trade_item.pos_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     trade_item.quantity = qty;
@@ -1168,8 +1229,8 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
         model->setItem(row_index, cst_tbview_position_avaliable, item);
         model->item(row_index, cst_tbview_position_avaliable)->setTextAlignment(align_way);
     }
-    // consider auto stop (profit/loss) order -------------------
-    // ps: auto set PositionAtom's stop profit/loss price
+    // consider stop (profit/loss) order -------------------
+    // ps: set PositionAtom's stop profit/loss price
     auto append_stop_order = [this](PositionAtom &pos_atom, double price, bool is_long, bool is_stop_loss)
     {
         OrderInfo order(is_stop_loss ? OrderType::STOPLOSS : OrderType::STOPPROFIT);
@@ -1191,18 +1252,35 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long)
         }
         
     };
-    
-    if( auto_stop_profit_ )
+    bool is_set_hand_stop = false;
+    if( p_profit_stop_ticks && *p_profit_stop_ticks != 0 )
     {
-        append_stop_order(*pos_atom, price, is_long, false);
+        is_set_hand_stop = true;
+        double stop_profit_price = is_long ? (price + cst_per_tick * (*p_profit_stop_ticks)) : (price - cst_per_tick * (*p_profit_stop_ticks)); 
+        append_stop_order(*pos_atom, stop_profit_price, is_long, false);
         UpdateOrders2KlineWalls(ORDER_TYPE_STOPPROFIT);
     }
-    if( auto_stop_loss_ )
+    if( p_loss_stop_ticks && *p_loss_stop_ticks != 0 )
     {
-        append_stop_order(*pos_atom, price, is_long, true); 
-        UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
+        is_set_hand_stop = true;
+        double stop_loss_price = is_long ? (price - cst_per_tick * (*p_profit_stop_ticks)) : (price + cst_per_tick * (*p_profit_stop_ticks)); 
+        append_stop_order(*pos_atom, stop_loss_price, is_long, true);
+        UpdateOrders2KlineWalls(ORDER_TYPE_STOPPROFIT);
     }
-     
+
+    if( !is_set_hand_stop ) // auto set
+    {
+        if( auto_stop_profit_ )
+        {
+            append_stop_order(*pos_atom, price, is_long, false);
+            UpdateOrders2KlineWalls(ORDER_TYPE_STOPPROFIT);
+        }
+        if( auto_stop_loss_ )
+        {
+            append_stop_order(*pos_atom, price, is_long, true); 
+            UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);
+        }
+    }
 }
 
 void TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info)

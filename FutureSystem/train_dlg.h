@@ -68,7 +68,7 @@ private:
     void PrintTradeRecords();
     
     //void OpenPosition(double para_price, bool is_long);
-    void OpenPosition(double para_price, unsigned int qty, bool is_long);
+    void OpenPosition(double para_price, unsigned int qty, bool is_long, unsigned int *p_profit_stop_ticks=nullptr, unsigned int *p_loss_stop_ticks=nullptr);
     void ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info=nullptr);
     void CloseInputSizePosition(double para_price, bool is_long, const T_StockHisDataItem &fake_k_item);
 
