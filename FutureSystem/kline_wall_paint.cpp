@@ -932,7 +932,12 @@ void KLineWall::paintEvent(QPaintEvent*)
     QPen pen; 
     pen.setColor(Qt::white);
     painter.setPen(pen);
-    
+
+    QPen pen_notice;
+    pen_notice.setWidth(0.1); 
+    pen_notice.setColor(Qt::red);
+    pen_notice.setStyle(Qt::DotLine); // ............ 
+
     QFont font;  
     font.setPointSize(mm_w / 45); 
     painter.setFont(font);
@@ -1029,6 +1034,14 @@ void KLineWall::paintEvent(QPaintEvent*)
         painter.setBrush(brush);   
         painter.drawRect(pos_data.columnar_top_left.x(), pos_data.columnar_top_left.y(), pos_data.x_right - pos_data.x_left, pos_data.height);
         painter.drawLine(pos_data.top.x(), pos_data.top.y(), pos_data.bottom.x(), pos_data.bottom.y());
+        //------over trading time vertical line----------
+        if( (*iter)->stk_item.hhmmss == 1500 | (*iter)->stk_item.hhmmss == 230 )
+        {
+            painter.setPen(pen_notice); 
+            painter.drawLine(pos_data.top.x(), this->height() - h_axis_trans_in_paint_k_, pos_data.top.x(), -1 * this->height());
+        }
+        //----------------------------------------------
+        painter.setPen(pen); 
         if( iter->get()->stk_item.date == highest_price_date_ && iter->get()->stk_item.hhmmss == highest_price_hhmm_ )
         {
             char buf[32] = {'\0'};
@@ -1099,7 +1112,7 @@ void KLineWall::paintEvent(QPaintEvent*)
             }while(0);
         }// if fenxin
         //----------------draw signal -----------------------
-#if 1 
+
         if( main_win_->show_sig() && (*iter)->tag != (int)TagType::UNKNOW_TAG )
         {
             QPen old_pen = painter.pen();
@@ -1121,7 +1134,7 @@ void KLineWall::paintEvent(QPaintEvent*)
             }
             painter.setPen(old_pen);
         }
-#endif 
+ 
       }  // for all k bar 
 
         if( is_draw_bi_ )

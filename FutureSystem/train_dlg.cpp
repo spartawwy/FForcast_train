@@ -1018,6 +1018,7 @@ void TrainDlg::RemoveFromTblConditionOrderByFakeId(int fake_id)
 
 void TrainDlg::Append2TblTrades(TradeRecordAtom &trade)
 {
+    SoundFilled(trade.action == OrderAction::OPEN);
     auto model = (QStandardItemModel*)ui.table_view_trades->model();
     model->insertRow(0);
     unsigned int row_index = 0;

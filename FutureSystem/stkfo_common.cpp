@@ -251,6 +251,14 @@ KGreenRedType KGGetGreenRedType(const T_StockHisDataItem &item, TypePeriod type_
     return gr_type;
 }
 
+void SoundFilled(bool is_o_filled)
+{
+    if( is_o_filled )
+        _beep(SOUND_DO, ONE_BEAT/2);
+    else
+        _beep(SOUND_MI1, ONE_BEAT/2);
+}
+
 //void ClearTopFractal(int &val)
 void ClearTopFractal(T_KlineDataItem &k_data_item)
 {

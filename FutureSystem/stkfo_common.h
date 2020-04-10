@@ -410,6 +410,8 @@ int cur_hhmm();
 
 KGreenRedType KGGetGreenRedType(const T_StockHisDataItem &item, TypePeriod type_period);
 
+void SoundFilled(bool is_o_filled);
+
 #define  EPSINON  0.0001
 #define  DEFAULT_DECIMAL 1
 
@@ -429,5 +431,19 @@ KGreenRedType KGGetGreenRedType(const T_StockHisDataItem &item, TypePeriod type_
 #define MARKET_SH_FUTURES  30
 
 #define DEFAULT_CODE  "SCL9"
+
+// ----------------------------
+#define SOUND_QDO 262 
+#define SOUND_QRE 294
+#define SOUND_QMI 330
+#define SOUND_QFA 349
+#define SOUND_QSO 392
+#define SOUND_QLA 440
+#define SOUND_QSI 494
+#define SOUND_DO 523
+
+#define SOUND_MI1 1318
+
+#define ONE_BEAT 400
 
 #endif // STKFO_COMMON_SDF3DSF_H_
