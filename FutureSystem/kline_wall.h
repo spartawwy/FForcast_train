@@ -102,6 +102,10 @@ public:
     int k_cur_train_date() { return k_cur_train_date_; }
     int k_cur_train_hhmm() { return k_cur_train_hhmm_; }
     int  k_rend_index_for_train() { return  k_rend_index_for_train_; }
+    void  k_rend_index_for_train(int val) 
+    { 
+        k_rend_index_for_train_ = val; 
+    }
 
     //------------------
     void Set_Cursor(Qt::CursorShape sp);
@@ -294,4 +298,5 @@ int GetKDataTargetStartTime(TypePeriod type_period, int hhmm);
 int FindKRendIndex(T_HisDataItemContainer *p_hisdata_container, int date_val, int hhmm);
 
 int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm);
+int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm, int r_start);
 #endif // K_LINE_WALL_SDF32DSF_

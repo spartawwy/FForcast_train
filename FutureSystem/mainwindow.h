@@ -66,7 +66,7 @@ public:
 
     void StockInputDlgRet();
 
-    void PopTrainDlg();
+    void PopTrainDlg(bool reset_type);
     void MinimizeTrainDlg();
 
     bool is_train_mode(){ return is_train_mode_; }

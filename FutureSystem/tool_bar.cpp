@@ -159,7 +159,7 @@ ToolBar::ToolBar(QWidget *parent)
     pLayout->addSpacing(5);
     pLayout->addWidget(show_sig_btn);
     pLayout->addSpacing(5);
-    pLayout->addWidget(mock_trade_btn);
+    //pLayout->addWidget(mock_trade_btn);
     pLayout->addSpacing(5);
     pLayout->addWidget(train_model_btn);
 
@@ -362,8 +362,8 @@ void ToolBar::onShowSignal(bool val)
 
 void ToolBar::onShowTrainModelWin()
 {
+    m_main_window->PopTrainDlg(!m_main_window->is_train_mode());
     m_main_window->is_train_mode(true);
-    m_main_window->PopTrainDlg();
 }
 
 void ToolBar::ConnectAllDrawNormalBtn()

@@ -303,20 +303,23 @@ void MainWindow::UpdateStockQuote()
         kline_wall_main_->UpdateStockQuote();
 }
 
-void MainWindow::PopTrainDlg()
+void MainWindow::PopTrainDlg(bool reset_type)
 {
     assert(train_dlg_);
-
-    if( tool_bar()->main_cycle_comb()->currentIndex() != COMBO_PERIOD_5M_INDEX )
+    if( reset_type )
     {
-        // ps: it will trigger onMainKwallCycleChange
-        tool_bar()->main_cycle_comb()->setCurrentIndex(COMBO_PERIOD_5M_INDEX); // set current to period day
+        if( tool_bar()->main_cycle_comb()->currentIndex() != COMBO_PERIOD_5M_INDEX )
+        {
+            // ps: it will trigger onMainKwallCycleChange
+            tool_bar()->main_cycle_comb()->setCurrentIndex(COMBO_PERIOD_5M_INDEX); // set current to period day
+        }
+        if( tool_bar()->sub_cycle_comb()->currentIndex() != COMBO_PERIOD_1M_INDEX )
+        {
+            // ps: it will trigger onSubKwallCycleChange
+            tool_bar()->sub_cycle_comb()->setCurrentIndex(COMBO_PERIOD_1M_INDEX);
+        }
     }
-    if( tool_bar()->sub_cycle_comb()->currentIndex() != COMBO_PERIOD_1M_INDEX )
-    {
-        // ps: it will trigger onSubKwallCycleChange
-        tool_bar()->sub_cycle_comb()->setCurrentIndex(COMBO_PERIOD_1M_INDEX);
-    }
+    
     tool_bar()->main_cycle_comb()->setEnabled(false);
 
     is_train_mode(true);

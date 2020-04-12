@@ -529,25 +529,8 @@ int FindKRendIndex(T_HisDataItemContainer *p_hisdata_container, int date_val, in
         return near_j;
 }
 
-
-// ps: from p_hisdata_container back to front
-int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm)
+int GetOverDayPoint(TypePeriod tp_period, int hhmm)
 {
-    static auto find_over_day_index = [](T_HisDataItemContainer &hisdata_container, int target_day)
-    {
-        bool is_find = false;
-        int j = 0;
-        int near_span = 99999;
-        int near_j = -1;
-        for( auto iter = hisdata_container.rbegin();
-            iter != hisdata_container.rend(); 
-            ++iter, ++j )
-        { 
-            if( target_day == iter->get()->stk_item.date && iter->get()->stk_item.hhmmss == 0 )
-                return j;
-        }
-        return -1;
-    };
     int over_day_point = 0;
     switch(tp_period)
     {
@@ -562,47 +545,158 @@ int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContain
         over_day_point = hhmm + 1; break;
     default: break;
     }
+    return over_day_point;
+}
+
+int find_over_day_index(T_HisDataItemContainer &hisdata_container, int target_day)
+{
+    //bool is_find = false;
+    int j = 0;
+    //int near_span = 99999;
+    //int near_j = -1;
+    auto iter = hisdata_container.rbegin(); 
+    for( auto iter = hisdata_container.rbegin();
+        iter != hisdata_container.rend(); 
+        ++iter, ++j )
+    { 
+        if( target_day == iter->get()->stk_item.date && iter->get()->stk_item.hhmmss == 0 )
+            return j;
+    }
+    return -1;
+}
+
+int find_over_day_index2right(T_HisDataItemContainer &hisdata_container, int target_day)
+{
+    int i = 0; 
+    for( auto iter = hisdata_container.begin();
+        iter != hisdata_container.end(); 
+        ++iter, ++i )
+    { 
+        if( target_day == iter->get()->stk_item.date && iter->get()->stk_item.hhmmss == 0 )
+            return i;
+    }
+    return -1;
+}
+
+// ps: from p_hisdata_container back to front
+int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm)
+{ 
+    int over_day_point = GetOverDayPoint(tp_period, hhmm);
     bool is_find = false;
     int j = 0;
     int near_span = 99999;
     int near_j = -1;
-    for( auto iter = p_hisdata_container.rbegin();
-        iter != p_hisdata_container.rend(); 
-        ++iter, ++j )
+    auto iter = p_hisdata_container.rbegin();
+     
+    for( ;iter != p_hisdata_container.rend(); ++iter, ++j ) // data has been sort by left small(date and hhmm) to right big(date and hhmm)
     { 
+        if( iter->get()->stk_item.date < date_val )
+        {
+            near_span = date_val - iter->get()->stk_item.date;
+            near_j = j - 1;
+            break;
+        }
+        if( iter->get()->stk_item.date != date_val )
+            continue;
+
+        auto my_pre_iter = iter;
         bool pre_item_exist = (iter + 1) != p_hisdata_container.rend();
-        if( iter->get()->stk_item.date == date_val && iter->get()->stk_item.hhmmss == hhmm )
+        bool next_item_exist = iter != p_hisdata_container.rbegin();
+        if( pre_item_exist )
+        {
+            my_pre_iter = iter + 1; 
+        }
+        if( iter->get()->stk_item.hhmmss == hhmm )
         {
             is_find = true;
             break;
         }else if( hhmm > over_day_point )
         {
             int target_day = calender.NextTradeDate(date_val, 1);
-            
             int targ_index = find_over_day_index(p_hisdata_container, target_day);
             return targ_index;
 
-        }else if( iter->get()->stk_item.date == date_val 
-            && ( pre_item_exist
-                    && ( 
-                         ((iter + 1)->get()->stk_item.date == date_val && ((iter + 1)->get()->stk_item.hhmmss < hhmm && hhmm <= iter->get()->stk_item.hhmmss) )
-                            || (iter + 1)->get()->stk_item.date < date_val 
-                        )
-                )
-           ) 
+        }else if( pre_item_exist 
+            &&   ( 
+            (my_pre_iter->get()->stk_item.date == date_val && (my_pre_iter->get()->stk_item.hhmmss < hhmm && hhmm < iter->get()->stk_item.hhmmss) )
+            || my_pre_iter->get()->stk_item.date < date_val 
+                  ) // hhmm in current k's duration
+            ) 
         {
+            int k_date = iter->get()->stk_item.date;
+            int k_hhmm = iter->get()->stk_item.hhmmss;
+            int pre_k_date = my_pre_iter->get()->stk_item.date;
+            int pre_k_hhmm = my_pre_iter->get()->stk_item.hhmmss;
             is_find = true;
-            break;
-        }else if( iter->get()->stk_item.date < date_val )
-        {
-            near_span = date_val - iter->get()->stk_item.date;
-            near_j = j - 1;
             break;
         }
 
-    }
+    } // for
     if( is_find )
         return j;
     else
         return near_j;
+}
+
+
+// ps: from p_hisdata_container  front + r_start to back
+int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm, int r_start)
+{  
+    assert(r_start >= 0);
+    assert(!p_hisdata_container.empty());
+    assert(r_start < p_hisdata_container.size());
+    bool is_find = false;
+    int over_day_point = GetOverDayPoint(tp_period, hhmm);
+    int near_span = 99999;
+    int near_i = -1; 
+    int index = p_hisdata_container.size() - 1 - r_start; 
+    for( auto iter = p_hisdata_container.begin() + index; iter != p_hisdata_container.end(); ++iter, ++index ) // data has been sort by left small(date and hhmm) to right big(date and hhmm)
+    { 
+        if( iter->get()->stk_item.date > date_val )
+        {
+            near_span = iter->get()->stk_item.date - date_val;
+            near_i = p_hisdata_container.size() - 1 - index;
+            break;
+        }
+        if( iter->get()->stk_item.date != date_val )
+            continue;
+
+        auto pre_iter = iter; 
+        bool pre_item_exist = iter != p_hisdata_container.begin();
+        if( pre_item_exist )
+            pre_iter = iter - 1;
+        auto next_iter = iter; 
+        bool next_item_exist = (iter + 1) != p_hisdata_container.end();
+        if( next_item_exist )
+            next_iter = iter + 1;
+        if( pre_item_exist )
+            pre_iter = iter - 1;
+        if( iter->get()->stk_item.hhmmss == hhmm )
+        {
+            is_find = true;
+            break;
+        }else if( hhmm > over_day_point )
+        {
+            int target_day = calender.NextTradeDate(date_val, 1);
+            int targ_index = find_over_day_index2right(p_hisdata_container, target_day);
+            if( targ_index > -1 )
+                return p_hisdata_container.size() - 1 - targ_index;
+            else 
+                return -1;
+        }else if( pre_item_exist 
+                 && (
+                 (pre_iter->get()->stk_item.date == date_val && (pre_iter->get()->stk_item.hhmmss < hhmm && hhmm < iter->get()->stk_item.hhmmss))
+                    || (next_item_exist && next_iter->get()->stk_item.date > date_val)
+                    )
+                 ) // hhmm in current k's duration
+        { 
+            is_find = true;
+            break;
+        }
+
+    } // for
+    if( is_find )
+        return p_hisdata_container.size() - 1 - index;
+    else
+        return near_i;
 }

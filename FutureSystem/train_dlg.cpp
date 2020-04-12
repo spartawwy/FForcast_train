@@ -19,7 +19,7 @@
 
 #include "train_trade.h"
 
-static const int cst_step_timer_inter_val = 3000;
+static const int cst_step_timer_inter_val = 5000;
  
 static const int cst_small_width = 60;
 
@@ -387,12 +387,20 @@ void TrainDlg::OnScrollTrainTimeMoved(int val)
     ui.lab_start_date->setText(QString::number(scroll_bar_date_));
 }
 
-void TrainDlg::closeEvent(QCloseEvent * /*event*/)
+void TrainDlg::closeEvent(QCloseEvent * event)
 {
+    this->hide();
+    auto ret = QMessageBox::information(nullptr, QString::fromLocal8Bit("提示"), QString::fromLocal8Bit("是否退出训练?"), QMessageBox::Yes, QMessageBox::No); 
+    if( ret == QMessageBox::No )
+    { 
+        event->ignore();
+        this->showNormal();
+        return;
+    }
     main_win_->is_train_mode(false);
-    parent_->k_rend_index_for_train_ = 0;
+    parent_->k_rend_index_for_train(0);
     if( main_win_->SubKlineWall() )
-        main_win_->SubKlineWall()->k_rend_index_for_train_ = 0;
+        main_win_->SubKlineWall()->k_rend_index_for_train(0);
     main_win_->tool_bar()->main_cycle_comb()->setEnabled(true);
 
     is_started_ = false;
@@ -439,7 +447,7 @@ void TrainDlg::OnStartTrain()
     int end_time = 1500;
     int start_date = ui.lab_start_date->text().toInt(); 
     int start_time = 905; //2340; //
-    cur_train_step_ = 0;
+    //cur_train_step_ = 0;
     auto p_item = parent_->SetTrainStartDateTime(TypePeriod::PERIOD_5M, start_date, start_time);
     parent_->SetTrainEndDateTime(TypePeriod::PERIOD_5M, end_date, end_time);
 
