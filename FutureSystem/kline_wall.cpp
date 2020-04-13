@@ -686,7 +686,7 @@ int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisData
         }else if( pre_item_exist 
                  && (
                  (pre_iter->get()->stk_item.date == date_val && (pre_iter->get()->stk_item.hhmmss < hhmm && hhmm < iter->get()->stk_item.hhmmss))
-                    || (next_item_exist && next_iter->get()->stk_item.date > date_val)
+                 || (tp_period >= TypePeriod::PERIOD_DAY && next_item_exist && next_iter->get()->stk_item.date > date_val)
                     )
                  ) // hhmm in current k's duration
         { 

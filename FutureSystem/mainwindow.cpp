@@ -485,6 +485,8 @@ void MainWindow::onSubKwallCycleChange(int /*index*/)
     if( is_train_mode() )
     {
         kline_wall_sub_->ResetTypePeriodTrain(target_type_period, kline_wall_ori_step_->train_start_date(), kline_wall_ori_step_->train_end_date());
+        // 1) todo: get sub wall's  pre k date time, and cur k date time
+        // 2) todo: calculate ori k  data 's high low price in  duration which step 1 get
         if( kline_wall_ori_step_->k_cur_train_date() > 0 )
         {
             if( kline_wall_sub_->k_type() == kline_wall_ori_step_->k_type() )

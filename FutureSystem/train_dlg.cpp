@@ -446,7 +446,7 @@ void TrainDlg::OnStartTrain()
     int end_date = std::get<2>(hisk_date_range_);
     int end_time = 1500;
     int start_date = ui.lab_start_date->text().toInt(); 
-    int start_time = 905; //2340; //
+    int start_time = 2340; //905; //
     //cur_train_step_ = 0;
     auto p_item = parent_->SetTrainStartDateTime(TypePeriod::PERIOD_5M, start_date, start_time);
     parent_->SetTrainEndDateTime(TypePeriod::PERIOD_5M, end_date, end_time);
