@@ -67,6 +67,19 @@
     <string>GeRecentHisData</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="btnGetDataFromFile">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>160</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>GetDataFromFile</string>
+   </property>
+  </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>
