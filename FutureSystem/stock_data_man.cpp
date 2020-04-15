@@ -292,30 +292,41 @@ T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, in
 #else
     stk_hisdata_release_(p_data_items);
 #endif
-    TraverseClearFractalType(items_in_container);
-
-    TraverseSetUpwardFractal(items_in_container);
-
-    TraverseSetDownwardFractal(items_in_container);
-    
-    TraverseAjustFractal(items_in_container);
-    if( is_index )
-        TraverseGetBi(period_type, stk_code, items_in_container);
-    else 
-        TraverseGetBi(period_type, code, items_in_container);
-    if( is_index )
-        TraverseGetStuctLines(period_type, stk_code, items_in_container);
-    else
-        TraverseGetStuctLines(period_type, code, items_in_container);
-    if( is_index )
-        TraversGetSections(period_type, stk_code, items_in_container);
-    else
-        TraversGetSections(period_type, code, items_in_container);
-
+     
     TraverSetSignale(ToTypePeriod(period_type), items_in_container, false);
 
 	return std::addressof(items_in_container);
 
+}
+
+// max_left_len : 0 -- all items
+void StockDataMan::TraverseSetFeatureData(const std::string &stk_code, PeriodType period_type, bool is_index, int r_start_index, unsigned int max_left_len)
+{
+    T_HisDataItemContainer & items = GetHisDataContainer(period_type, stk_code);
+    TraverseClearFractalType(items, r_start_index, max_left_len);
+
+    TraverseSetUpwardFractal(items, r_start_index, max_left_len);
+
+    TraverseSetDownwardFractal(items, r_start_index, max_left_len);
+    
+    TraverseAjustFractal(items, r_start_index, max_left_len);
+#if defined(USE_ZHONGSHU)
+    if( is_index )
+        TraverseGetBi(period_type, stk_code, items);
+    else 
+        TraverseGetBi(period_type, code, items);
+#endif
+
+        TraverseGetStuctLines(period_type, stk_code, items);
+
+#if defined(USE_ZHONGSHU)
+    if( is_index )
+        TraversGetSections(period_type, stk_code, items);
+    else
+        TraversGetSections(period_type, code, items);
+#endif
+
+    TraverSetSignale(ToTypePeriod(period_type), items, false);
 }
 
 // ret 0: unupdated; 1: updated last item; 2: appended an item
@@ -569,19 +580,22 @@ std::tuple<int, int> StockDataMan::GetDateIndexFromContainer(PeriodType period_t
 }
  
 /*   \/ 
-    kline_data_items[0] is smallest time  */
-void TraverseSetUpwardFractal(T_HisDataItemContainer &kline_data_items, int backward_size/*= 0 */)
+    traverse from left to r_start_index;  kline_data_items[0] is smallest time  ; backward_size: 0 -- traverse all item*/
+void TraverseSetUpwardFractal(T_HisDataItemContainer &kline_data_items, int r_start_index, int backward_size/*= 0 */)
 {
-    assert( backward_size <= kline_data_items.size() );
     if( kline_data_items.size() < 1 )
         return;
+    assert(r_start_index > -1);
+    assert(r_start_index < kline_data_items.size());
+    assert( backward_size <= kline_data_items.size() );
+    
     // begin from left
     unsigned int index = 1;
     if( backward_size > 0 )
     {
         index = kline_data_items.size() - backward_size + 1;
     }
-    while( index < kline_data_items.size() - 1 )
+    while( index < kline_data_items.size() - 1 - r_start_index )
     {
         //debug -------
         int ck_date = kline_data_items[index]->stk_item.date;
@@ -670,19 +684,22 @@ void TraverseSetUpwardFractal(T_HisDataItemContainer &kline_data_items, int back
 }
 
 /*   /\ 
-    kline_data_items[0] is smallest time  */
-void TraverseSetDownwardFractal( T_HisDataItemContainer &kline_data_items, int backward_size/* = 0*/)
+   traverse from left to r_start_index; kline_data_items[0] is smallest time ;  backward_size : 0 -- all items*/
+void TraverseSetDownwardFractal( T_HisDataItemContainer &kline_data_items, int r_start_index, int backward_size/* = 0*/)
 {
-    assert( backward_size <= kline_data_items.size() );
     if( kline_data_items.size() < 1 )
         return;
+    assert(r_start_index > -1);
+    assert(r_start_index < kline_data_items.size());
+    assert( backward_size <= kline_data_items.size() );
 
     unsigned int index = 1;
     if( backward_size > 0 )
     {
         index = kline_data_items.size() - backward_size + 1;
     }
-    while( index < kline_data_items.size() - 1 )
+    // from left to right
+    while( index < kline_data_items.size() - 1 - r_start_index )
     { 
         //debug -------
         int ck_date = kline_data_items[index]->stk_item.date;
@@ -783,11 +800,15 @@ void TraverseSetDownwardFractal( T_HisDataItemContainer &kline_data_items, int b
     }//while
 }
 
-void TraverseClearFractalType(T_HisDataItemContainer &kline_data_items, int backward_size/* = 0*/)
+// traverse from left to r_start_index; [0] backward <------ [size -1]
+void TraverseClearFractalType(T_HisDataItemContainer &kline_data_items, int r_start_index, int backward_size/* = 0*/)
 {
-    if( kline_data_items.size() < 1 )
+    assert(r_start_index > -1);
+    assert(r_start_index < kline_data_items.size());
+    if( kline_data_items.empty() )
         return;
-    unsigned int index = kline_data_items.size();
+    
+    int index = (int)kline_data_items.size() - r_start_index;
     if( backward_size == 0 )
     {
         while( --index > 0 )
@@ -804,7 +825,8 @@ void TraverseClearFractalType(T_HisDataItemContainer &kline_data_items, int back
     }
 }
 
-void TraverseAjustFractal( std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items, int backward_size/* = 0*/)
+//  traverse from left to r_start_index; 
+void TraverseAjustFractal( std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items, int r_start_index, int backward_size/* = 0*/)
 {
     static auto find_left_btm_frac = [](std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items, int index)->int
     {
@@ -901,9 +923,11 @@ void TraverseAjustFractal( std::deque<std::shared_ptr<T_KlineDataItem> > &kline_
     
     if( kline_data_items.size() < 1 )
         return;
-    assert(backward_size <= kline_data_items.size());
+    assert(r_start_index > -1);
+    assert(r_start_index < kline_data_items.size());
+    assert( backward_size <= kline_data_items.size() );
      
-    unsigned int index = kline_data_items.size();
+    int index = (int)kline_data_items.size() - r_start_index;
 
     int num = kline_data_items.size();
     if( backward_size > 0 )
@@ -1913,36 +1937,11 @@ void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items
             return;
         KGreenRedType left_gr_type = KGGetGreenRedType(data_items_in_container[target_front_index]->stk_item, type_period);
         KGreenRedType right_gr_type = KGGetGreenRedType(data_items_in_container[target_follow_index]->stk_item, type_period);
-#if 0 
-        if( data_items_in_container[target_follow_index]->stk_item.low_price > data_items_in_container[index]->stk_item.low_price 
-            && data_items_in_container[target_follow_index]->stk_item.high_price > data_items_in_container[index]->stk_item.high_price 
-            && data_items_in_container[target_front_index]->stk_item.low_price > data_items_in_container[index]->stk_item.low_price 
-            && data_items_in_container[target_front_index]->stk_item.high_price > data_items_in_container[index]->stk_item.high_price )
-        {
-
-            if( left_gr_type >= KGreenRedType::SMALL_GREEN
-                && right_gr_type >= KGreenRedType::SMALL_RED && right_gr_type < KGreenRedType::SMALL_GREEN )
-            {
-                data_items_in_container[index]->tag |= (int)TagType::BUY;
-            }
-            data_items_in_container[index]->type |= int(FractalType::BTM_AXIS_T_3);
-        }
-#else
         data_items_in_container[index]->tag |= (int)TagType::BUY;
         if( is_only_set_tail )
             data_items_in_container[index]->type |= int(FractalType::BTM_AXIS_T_3);
-#endif
     };
-
-#else
-    static auto proc_if_face = [](TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, int index)
-    {
-        if( data_items_in_container[index]->stk_item.close_price < data_items_in_container[index]->stk_item.open_price )
-            data_items_in_container[index]->tag |= (int)TagType::SELL;
-        else
-            data_items_in_container[index]->tag |= (int)TagType::BUY;
-        qDebug() << "proc_if_frace " << data_items_in_container[index]->stk_item.hhmmss << " set tag:" << data_items_in_container[index]->tag;
-    };
+     
 #endif
     if( data_items_in_container.size() < 3 )
         return;

@@ -49,6 +49,8 @@ public:
     T_HisDataItemContainer* FindStockData(PeriodType period_type, const std::string &stk_code, int start_date, int end_date, bool is_index=false);
     T_HisDataItemContainer* AppendStockData(PeriodType period_type, int nmarket, const std::string &stk_code, int start_date, int end_date, bool is_index=false);
 	     
+    void TraverseSetFeatureData(const std::string &stk_code, PeriodType period_type, bool is_index, int r_start_index, unsigned int max_left_len=0);
+
     int UpdateOrAppendLatestItemStockData(PeriodType period_type, int nmarket, const std::string &stk_code, bool is_index=false);
     void TraverseGetBi(PeriodType period_type, const std::string &code, std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items);
 
@@ -115,7 +117,7 @@ private:
 
 private:
 
-    KLineWall *kwall_;
+    //KLineWall *kwall_;
 #if 1
     TdxExHqWrapper  tdx_exhq_wrapper_;
 #endif
@@ -131,13 +133,13 @@ int FindDataIndex(T_HisDataItemContainer &data_items_in_container, int date, int
 bool IsDataIn(T_HisDataItemContainer &data_items_in_container, int date);
 
 // 下分形遍历
-void TraverseSetUpwardFractal(T_HisDataItemContainer &kline_data_items, int backward_size = 0);
+void TraverseSetUpwardFractal(T_HisDataItemContainer &kline_data_items, int r_start_index = 0, int backward_size = 0);
 // 上分形遍历
-void TraverseSetDownwardFractal(T_HisDataItemContainer &kline_data_items, int backward_size = 0);
+void TraverseSetDownwardFractal(T_HisDataItemContainer &kline_data_items, int r_start_index = 0, int backward_size = 0);
 
-void TraverseClearFractalType(T_HisDataItemContainer &kline_data_items, int backward_size = 0);
+void TraverseClearFractalType(T_HisDataItemContainer &kline_data_items, int r_start_index = 0, int backward_size = 0);
 
-void TraverseAjustFractal(T_HisDataItemContainer &kline_data_items, int backward_size = 0);
+void TraverseAjustFractal(T_HisDataItemContainer &kline_data_items, int r_start_index = 0, int backward_size = 0);
 
 void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, bool is_only_set_tail);
 

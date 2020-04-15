@@ -89,13 +89,14 @@ public:
     T_StockHisDataItem* SetTrainStartDateTime(TypePeriod tp_period, int date, int hhmm);
     T_StockHisDataItem* SetTrainEndDateTime(TypePeriod tp_period, int date, int hhmm);
 
+    T_StockHisDataItem* SetTrainByDateTime(int date, int hhmm);
     T_StockHisDataItem* SetTrainByRendIndex(int rend_index);
     std::tuple<int, int> MoveRightEndToNextK();
     void MoveRightEndToNextK(int date, int hhmm);
     T_StockHisDataItem Train_NextStep();
     void Train_NextStep(T_StockHisDataItem & input_item);
 
-    void MoveRightEndToPreDayK();
+    //void MoveRightEndToPreDayK();
     const T_StockHisDataItem & CurTrainStockDataItem();
     void right_clicked_k_date(int date) { right_clicked_k_date_ = date; }
     void right_clicked_k_hhmm(int hhmm){ right_clicked_k_hhmm_ = hhmm; }
@@ -148,8 +149,8 @@ private:
     bool Reset_Stock(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int oldest_date);
     bool Reset_Stock_Train(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int start_date, int end_date);
     void AppendData();
-    void AppendPreData(int date);
-    void AppendData(int date);
+    T_StockHisDataItem* AppendPreData(int date, int hhmm);
+    T_StockHisDataItem* AppendData(int date, int hhmm);
     
 
     void Draw2pDownForcast(QPainter &, const int mm_h, double item_w);

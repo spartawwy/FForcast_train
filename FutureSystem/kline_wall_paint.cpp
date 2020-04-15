@@ -1899,10 +1899,10 @@ void KLineWall::UpdateIfNecessary(int target_date, int cur_hhmm)
             if( ret > 0 )
             {
                 int backward_size = p_contain->size() < 5 ? p_contain->size() : 5;
-                TraverseClearFractalType(container, backward_size);
-                TraverseSetUpwardFractal(container, backward_size);
-                TraverseSetDownwardFractal(container, backward_size);
-                TraverseAjustFractal(container, backward_size);
+                TraverseClearFractalType(container, 0, backward_size);
+                TraverseSetUpwardFractal(container, 0, backward_size);
+                TraverseSetDownwardFractal(container, 0, backward_size);
+                TraverseAjustFractal(container, 0, backward_size);
             }
             if( ret == 1 )
                 TraverSetSignale(k_type_, container, true);
@@ -1938,6 +1938,11 @@ void KLineWall::UpdateIfNecessary(int target_date, int cur_hhmm)
     {
 
     }
+}
+
+T_StockHisDataItem* SetTrainByDateTime(int date, int hhmm)
+{
+    // todo:
 }
 
 T_StockHisDataItem* KLineWall::SetTrainByRendIndex(int rend_index)
@@ -1992,21 +1997,20 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
             date_span = 3;
 
         start_date = app_->exchange_calendar()->PreTradeDate(date, date_span);
-        AppendPreData(start_date);
-        //target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
-        target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
-        if( target_r_end_index > -1 )
-        {
-            k_rend_index_ = target_r_end_index; 
-            k_rend_index_for_train(target_r_end_index);
-            //k_num_ = WOKRPLACE_DEFUALT_K_NUM;
-            k_num_ = k_num_;
-            ret_item = std::addressof((*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item);
-        }else
-        {
-            k_rend_index_for_train(p_hisdata_container_->size() > 0 ? p_hisdata_container_->size() - 1 : 0);
-            k_num_ = 0;
-        }
+        AppendPreData(start_date, hhmm); 
+        //target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
+        //if( target_r_end_index > -1 )
+        //{
+        //    k_rend_index_ = target_r_end_index; 
+        //    k_rend_index_for_train(target_r_end_index);
+        //    //k_num_ = WOKRPLACE_DEFUALT_K_NUM;
+        //    k_num_ = k_num_;
+        //    ret_item = std::addressof((*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item);
+        //}else
+        //{
+        //    k_rend_index_for_train(p_hisdata_container_->size() > 0 ? p_hisdata_container_->size() - 1 : 0);
+        //    k_num_ = 0;
+        //}
     }
     if( !p_hisdata_container_->empty() )
     {
@@ -2035,14 +2039,12 @@ T_StockHisDataItem* KLineWall::SetTrainEndDateTime(TypePeriod tp_period, int dat
         ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
     }else
     {  
-        AppendData(date); 
-        target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
+        ret_item = AppendData(date, hhmm); 
+        /*target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
         if( target_r_end_index > -1 )
-        { 
-            //k_num_ = WOKRPLACE_DEFUALT_K_NUM;
-            k_num_ = k_num_;
+        {  
             ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
-        } 
+        } */
     }
     if( ret_item ) train_end_date_ = ret_item->date;
     else train_end_date_ = date;
@@ -2254,49 +2256,50 @@ void KLineWall::MoveRightEndToNextK(int date, int hhmm)
     }
 }
 
-void KLineWall::MoveRightEndToPreDayK()
-{
-    static auto get_predate_rend_index = [](T_HisDataItemContainer *container, const int old_date, const int rend_index_para)->int
-    { 
-        int rend_index = rend_index_para + 1 < container->size() ? rend_index_para + 1 : container->size() - 1;
-
-        while( rend_index < container->size() - 1
-            && old_date == (*(container->rbegin() + rend_index))->stk_item.date )
-        {
-            if( rend_index < container->size() - 1 )
-                rend_index += 1;
-            else
-                break;
-        }
-        return rend_index;
-    };
-
-    const int old_k_rend_index = k_rend_index_;
-
-    const int old_date = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
-
-    auto val = get_predate_rend_index(p_hisdata_container_, old_date, k_rend_index_for_train_);
-    k_rend_index_for_train(val);
-
-    if( k_rend_index_for_train_ == p_hisdata_container_->size() - 1 )
-    { 
-        AppendData();
-        auto val = get_predate_rend_index(p_hisdata_container_, old_date, k_rend_index_for_train_);
-        k_rend_index_for_train(val);
-    }
-
-    k_cur_train_date_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
-    k_cur_train_hhmm_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.hhmmss;
-
-    k_rend_index_ = k_rend_index_for_train_;
-    if( old_k_rend_index != k_rend_index_ )
-    {
-        UpdateKwallMinMaxPrice();
-        UpdatePosDatas();
-        update();
-    }
-}
-
+//#if 0 
+//void KLineWall::MoveRightEndToPreDayK()
+//{
+//    static auto get_predate_rend_index = [](T_HisDataItemContainer *container, const int old_date, const int rend_index_para)->int
+//    { 
+//        int rend_index = rend_index_para + 1 < container->size() ? rend_index_para + 1 : container->size() - 1;
+//
+//        while( rend_index < container->size() - 1
+//            && old_date == (*(container->rbegin() + rend_index))->stk_item.date )
+//        {
+//            if( rend_index < container->size() - 1 )
+//                rend_index += 1;
+//            else
+//                break;
+//        }
+//        return rend_index;
+//    };
+//
+//    const int old_k_rend_index = k_rend_index_;
+//
+//    const int old_date = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
+//
+//    auto val = get_predate_rend_index(p_hisdata_container_, old_date, k_rend_index_for_train_);
+//    k_rend_index_for_train(val);
+//
+//    if( k_rend_index_for_train_ == p_hisdata_container_->size() - 1 )
+//    { 
+//        AppendData();
+//        auto val = get_predate_rend_index(p_hisdata_container_, old_date, k_rend_index_for_train_);
+//        k_rend_index_for_train(val);
+//    }
+//
+//    k_cur_train_date_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
+//    k_cur_train_hhmm_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.hhmmss;
+//
+//    k_rend_index_ = k_rend_index_for_train_;
+//    if( old_k_rend_index != k_rend_index_ )
+//    {
+//        UpdateKwallMinMaxPrice();
+//        UpdatePosDatas();
+//        update();
+//    }
+//}
+//#endif
 const T_StockHisDataItem & KLineWall::CurTrainStockDataItem()
 {
     static T_StockHisDataItem no_use_item;
