@@ -149,8 +149,8 @@ private:
     bool Reset_Stock(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int oldest_date);
     bool Reset_Stock_Train(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int start_date, int end_date);
     void AppendData();
-    T_StockHisDataItem* AppendPreData(int date, int hhmm);
-    T_StockHisDataItem* AppendData(int date, int hhmm);
+    T_HisDataItemContainer* AppendPreData(int date, int hhmm);
+    T_HisDataItemContainer* AppendData(int date, int hhmm);
     
 
     void Draw2pDownForcast(QPainter &, const int mm_h, double item_w);
@@ -273,7 +273,7 @@ private:
     int  right_clicked_k_hhmm_; // right mouse click
      
     StatisticDlg  statistic_dlg_;
-    // train related
+    // train related ------------
     std::list<OrderInfo> hangon_order_infos_;
     std::list<OrderInfo> stop_profit_order_infos_; 
     std::list<OrderInfo> stop_loss_order_infos_; 
@@ -282,7 +282,7 @@ private:
     TypePeriod  train_step_type_;
     int train_start_date_;
     int train_end_date_;
-
+    //------------------------
     friend class ZhibiaoWindow;
     friend class VolZhibiaoWin;
     friend class MomentumZhibiaoWin;

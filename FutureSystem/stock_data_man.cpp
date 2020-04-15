@@ -283,9 +283,7 @@ T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, in
     
     // sort T_KlineDateItems by day from small to bigger
     //std::sort(items_in_container.begin(), items_in_container.end(), dompare);
-
-    CaculateZhibiao(items_in_container);
-
+     
 #if defined(USE_WINNER_API) || defined(USE_TDXHQ) 
     delete p_stk_hisdata_item_vector;
     p_stk_hisdata_item_vector = nullptr;
@@ -293,8 +291,6 @@ T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, in
     stk_hisdata_release_(p_data_items);
 #endif
      
-    TraverSetSignale(ToTypePeriod(period_type), items_in_container, false);
-
 	return std::addressof(items_in_container);
 
 }
@@ -303,6 +299,8 @@ T_HisDataItemContainer* StockDataMan::AppendStockData(PeriodType period_type, in
 void StockDataMan::TraverseSetFeatureData(const std::string &stk_code, PeriodType period_type, bool is_index, int r_start_index, unsigned int max_left_len)
 {
     T_HisDataItemContainer & items = GetHisDataContainer(period_type, stk_code);
+    if( items.empty() )
+        return;
     TraverseClearFractalType(items, r_start_index, max_left_len);
 
     TraverseSetUpwardFractal(items, r_start_index, max_left_len);
@@ -326,7 +324,9 @@ void StockDataMan::TraverseSetFeatureData(const std::string &stk_code, PeriodTyp
         TraversGetSections(period_type, code, items);
 #endif
 
-    TraverSetSignale(ToTypePeriod(period_type), items, false);
+    TraverSetSignale(ToTypePeriod(period_type), items, r_start_index, max_left_len);
+
+    CaculateZhibiao(items);
 }
 
 // ret 0: unupdated; 1: updated last item; 2: appended an item
@@ -803,11 +803,11 @@ void TraverseSetDownwardFractal( T_HisDataItemContainer &kline_data_items, int r
 // traverse from left to r_start_index; [0] backward <------ [size -1]
 void TraverseClearFractalType(T_HisDataItemContainer &kline_data_items, int r_start_index, int backward_size/* = 0*/)
 {
-    assert(r_start_index > -1);
-    assert(r_start_index < kline_data_items.size());
     if( kline_data_items.empty() )
         return;
-    
+    assert(r_start_index > -1);
+    assert(r_start_index < kline_data_items.size());
+
     int index = (int)kline_data_items.size() - r_start_index;
     if( backward_size == 0 )
     {
@@ -1844,10 +1844,11 @@ bool IsDataIn(T_HisDataItemContainer &data_items_in_container, int date)
     
 }
 
-void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, bool is_only_set_tail)
+// backward_size :0 -- all left
+void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, /*bool is_only_set_tail,*/ int r_start_index, int backward_size)
 { 
 #if 1
-    static auto proc_if_top_face = [](TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, int index, bool is_only_set_tail)
+    static auto proc_if_top_face = [](TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, int index/*, bool is_only_set_tail*/, int r_start_index)
     {
         const unsigned int max_inner_count = 5;
         // find left red k
@@ -1871,7 +1872,7 @@ void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items
         // find right green k
         int target_follow_index = -1;
         k = index + 1;
-        for( ; k < data_items_in_container.size() && k <= index + max_inner_count; ++k )
+        for( ; k < data_items_in_container.size() - r_start_index && k <= index + max_inner_count; ++k )
         {
             if( data_items_in_container[k]->stk_item.low_price < data_items_in_container[index]->stk_item.low_price - EPSINON
                 && data_items_in_container[k]->stk_item.high_price < data_items_in_container[index]->stk_item.high_price - EPSINON  )
@@ -1891,11 +1892,11 @@ void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items
         KGreenRedType right_gr_type = KGGetGreenRedType(data_items_in_container[target_follow_index]->stk_item, type_period);
 
         data_items_in_container[index]->tag |= (int)TagType::SELL;
-        if( is_only_set_tail )
-            data_items_in_container[index]->type |= int(FractalType::TOP_AXIS_T_3);
+        //if( is_only_set_tail )  // ndchk
+        //    data_items_in_container[index]->type |= int(FractalType::TOP_AXIS_T_3);
  
     };
-    static auto proc_if_down_face = [](TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, int index, bool is_only_set_tail)
+    static auto proc_if_down_face = [](TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, int index/*, bool is_only_set_tail*/, int r_start_index)
     {
         const unsigned int max_inner_count = 5;
         // find toward left 
@@ -1920,7 +1921,7 @@ void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items
         // find right red k
         int target_follow_index = -1;
         k = index + 1;
-        for( ; k < data_items_in_container.size() && k <= index + max_inner_count; ++k )
+        for( ; k < data_items_in_container.size() - r_start_index && k <= index + max_inner_count; ++k )
         {
             if( data_items_in_container[k]->stk_item.low_price > data_items_in_container[index]->stk_item.low_price
                 && data_items_in_container[k]->stk_item.high_price > data_items_in_container[index]->stk_item.high_price )
@@ -1938,16 +1939,16 @@ void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items
         KGreenRedType left_gr_type = KGGetGreenRedType(data_items_in_container[target_front_index]->stk_item, type_period);
         KGreenRedType right_gr_type = KGGetGreenRedType(data_items_in_container[target_follow_index]->stk_item, type_period);
         data_items_in_container[index]->tag |= (int)TagType::BUY;
-        if( is_only_set_tail )
-            data_items_in_container[index]->type |= int(FractalType::BTM_AXIS_T_3);
+        //if( is_only_set_tail ) // ndchk
+        //    data_items_in_container[index]->type |= int(FractalType::BTM_AXIS_T_3);
     };
      
 #endif
     if( data_items_in_container.size() < 3 )
         return;
-    int index = data_items_in_container.size() - 2;
-    const unsigned int max_inner_count = 5;
-    int count_when_only_set_tail = 50;
+    int index = data_items_in_container.size() - 2 - r_start_index;
+    //const unsigned int max_inner_count = 5;
+    int count_when_only_set_tails = backward_size == 0 ? data_items_in_container.size() : backward_size; // tail 50 k
     while( index > 0 )
     {
         // clear sig
@@ -1956,11 +1957,11 @@ void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items
         if( (data_items_in_container[index]->tag & (int)TagType::SELL) == (int)TagType::SELL )
             data_items_in_container[index]->tag ^= (int)TagType::SELL;
         // judge to set sig
-        proc_if_top_face(type_period, data_items_in_container, index, is_only_set_tail);
-        proc_if_down_face(type_period, data_items_in_container, index, is_only_set_tail);
-        if( is_only_set_tail )
+        proc_if_top_face(type_period, data_items_in_container, index, /*is_only_set_tail*/r_start_index);
+        proc_if_down_face(type_period, data_items_in_container, index, /*is_only_set_tail*/r_start_index);
+        //if( is_only_set_tail )
         {
-            if( --count_when_only_set_tail == 0 )
+            if( --count_when_only_set_tails == 0 )
                 break;
         }
         --index;

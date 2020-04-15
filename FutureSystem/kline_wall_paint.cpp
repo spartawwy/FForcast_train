@@ -1671,9 +1671,10 @@ bool KLineWall::ResetStock(const QString& code, const QString& code_name, TypePe
        return false;
 }
 
-// ps : it may update k data's current data   
+// ps : it may update k data's current data;  make sure not invoker by train mode
 bool KLineWall::Reset_Stock(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int start_date)
 {   
+    assert(!main_win_->is_train_mode());
     T_HisDataItemContainer & items_in_container = app_->stock_data_man().GetHisDataContainer(ToPeriodType(k_type_), stock.toLocal8Bit().data());
 
     if( k_type_ == type_period && stock_code_ ==  stock.toLocal8Bit().data() && !items_in_container.empty() )
@@ -1713,7 +1714,6 @@ bool KLineWall::Reset_Stock(const QString& stock, TypePeriod type_period, bool i
     {
         int a_pre_date = app_->exchange_calendar()->PreTradeDate(cur_date, 1);
         p_hisdata_container_ = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, a_pre_date, cur_date, is_index);
-        
     }
 	
     if( !p_hisdata_container_ )
@@ -1721,6 +1721,7 @@ bool KLineWall::Reset_Stock(const QString& stock, TypePeriod type_period, bool i
         ret = false;
         break;
     }
+    app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, 0);
 
     this->is_index_ = is_index;
     if( !p_hisdata_container_->empty() )
@@ -1763,6 +1764,7 @@ bool KLineWall::Reset_Stock_Train(const QString& stock, TypePeriod type_period, 
     is_resetting_stock_ = true;
 
     k_rend_index_ = 0;
+    k_rend_index_for_train_ = 0;
     pre_k_rend_index_ = 0;
     k_move_temp_index_ = 0;
 
@@ -1778,7 +1780,25 @@ bool KLineWall::Reset_Stock_Train(const QString& stock, TypePeriod type_period, 
         p_hisdata_container_ = app_->stock_data_man().FindStockData(ToPeriodType(k_type_), stock_code_, start_date, end_date, hhmm, is_index);
         if( !p_hisdata_container_ )
         {  
-            p_hisdata_container_ = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, start_date, end_date, is_index);
+            int beg_date = start_date;
+            int pre_span = 30;
+            switch(k_type_)
+            {
+            case TypePeriod::PERIOD_HOUR: pre_span = 100 / 4 + 4;break;
+            case TypePeriod::PERIOD_30M: pre_span = 100 / 8 + 3;break;
+            case TypePeriod::PERIOD_15M: pre_span = 100 / 16 + 2;break;
+            case TypePeriod::PERIOD_5M: pre_span = 100 / 48 + 1;break;
+            case TypePeriod::PERIOD_1M: pre_span = 1;break;
+            default: break;
+            }
+            beg_date = app_->exchange_calendar()->PreTradeDate(start_date, pre_span);
+            p_hisdata_container_ = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, beg_date, end_date, is_index);
+            auto p_item = SetTrainByDateTime(k_cur_train_date_, k_cur_train_hhmm_);
+            if( !p_item )
+            {
+                // log error
+            }
+            app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
         } 
 
         if( !p_hisdata_container_ )
@@ -1786,7 +1806,7 @@ bool KLineWall::Reset_Stock_Train(const QString& stock, TypePeriod type_period, 
             ret = false;
             break;
         }
-
+        
         this->is_index_ = is_index;
         if( !p_hisdata_container_->empty() )
         { 
@@ -1842,7 +1862,10 @@ void KLineWall::ShowDurationKlines(int date, int hhmm)
         default:break;
         }
         beg_date = app_->exchange_calendar()->PreTradeDate(date, pre_span);
-        AppendPreData(beg_date); 
+        AppendPreData(beg_date, hhmm); 
+        if( main_win_->is_train_mode() )
+            SetTrainByDateTime(date, hhmm); 
+        app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
     }
     k_rend_index_ = 0;
     int index = FindKRendIndex(p_hisdata_container_, date, hhmm);
@@ -1905,10 +1928,10 @@ void KLineWall::UpdateIfNecessary(int target_date, int cur_hhmm)
                 TraverseAjustFractal(container, 0, backward_size);
             }
             if( ret == 1 )
-                TraverSetSignale(k_type_, container, true);
+                TraverSetSignale(k_type_, container, 0, 50);
             else if( ret == 2 )
             {
-                TraverSetSignale(k_type_, container, false);
+                TraverSetSignale(k_type_, container);
                 app_->stock_data_man().TraverseGetStuctLines(ToPeriodType(k_type_), stock_code_, container);
             }
             is_need_updated = ret > 0;
@@ -1940,9 +1963,17 @@ void KLineWall::UpdateIfNecessary(int target_date, int cur_hhmm)
     }
 }
 
-T_StockHisDataItem* SetTrainByDateTime(int date, int hhmm)
+T_StockHisDataItem* KLineWall::SetTrainByDateTime(int date, int hhmm)
 {
-    // todo:
+    T_StockHisDataItem* ret_item = nullptr;
+    int target_r_end_index = FindKRendIndexInHighPeriodContain(k_type_, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
+    if( target_r_end_index > -1 )
+    {
+        k_rend_index_ = target_r_end_index; 
+        k_rend_index_for_train(target_r_end_index);
+        ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
+    } 
+    return ret_item; 
 }
 
 T_StockHisDataItem* KLineWall::SetTrainByRendIndex(int rend_index)
@@ -1997,20 +2028,13 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
             date_span = 3;
 
         start_date = app_->exchange_calendar()->PreTradeDate(date, date_span);
-        AppendPreData(start_date, hhmm); 
-        //target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
-        //if( target_r_end_index > -1 )
-        //{
-        //    k_rend_index_ = target_r_end_index; 
-        //    k_rend_index_for_train(target_r_end_index);
-        //    //k_num_ = WOKRPLACE_DEFUALT_K_NUM;
-        //    k_num_ = k_num_;
-        //    ret_item = std::addressof((*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item);
-        //}else
-        //{
-        //    k_rend_index_for_train(p_hisdata_container_->size() > 0 ? p_hisdata_container_->size() - 1 : 0);
-        //    k_num_ = 0;
-        //}
+        auto p_container = AppendPreData(start_date, hhmm); 
+        if( !p_container->empty() )
+        {
+            ret_item = SetTrainByDateTime(date, hhmm);
+            assert(ret_item);
+            app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
+        }
     }
     if( !p_hisdata_container_->empty() )
     {
@@ -2039,12 +2063,13 @@ T_StockHisDataItem* KLineWall::SetTrainEndDateTime(TypePeriod tp_period, int dat
         ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
     }else
     {  
-        ret_item = AppendData(date, hhmm); 
-        /*target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
-        if( target_r_end_index > -1 )
-        {  
-            ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
-        } */
+        auto p_container = AppendData(date, hhmm); 
+        if( !p_container->empty() )
+        {
+            ret_item = SetTrainByDateTime(date, hhmm);
+            assert(ret_item);
+            app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
+        }
     }
     if( ret_item ) train_end_date_ = ret_item->date;
     else train_end_date_ = date;

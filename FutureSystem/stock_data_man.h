@@ -141,6 +141,6 @@ void TraverseClearFractalType(T_HisDataItemContainer &kline_data_items, int r_st
 
 void TraverseAjustFractal(T_HisDataItemContainer &kline_data_items, int r_start_index = 0, int backward_size = 0);
 
-void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, bool is_only_set_tail);
+void TraverSetSignale(TypePeriod type_period, T_HisDataItemContainer &data_items_in_container, /*bool is_only_set_tail,*/ int r_start_index = 0, int backward_size = 0);
 
 #endif // STOCK_DATA_MAN_H

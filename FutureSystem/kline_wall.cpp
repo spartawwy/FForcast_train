@@ -39,44 +39,33 @@ void KLineWall::AppendData()
     default: break;
     }
      
-    app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, start_date, oldest_day, is_index_);
-    app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, 0);
+    auto p_container = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, start_date, oldest_day, is_index_);
+    if( !p_container->empty() )
+    { 
+        app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_);
+    }
 }
 
-T_StockHisDataItem* KLineWall::AppendPreData(int date, int hhmm)
+T_HisDataItemContainer* KLineWall::AppendPreData(int date, int hhmm)
 {
     assert( date > 19800000 && date < 20500000 );
-    T_StockHisDataItem* ret_item = nullptr;
 
     int oldest_day = QDateTime::currentDateTime().toString("yyyyMMdd").toInt(); //default 
     if( !p_hisdata_container_->empty() )
         oldest_day = p_hisdata_container_->front()->stk_item.date;
 
     if( date > oldest_day )
-    {
-        int target_r_end_index = FindKRendIndexInHighPeriodContain(k_type_, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
-        assert( target_r_end_index > -1 );
-        k_rend_index_ = target_r_end_index; 
-        k_rend_index_for_train(target_r_end_index);
-        ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
-        return ret_item; 
+    { 
+        return p_hisdata_container_; 
     }
 
-    app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, date, oldest_day, is_index_);
-    int target_r_end_index = FindKRendIndexInHighPeriodContain(k_type_, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
-    assert( target_r_end_index > -1 );
-    k_rend_index_ = target_r_end_index; 
-    k_rend_index_for_train(target_r_end_index); 
-    ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
-     
-    app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, target_r_end_index);
-    return ret_item;
+    auto p_container = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, date, oldest_day, is_index_); 
+    return p_container;
 }
  
-T_StockHisDataItem* KLineWall::AppendData(int date, int hhmm)
+T_HisDataItemContainer* KLineWall::AppendData(int date, int hhmm)
 {
     assert( date > 19800000 && date < 20500000 );
-    T_StockHisDataItem* ret_item = nullptr;
 
     int today = QDateTime::currentDateTime().toString("yyyyMMdd").toInt(); //default 
     int back_date = app_->exchange_calendar()->PreTradeDate(today, 5);
@@ -85,25 +74,10 @@ T_StockHisDataItem* KLineWall::AppendData(int date, int hhmm)
 
     if( back_date > date )
     {
-        int target_r_end_index = FindKRendIndexInHighPeriodContain(k_type_, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
-        assert( target_r_end_index > -1 );
-        k_rend_index_ = target_r_end_index; 
-        k_rend_index_for_train(target_r_end_index);
-        ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
-        return ret_item; 
+        return p_hisdata_container_;
     }
-    app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, back_date, date, is_index_);
-
-    int target_r_end_index = FindKRendIndexInHighPeriodContain(k_type_, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
-    assert( target_r_end_index > -1 );
-    k_rend_index_ = target_r_end_index; 
-    k_rend_index_for_train(target_r_end_index);
-    //k_num_ = WOKRPLACE_DEFUALT_K_NUM;
-    ret_item = std::addressof((*(p_hisdata_container_->rbegin() + target_r_end_index))->stk_item);
-
-    app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, target_r_end_index);
-
-    return ret_item;
+    auto p_container = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, back_date, date, is_index_);
+    return p_container;
 }
 
 void KLineWall::ResetTypePeriod(TypePeriod  type)
@@ -115,7 +89,6 @@ void KLineWall::ResetTypePeriod(TypePeriod  type)
 
 void KLineWall::ResetTypePeriodTrain(TypePeriod  type, int start_date, int end_date)
 {
-    //Reset_Stock_Train(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int start_date, int end_date)
     Reset_Stock_Train(stock_code_.c_str(), type, is_index_, nmarket_, start_date, end_date);
 }
 
@@ -723,6 +696,7 @@ int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisData
         }else if( pre_item_exist 
                  && (
                  (pre_iter->get()->stk_item.date == date_val && (pre_iter->get()->stk_item.hhmmss < hhmm && hhmm < iter->get()->stk_item.hhmmss))
+                 || (pre_iter->get()->stk_item.date < date_val && hhmm < iter->get()->stk_item.hhmmss) // consider none night trading
                  || (tp_period >= TypePeriod::PERIOD_DAY && next_item_exist && next_iter->get()->stk_item.date > date_val)
                     )
                  ) // hhmm in current k's duration

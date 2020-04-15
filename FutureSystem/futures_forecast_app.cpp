@@ -166,11 +166,11 @@ void FuturesForecastApp::UpdateStockData(int target_date, int cur_hhmm, const st
         { 
             local_logger().LogLocal(TSystem::utility::FormatStr("UpdateStockData k ex %d %04d tp:%d", target_date, cur_hhmm, type_period));
             int ret = stock_data_man().UpdateOrAppendLatestItemStockData(ToPeriodType(type_period), nmarket, code, false);
-            if( ret == 1 )
-                TraverSetSignale(type_period, container, true);
-            else if( ret == 2 )
+            if( ret == 1 ) // if updated last item
+                TraverSetSignale(type_period, container, 0, 50);
+            else if( ret == 2 ) // if appended an item
             {
-                TraverSetSignale(type_period, container, false);
+                TraverSetSignale(type_period, container);
                 stock_data_man().TraverseGetStuctLines(ToPeriodType(type_period), code, container);
             }
             
@@ -180,6 +180,8 @@ void FuturesForecastApp::UpdateStockData(int target_date, int cur_hhmm, const st
             auto date_time = GetKDataTargetDateTime(*exchange_calendar(), type_period, target_date, cur_hhmm, WOKRPLACE_DEFUALT_K_NUM);
             auto p_cur_time_contain = stock_data_man().AppendStockData(ToPeriodType(type_period), nmarket, code, std::get<0>(date_time), target_date, false);
             local_logger().LogLocal(TSystem::utility::FormatStr("UpdateStockData k app <%d %d %d> tp:%d %d %d", std::get<0>(date_time), std::get<1>(date_time), target_date, type_period, pre_k_num, p_cur_time_contain->size()));
+            TraverSetSignale(type_period, container);
+            stock_data_man().TraverseGetStuctLines(ToPeriodType(type_period), code, container);
         }
     }
 }
