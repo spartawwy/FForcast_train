@@ -95,6 +95,7 @@ public:
     std::vector<T_Data3pForcast> * Find3pForcastVector(const std::string &code, TypePeriod type_period, bool is_down_forward);
     T_Data3pForcast * Find3pForcast(const std::string &code, TypePeriod type_period, bool is_down_forward, T_KlineDataItem &item_a, T_KlineDataItem &item_b);
     void Remove3pForcastItem(const std::string &code, TypePeriod type_period, bool is_down_forward, T_KlineDataItem &item_a, T_KlineDataItem &item_b);
+    void RemoveForcastItems(const std::string &code, TypePeriod type_period);
 
     double FindMaxForcastPrice(const std::string &code, TypePeriod type_period, int start_date, int end_date);
     double FindMinForcastPrice(const std::string &code, TypePeriod type_period, int start_date, int end_date);

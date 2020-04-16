@@ -167,6 +167,7 @@
     </ClCompile>
     <ClCompile Include="HintList.cpp" />
     <ClCompile Include="kline_wall.cpp" />
+    <ClCompile Include="kline_wall_autoforcast.cpp" />
     <ClCompile Include="kline_wall_paint.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />

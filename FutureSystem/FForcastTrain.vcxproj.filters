@@ -200,6 +200,9 @@
     <ClCompile Include="GeneratedFiles\Release\moc_cfg_stop_profitloss_dlg.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="kline_wall_autoforcast.cpp">
+      <Filter>win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.ui">

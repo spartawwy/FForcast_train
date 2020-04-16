@@ -249,6 +249,25 @@ void ForcastMan::Remove3pForcastItem(const std::string &code, TypePeriod type_pe
         data->Clear();
 }
 
+void ForcastMan::RemoveForcastItems(const std::string &code, TypePeriod type_period)
+{
+    auto p_2p_fcst = Find2pForcastVector(code, type_period, true);
+    if( p_2p_fcst )
+        p_2p_fcst->clear();
+    p_2p_fcst = Find2pForcastVector(code, type_period, false);
+    if( p_2p_fcst )
+        p_2p_fcst->clear();
+    Code3pForcastType &code_3p_fcst = Get3pDataHolder(type_period, true);
+    auto vector_iter = code_3p_fcst.find(code);
+    if( vector_iter != code_3p_fcst.end() )
+        vector_iter->second.clear();
+    Code3pForcastType &code_3p_fcst0 = Get3pDataHolder(type_period, false);
+    auto vector_iter0 = code_3p_fcst0.find(code);
+    if( vector_iter0 != code_3p_fcst0.end() )
+        vector_iter0->second.clear();
+
+}
+
 std::vector<T_Data3pForcast> * ForcastMan::Find3pForcastVector(const std::string &code, TypePeriod type_period, bool is_down_forward)
 {
     Code3pForcastType &code_3p_fcst = Get3pDataHolder(type_period, is_down_forward);

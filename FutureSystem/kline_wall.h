@@ -154,13 +154,13 @@ private:
     T_HisDataItemContainer* AppendPreData(int date, int hhmm);
     T_HisDataItemContainer* AppendData(int date, int hhmm);
     
+     
+    void Draw2pDownForcast(QPainter &, const int mm_h, double item_w, ForcastMan &forcast_man);
+    void Draw2pUpForcast(QPainter &, const int mm_h, double item_w, ForcastMan &forcast_man);
 
-    void Draw2pDownForcast(QPainter &, const int mm_h, double item_w);
-    void Draw2pUpForcast(QPainter &, const int mm_h, double item_w);
-
-    void Draw3pDownForcast(QPainter &, const int mm_h, double item_w);
-    void Draw3pUpForcast(QPainter &, const int mm_h, double item_w);
-    void _Draw3pForcast(QPainter &, const int mm_h, double item_w, bool is_down_forward);
+    void Draw3pDownForcast(QPainter &, const int mm_h, double item_w, ForcastMan &forcast_man);
+    void Draw3pUpForcast(QPainter &, const int mm_h, double item_w, ForcastMan &forcast_man);
+    void _Draw3pForcast(QPainter &, const int mm_h, double item_w, bool is_down_forward, ForcastMan &forcast_man);
 
     void DrawBi(QPainter &, const int mm_h);
     void DrawStructLine(QPainter &painter, const int mm_h);

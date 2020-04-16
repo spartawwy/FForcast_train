@@ -16,7 +16,7 @@
 
 using namespace TSystem;
 
-
+// ps: only invoke by mouse drag and zoom in
 void KLineWall::AppendData()
 { 
     int oldest_day = QDateTime::currentDateTime().toString("yyyyMMdd").toInt();
@@ -43,6 +43,7 @@ void KLineWall::AppendData()
     if( !p_container->empty() )
     { 
         app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_);
+        HandleAutoForcast();
     }
 }
 
@@ -77,6 +78,7 @@ T_HisDataItemContainer* KLineWall::AppendData(int date, int hhmm)
         return p_hisdata_container_;
     }
     auto p_container = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, back_date, date, is_index_);
+    
     return p_container;
 }
 
@@ -304,11 +306,6 @@ int KLineWall::Calculate_k_mm_h()
             mm_h -= zb_windows_[i]->Height();
     }
     return mm_h;
-}
-
-void KLineWall::HandleAutoForcast()
-{
-    // todo:
 }
 
 void KLineWall::ClearForcastData()

@@ -119,10 +119,11 @@ bool KLineWall::Init()
     return ResetStock(DEFAULT_CODE, k_type_, false, MARKET_SH_FUTURES); // 600196  000301
 
 }
+ 
 
-void KLineWall::Draw2pDownForcast(QPainter &painter, const int mm_h, double item_w)
+void KLineWall::Draw2pDownForcast(QPainter &painter, const int mm_h, double item_w, ForcastMan &forcast_man)
 {
-    std::vector<T_Data2pForcast> *p_data_vector = forcast_man_.Find2pForcastVector(stock_code_, k_type_, true);
+    std::vector<T_Data2pForcast> *p_data_vector = forcast_man.Find2pForcastVector(stock_code_, k_type_, true);
 
     if( p_data_vector && !p_data_vector->empty() )
     { 
@@ -193,9 +194,9 @@ fronts_to_draw.push_back(std::make_tuple(QPointF(h_line_left - font_size*6, y3),
 
 }
 
-void KLineWall::Draw2pUpForcast(QPainter &painter, const int mm_h, double item_w)
+void KLineWall::Draw2pUpForcast(QPainter &painter, const int mm_h, double item_w, ForcastMan &forcast_man)
 {
-    std::vector<T_Data2pForcast> *p_data_vector = forcast_man_.Find2pForcastVector(stock_code_, k_type_, false);
+    std::vector<T_Data2pForcast> *p_data_vector = forcast_man.Find2pForcastVector(stock_code_, k_type_, false);
     if( !p_data_vector || p_data_vector->empty() )
         return;
 
@@ -257,19 +258,19 @@ fronts_to_draw.push_back(std::make_tuple(QPointF(h_line_left - font_size*6, y3),
     });
 }
 
-void KLineWall::Draw3pDownForcast(QPainter &painter, const int mm_h, double item_w)
+void KLineWall::Draw3pDownForcast(QPainter &painter, const int mm_h, double item_w, ForcastMan &forcast_man)
 {
-    _Draw3pForcast(painter, mm_h, item_w, true);
+    _Draw3pForcast(painter, mm_h, item_w, true, forcast_man);
 }
 
-void KLineWall::Draw3pUpForcast(QPainter &painter, const int mm_h, double item_w)
+void KLineWall::Draw3pUpForcast(QPainter &painter, const int mm_h, double item_w, ForcastMan &forcast_man)
 {
-    _Draw3pForcast(painter, mm_h, item_w, false);
+    _Draw3pForcast(painter, mm_h, item_w, false, forcast_man);
 }
 
-void KLineWall::_Draw3pForcast(QPainter &painter, const int mm_h, double item_w, bool is_down_forward)
+void KLineWall::_Draw3pForcast(QPainter &painter, const int mm_h, double item_w, bool is_down_forward, ForcastMan &forcast_man)
 {
-    std::vector<T_Data3pForcast> *p_data_vector = forcast_man_.Find3pForcastVector(stock_code_, k_type_, is_down_forward);
+    std::vector<T_Data3pForcast> *p_data_vector = forcast_man.Find3pForcastVector(stock_code_, k_type_, is_down_forward);
     if( !p_data_vector || p_data_vector->empty() )
         return;
 
@@ -1146,13 +1147,18 @@ void KLineWall::paintEvent(QPaintEvent*)
         if( is_draw_section_ )
             DrawSection(painter, k_mm_h);
 
-        // paint 3pdatas ----------------------
-        Draw2pDownForcast(painter, k_mm_h, item_w);
-        Draw2pUpForcast(painter, k_mm_h, item_w);  
+        // paint handle forecast ----------------------
+        Draw2pDownForcast(painter, k_mm_h, item_w, forcast_man_);
+        Draw2pUpForcast(painter, k_mm_h, item_w, forcast_man_);  
 
-        Draw3pDownForcast(painter, k_mm_h, item_w);
-        Draw3pUpForcast(painter, k_mm_h, item_w);
+        Draw3pDownForcast(painter, k_mm_h, item_w, forcast_man_);
+        Draw3pUpForcast(painter, k_mm_h, item_w, forcast_man_);
         
+        Draw2pDownForcast(painter, k_mm_h, item_w, auto_forcast_man_);
+        Draw2pUpForcast(painter, k_mm_h, item_w, auto_forcast_man_);  
+
+        Draw3pDownForcast(painter, k_mm_h, item_w, auto_forcast_man_);
+        Draw3pUpForcast(painter, k_mm_h, item_w, auto_forcast_man_);
     } //if( p_hisdata_container_ )
    
     //k line view bottom border horizontal line (----------)
@@ -1800,6 +1806,7 @@ bool KLineWall::Reset_Stock_Train(const QString& stock, TypePeriod type_period, 
                 // log error
             }
             app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
+            HandleAutoForcast();
         } 
 
         if( !p_hisdata_container_ )
@@ -2035,6 +2042,7 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
             ret_item = SetTrainByDateTime(date, hhmm);
             assert(ret_item);
             app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
+            HandleAutoForcast();
         }
     }
     if( !p_hisdata_container_->empty() )
@@ -2071,6 +2079,7 @@ T_StockHisDataItem* KLineWall::SetTrainEndDateTime(TypePeriod tp_period, int dat
         k_rend_index_for_train(target_r_end_index);
         k_rend_index_ = target_r_end_index;
         app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
+        HandleAutoForcast();
         }
     }
     if( ret_item ) train_end_date_ = ret_item->date;
@@ -2103,7 +2112,6 @@ T_StockHisDataItem KLineWall::Train_NextStep()
             {
                 app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
             }
-
             if( wall_index_ != (int)WallIndex::ORISTEP )
             {
                 const unsigned int left_index = p_hisdata_container_->size() - k_rend_index_for_train_ - 1;
@@ -2121,32 +2129,43 @@ T_StockHisDataItem KLineWall::Train_NextStep()
 
 void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
 { 
-    auto do_move_train_to_next = [this](T_StockHisDataItem & input_item, bool is_to_cover) // ps: not allow static auto
-    {
-        k_rend_index_for_train(k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0);
-        T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
+    //auto do_move_train_to_next = [this](T_StockHisDataItem & input_item, bool is_to_cover) // ps: not allow static auto
+    //{
+    //    k_rend_index_for_train(k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0);
+    //    T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
 
-        k_cur_train_date_ = target_item->stk_item.date; //ndchk
-        k_cur_train_hhmm_ = target_item->stk_item.hhmmss; //ndchk
-        if( is_to_cover )
-        {
-            target_item->stk_item.open_price = input_item.open_price;
-            target_item->stk_item.close_price = input_item.close_price;
-            target_item->stk_item.high_price = input_item.high_price;
-            target_item->stk_item.low_price = input_item.low_price;
-            target_item->stk_item.vol = input_item.vol;
-        }
+    //    k_cur_train_date_ = target_item->stk_item.date; //ndchk
+    //    k_cur_train_hhmm_ = target_item->stk_item.hhmmss; //ndchk
+    //    if( is_to_cover )
+    //    {
+    //        target_item->stk_item.open_price = input_item.open_price;
+    //        target_item->stk_item.close_price = input_item.close_price;
+    //        target_item->stk_item.high_price = input_item.high_price;
+    //        target_item->stk_item.low_price = input_item.low_price;
+    //        target_item->stk_item.vol = input_item.vol;
+    //    }
 
-        k_rend_index_ = k_rend_index_for_train_;
-    };
+    //    k_rend_index_ = k_rend_index_for_train_;
+    //};
 
     if( p_hisdata_container_->empty() || k_rend_index_for_train_ <= 0 )
         return; 
      
     if( k_type_ == DEFAULT_ORI_STEP_TYPE_PERIOD )
     {
-        do_move_train_to_next(input_item, false);
+        k_rend_index_for_train(k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0);
+        T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
 
+        k_cur_train_date_ = target_item->stk_item.date;  
+        k_cur_train_hhmm_ = target_item->stk_item.hhmmss;  
+        target_item->stk_item.open_price = input_item.open_price;
+        target_item->stk_item.close_price = input_item.close_price;
+        target_item->stk_item.high_price = input_item.high_price;
+        target_item->stk_item.low_price = input_item.low_price;
+        target_item->stk_item.vol = input_item.vol;
+
+        k_rend_index_ = k_rend_index_for_train_;
+        HandleAutoForcast();
     }else 
     {
         T_HisDataItemContainer::reference cur_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
@@ -2177,7 +2196,7 @@ void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
                         target_item->stk_item.low_price = input_item.low_price;
                         target_item->stk_item.vol = input_item.vol;
                         app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
-
+                        HandleAutoForcast();
                     }else
                     {
                         // update cur item
@@ -2186,11 +2205,13 @@ void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
                         {
                             cur_item->stk_item.high_price = input_item.high_price;
                             app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
+                            HandleAutoForcast();
                         }
                         if( input_item.low_price < cur_item->stk_item.low_price )
                         {
                             cur_item->stk_item.low_price = input_item.low_price;
                             app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
+                            HandleAutoForcast();
                         }
                         cur_item->stk_item.vol += input_item.vol;
                     }
