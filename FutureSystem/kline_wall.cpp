@@ -306,6 +306,11 @@ int KLineWall::Calculate_k_mm_h()
     return mm_h;
 }
 
+void KLineWall::HandleAutoForcast()
+{
+    // todo:
+}
+
 void KLineWall::ClearForcastData()
 { 
     auto iter = forcast_man_.Find2pForcastVector(stock_code_, k_type_, true);

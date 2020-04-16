@@ -91,11 +91,13 @@ public:
 
     T_StockHisDataItem* SetTrainByDateTime(int date, int hhmm);
     T_StockHisDataItem* SetTrainByRendIndex(int rend_index);
-    std::tuple<int, int> MoveRightEndToNextK();
-    void MoveRightEndToNextK(int date, int hhmm);
+   
     T_StockHisDataItem Train_NextStep();
     void Train_NextStep(T_StockHisDataItem & input_item);
-
+#if 0 
+    std::tuple<int, int> MoveRightEndToNextK();
+    void MoveRightEndToNextK(int date, int hhmm);
+#endif
     //void MoveRightEndToPreDayK();
     const T_StockHisDataItem & CurTrainStockDataItem();
     void right_clicked_k_date(int date) { right_clicked_k_date_ = date; }
@@ -191,7 +193,8 @@ private:
 
     int Calculate_k_mm_h();
 
-
+    void HandleAutoForcast();
+    //-------------------------------------------------------
     FuturesForecastApp *app_;
     MainWindow  *main_win_;
 	Ui_KLineWallForm  ui;
@@ -259,9 +262,13 @@ private:
 
     QMenu * k_wall_menu_;
     QMenu * k_wall_menu_sub_;
-    ForcastMan  forcast_man_;
+
+    // forcast related -----------
+    ForcastMan  forcast_man_; 
     T_DataForcast *cur_select_forcast_;
 
+    ForcastMan  auto_forcast_man_;
+    //---------------------------
     std::vector<std::shared_ptr<ZhibiaoWindow> > zb_windows_;
 
     bool is_draw_bi_;

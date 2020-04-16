@@ -315,7 +315,7 @@ void StockDataMan::TraverseSetFeatureData(const std::string &stk_code, PeriodTyp
         TraverseGetBi(period_type, code, items);
 #endif
 
-        TraverseGetStuctLines(period_type, stk_code, items);
+        TraverseGetStuctLines(period_type, stk_code, r_start_index, items);
 
 #if defined(USE_ZHONGSHU)
     if( is_index )
@@ -593,7 +593,9 @@ void TraverseSetUpwardFractal(T_HisDataItemContainer &kline_data_items, int r_st
     unsigned int index = 1;
     if( backward_size > 0 )
     {
-        index = kline_data_items.size() - backward_size + 1;
+        index = kline_data_items.size() - backward_size + 1 - r_start_index;
+        if( index < 1 )
+            index = 1;
     }
     while( index < kline_data_items.size() - 1 - r_start_index )
     {
@@ -696,7 +698,9 @@ void TraverseSetDownwardFractal( T_HisDataItemContainer &kline_data_items, int r
     unsigned int index = 1;
     if( backward_size > 0 )
     {
-        index = kline_data_items.size() - backward_size + 1;
+        index = kline_data_items.size() - backward_size + 1 - r_start_index;
+        if( index < 1 )
+            index = 1;
     }
     // from left to right
     while( index < kline_data_items.size() - 1 - r_start_index )
@@ -1210,6 +1214,7 @@ void StockDataMan::TraverseGetBi(PeriodType period_type, const std::string &code
     }
 }
 
+// towards left
 int find_next_btm_fractal(std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items, int from_index)
 {
     int local_index = from_index;
@@ -1222,6 +1227,7 @@ int find_next_btm_fractal(std::deque<std::shared_ptr<T_KlineDataItem> > &kline_d
     return -1;
 }
 
+// towards left
 int find_next_top_fractal(std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items, int from_index)
 {
     int local_index = from_index;
@@ -1345,7 +1351,7 @@ void find_up_towardleft_end(std::deque<std::shared_ptr<T_KlineDataItem> > &kline
 } 
 
 // ps : towards left 
-void StockDataMan::TraverseGetStuctLines(PeriodType period_type, const std::string &code, std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items)
+void StockDataMan::TraverseGetStuctLines(PeriodType period_type, const std::string &code, int r_start_index, std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items)
 {
     auto find_next_up_struct_line_end_hight_p = [](std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items, int index, double pre_btm_price)->double
     { 
@@ -1379,6 +1385,7 @@ void StockDataMan::TraverseGetStuctLines(PeriodType period_type, const std::stri
         return -1 * MAX_PRICE;
     };
 
+    //towards left
     auto find_next_down_struct_line_end_low_p = [](std::deque<std::shared_ptr<T_KlineDataItem> > &kline_data_items, int index, double pre_top_price)->double
     { 
         if( kline_data_items.size() < 1 )
@@ -1411,11 +1418,14 @@ void StockDataMan::TraverseGetStuctLines(PeriodType period_type, const std::stri
         return -1 * MAX_PRICE;
     };
      
-    if( kline_data_items.size() < 1 )
+    if( kline_data_items.empty() )
         return;
+    assert(r_start_index >= 0);
+    assert(r_start_index < kline_data_items.size());
+
     T_StructLineContainer &container = GetStructLineContainer(period_type, code); 
     container.clear();
-    unsigned int index = kline_data_items.size();
+    unsigned int index = kline_data_items.size() - r_start_index;
     double pre_btm_price = MAX_PRICE;
     double pre_top_price = MIN_PRICE;
     bool is_pre_add_up_line = false;

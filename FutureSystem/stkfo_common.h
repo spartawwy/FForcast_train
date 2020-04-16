@@ -446,4 +446,6 @@ void SoundFilled(bool is_o_filled);
 
 #define ONE_BEAT 400
 
+#define DEFAULT_TRAVERSE_LEFT_K_NUM  50
+
 #endif // STKFO_COMMON_SDF3DSF_H_

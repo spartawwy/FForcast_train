@@ -67,6 +67,7 @@ KLineWall::KLineWall(FuturesForecastApp *app, QWidget *parent, int index, TypePe
     , move_start_point_(0, 0)
     , area_select_flag_(false)
     , forcast_man_(index)
+    , auto_forcast_man_(index)
     , cur_select_forcast_(nullptr)
     , is_draw_bi_(false)
     , is_draw_struct_line_(false)
@@ -1036,7 +1037,7 @@ void KLineWall::paintEvent(QPaintEvent*)
         painter.drawRect(pos_data.columnar_top_left.x(), pos_data.columnar_top_left.y(), pos_data.x_right - pos_data.x_left, pos_data.height);
         painter.drawLine(pos_data.top.x(), pos_data.top.y(), pos_data.bottom.x(), pos_data.bottom.y());
         //------over trading time vertical line----------
-        if( (*iter)->stk_item.hhmmss == 1500 | (*iter)->stk_item.hhmmss == 230 )
+        if( (*iter)->stk_item.hhmmss == 1500 || (*iter)->stk_item.hhmmss == 230 )
         {
             painter.setPen(pen_notice); 
             painter.drawLine(pos_data.top.x(), this->height() - h_axis_trans_in_paint_k_, pos_data.top.x(), -1 * this->height());
@@ -1928,11 +1929,11 @@ void KLineWall::UpdateIfNecessary(int target_date, int cur_hhmm)
                 TraverseAjustFractal(container, 0, backward_size);
             }
             if( ret == 1 )
-                TraverSetSignale(k_type_, container, 0, 50);
+                TraverSetSignale(k_type_, container, 0, DEFAULT_TRAVERSE_LEFT_K_NUM);
             else if( ret == 2 )
             {
                 TraverSetSignale(k_type_, container);
-                app_->stock_data_man().TraverseGetStuctLines(ToPeriodType(k_type_), stock_code_, container);
+                app_->stock_data_man().TraverseGetStuctLines(ToPeriodType(k_type_), stock_code_, 0, container);
             }
             is_need_updated = ret > 0;
             
@@ -2056,7 +2057,7 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
 T_StockHisDataItem* KLineWall::SetTrainEndDateTime(TypePeriod tp_period, int date, int hhmm)
 {
     T_StockHisDataItem* ret_item = nullptr;
-     
+    const int old_size = p_hisdata_container_->size();
     int target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), date, hhmm);
     if( target_r_end_index > -1 )
     { 
@@ -2064,43 +2065,18 @@ T_StockHisDataItem* KLineWall::SetTrainEndDateTime(TypePeriod tp_period, int dat
     }else
     {  
         auto p_container = AppendData(date, hhmm); 
-        if( !p_container->empty() )
+        if( p_container->size() > old_size )
         {
-            ret_item = SetTrainByDateTime(date, hhmm);
-            assert(ret_item);
-            app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
+        target_r_end_index = FindKRendIndexInHighPeriodContain(k_type_, *p_hisdata_container_, *app_->exchange_calendar(), k_cur_train_date_, k_cur_train_hhmm_);
+        k_rend_index_for_train(target_r_end_index);
+        k_rend_index_ = target_r_end_index;
+        app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
         }
     }
     if( ret_item ) train_end_date_ = ret_item->date;
     else train_end_date_ = date;
     return ret_item;
 }
-
-// return <data, hhmm> of next k
-std::tuple<int, int> KLineWall::MoveRightEndToNextK()
-{
-    if( p_hisdata_container_->empty() || k_rend_index_for_train_ <= 0 )
-        return std::make_tuple(0, 0);
-
-    const int old_k_rend_index = k_rend_index_; 
-    const int old_date = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.date;
-    const int old_hhmm = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.hhmmss;
-
-    k_rend_index_for_train(k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0);
-
-    k_cur_train_date_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
-    k_cur_train_hhmm_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.hhmmss;
-    
-    k_rend_index_ = k_rend_index_for_train_;
-    if( old_k_rend_index != k_rend_index_ )
-    {
-        UpdateKwallMinMaxPrice();
-        UpdatePosDatas();
-        update();
-    }
-    return std::make_tuple(k_cur_train_date_, k_cur_train_hhmm_);
-}
-
  
 T_StockHisDataItem KLineWall::Train_NextStep()
 { 
@@ -2121,6 +2097,13 @@ T_StockHisDataItem KLineWall::Train_NextStep()
         k_rend_index_ = k_rend_index_for_train_;
         if( old_k_rend_index != k_rend_index_ )
         {
+            T_HisDataItemContainer::reference pre_item = *(p_hisdata_container_->rbegin() + old_k_rend_index);
+            if( target_item->stk_item.low_price < pre_item->stk_item.low_price  
+                || target_item->stk_item.high_price > pre_item->stk_item.high_price)
+            {
+                app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
+            }
+
             if( wall_index_ != (int)WallIndex::ORISTEP )
             {
                 const unsigned int left_index = p_hisdata_container_->size() - k_rend_index_for_train_ - 1;
@@ -2193,12 +2176,22 @@ void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
                         target_item->stk_item.high_price = input_item.high_price;
                         target_item->stk_item.low_price = input_item.low_price;
                         target_item->stk_item.vol = input_item.vol;
+                        app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
+
                     }else
                     {
                         // update cur item
                         cur_item->stk_item.close_price = input_item.close_price;
-                        if( input_item.high_price > cur_item->stk_item.high_price ) cur_item->stk_item.high_price = input_item.high_price;
-                        if( input_item.low_price < cur_item->stk_item.low_price ) cur_item->stk_item.low_price = input_item.low_price;
+                        if( input_item.high_price > cur_item->stk_item.high_price ) 
+                        {
+                            cur_item->stk_item.high_price = input_item.high_price;
+                            app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
+                        }
+                        if( input_item.low_price < cur_item->stk_item.low_price )
+                        {
+                            cur_item->stk_item.low_price = input_item.low_price;
+                            app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_,  k_rend_index_for_train_, DEFAULT_TRAVERSE_LEFT_K_NUM);
+                        }
                         cur_item->stk_item.vol += input_item.vol;
                     }
                 }
@@ -2216,6 +2209,32 @@ void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
         UpdatePosDatas();
         update();
     }
+}
+
+#if 0 
+// return <data, hhmm> of next k
+std::tuple<int, int> KLineWall::MoveRightEndToNextK()
+{
+    if( p_hisdata_container_->empty() || k_rend_index_for_train_ <= 0 )
+        return std::make_tuple(0, 0);
+
+    const int old_k_rend_index = k_rend_index_; 
+    const int old_date = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.date;
+    const int old_hhmm = ( *(p_hisdata_container_->rbegin() + k_rend_index_for_train_) )->stk_item.hhmmss;
+
+    k_rend_index_for_train(k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0);
+
+    k_cur_train_date_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
+    k_cur_train_hhmm_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.hhmmss;
+    
+    k_rend_index_ = k_rend_index_for_train_;
+    if( old_k_rend_index != k_rend_index_ )
+    {
+        UpdateKwallMinMaxPrice();
+        UpdatePosDatas();
+        update();
+    }
+    return std::make_tuple(k_cur_train_date_, k_cur_train_hhmm_);
 }
 
 // move to target k( date, hhmm )
@@ -2280,7 +2299,7 @@ void KLineWall::MoveRightEndToNextK(int date, int hhmm)
         update();
     }
 }
-
+#endif
 //#if 0 
 //void KLineWall::MoveRightEndToPreDayK()
 //{
