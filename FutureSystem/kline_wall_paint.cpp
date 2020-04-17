@@ -1153,12 +1153,14 @@ void KLineWall::paintEvent(QPaintEvent*)
 
         Draw3pDownForcast(painter, k_mm_h, item_w, forcast_man_);
         Draw3pUpForcast(painter, k_mm_h, item_w, forcast_man_);
-        
+        if( main_win_->is_show_autoforcast() )
+        {
         Draw2pDownForcast(painter, k_mm_h, item_w, auto_forcast_man_);
         Draw2pUpForcast(painter, k_mm_h, item_w, auto_forcast_man_);  
 
         Draw3pDownForcast(painter, k_mm_h, item_w, auto_forcast_man_);
         Draw3pUpForcast(painter, k_mm_h, item_w, auto_forcast_man_);
+        }
     } //if( p_hisdata_container_ )
    
     //k line view bottom border horizontal line (----------)

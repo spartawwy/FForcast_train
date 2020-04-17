@@ -120,7 +120,7 @@ public:
     //void LockPaintingMutex() { std::lock locker(painting_mutex_); }
 
     void UpdateStockQuote();
-
+     
 signals:
     void sigUpdateKwall();
 
@@ -268,6 +268,7 @@ private:
     T_DataForcast *cur_select_forcast_;
 
     ForcastMan  auto_forcast_man_;
+    
     //---------------------------
     std::vector<std::shared_ptr<ZhibiaoWindow> > zb_windows_;
 

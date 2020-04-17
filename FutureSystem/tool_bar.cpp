@@ -32,6 +32,7 @@ ToolBar::ToolBar(QWidget *parent)
     , main_show_section_btn_(nullptr)
     , sub_show_section_btn_(nullptr)
     , show_sub_kwall_btn_(nullptr)
+    , show_autoforcast_btn_(nullptr)
     , pre_btn_(nullptr)
     , main_cycle_comb_(nullptr)
     , sub_cycle_comb_(nullptr)
@@ -71,6 +72,11 @@ ToolBar::ToolBar(QWidget *parent)
     show_sub_kwall_btn_ = new QPushButton(QString::fromLocal8Bit("联动窗口"));
     show_sub_kwall_btn_->setFixedSize(54, 22);
     show_sub_kwall_btn_->setCheckable(true);
+
+    show_autoforcast_btn_ = new QPushButton(QString::fromLocal8Bit("自动预测"));
+    show_autoforcast_btn_->setFixedSize(54, 22);
+    show_autoforcast_btn_->setCheckable(true);
+     
 
     ab_down_for_c_pen_ = new QPushButton();
     QPixmap icon1(tr("img/ab_down_c.png"));
@@ -136,6 +142,9 @@ ToolBar::ToolBar(QWidget *parent)
 
     ret = connect(show_sig_btn, SIGNAL(clicked(bool)), this, SLOT(onShowSignal(bool))); 
     ret = connect(mock_trade_btn, SIGNAL(clicked(bool)), this, SLOT(onShowMockTradeWin())); 
+     
+    ret = connect(show_autoforcast_btn_, SIGNAL(clicked(bool)), this, SLOT(onShowAutoForcast(bool))); 
+    
     ret = ret;
 
     QHBoxLayout *pLayout = new QHBoxLayout(this);
@@ -174,6 +183,9 @@ ToolBar::ToolBar(QWidget *parent)
     pLayout->addSpacing(5);
     pLayout->addWidget(sub_cycle_comb_);
 
+    pLayout->addSpacing(5);
+    pLayout->addWidget(show_autoforcast_btn_);
+     
     pLayout->setContentsMargins(5, 0, 5, 0);
      
     setLayout(pLayout);
@@ -226,6 +238,7 @@ void ToolBar::SetShowSubKwallBtn(bool checked)
     sub_show_section_btn_->setVisible(checked);
     sub_cycle_comb_->setVisible(checked);
 }
+
 
 void ToolBar::mouseDoubleClickEvent(QMouseEvent *)
 {
@@ -364,6 +377,11 @@ void ToolBar::onShowTrainModelWin()
 {
     m_main_window->PopTrainDlg(!m_main_window->is_train_mode());
     m_main_window->is_train_mode(true);
+}
+
+void ToolBar::onShowAutoForcast(bool checked)
+{
+    m_main_window->is_show_autoforcast(checked);
 }
 
 void ToolBar::ConnectAllDrawNormalBtn()

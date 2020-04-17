@@ -55,6 +55,7 @@ MainWindow::MainWindow(FuturesForecastApp *app, QWidget *parent) :
     , mock_trade_dlg_(nullptr)
     , show_sig_(false)
     , cur_quote_price_(0.0)
+    , is_show_autoforcast_(false)
 {
     ui->setupUi(this); 
 }

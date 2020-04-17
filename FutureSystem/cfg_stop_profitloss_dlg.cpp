@@ -144,6 +144,7 @@ void CfgStopProfitLossDlg::OnSave()
         
         PositionAtom atom;
         atom.trade_id = data_model_->item(i, cst_tbv_pos_id)->text().toInt(); 
+        atom.qty_available = data_model_->item(i, cst_tbv_pos_qty)->text().toInt(); 
         atom.stop_profit_price = stop_profit_price;
         atom.stop_loss_price = stop_loss_price;
         pos_atoms.push_back(atom);

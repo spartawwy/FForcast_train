@@ -16,6 +16,7 @@
 #include "tool_bar.h"
 #include "kline_wall.h"
 #include "cfg_stop_profitloss_dlg.h"
+#include "cfg_train_dlg.h"
 
 #include "train_trade.h"
 
@@ -71,6 +72,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , parent_(parent)
     , main_win_(main_win)
     , cfg_stop_profitloss_dlg_(nullptr)
+    , cfg_train_dlg_(nullptr)
     , account_info_()
     , ori_capital_(cst_default_ori_capital)
     , force_close_low_(MAX_PRICE)
@@ -92,6 +94,10 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     cfg_stop_profitloss_dlg_->setWindowFlags(cfg_stop_profitloss_dlg_->windowFlags() | Qt::WindowStaysOnTopHint/*Qt::Dialog*/ );
     cfg_stop_profitloss_dlg_->hide();
      
+    cfg_train_dlg_ = new CfgTrainDlg(this);
+    cfg_train_dlg_->setWindowFlags(cfg_stop_profitloss_dlg_->windowFlags() | Qt::WindowStaysOnTopHint/*Qt::Dialog*/ );
+    cfg_train_dlg_->hide();
+
     bool ret = false;
     ret = connect(ui.pbtnStart, SIGNAL(clicked()), this, SLOT(OnStartTrain()));
     ret = connect(ui.pbtnStop, SIGNAL(clicked()), this, SLOT(OnStopTrain()));
@@ -101,7 +107,8 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ret = connect(ui.pbtn_buy, SIGNAL(clicked()), this, SLOT(OnBuy()));
     ret = connect(ui.pbtn_sell, SIGNAL(clicked()), this, SLOT(OnSell()));
     assert(ret);
-     
+    ret = connect(ui.pbtn_config,  SIGNAL(clicked()), this, SLOT(OnShowCfg()));
+    assert(ret);
     // set his k date range info----------------
     T_DateRange  date_rage_5m;
     bool result = main_win_->app_->data_base()->GetHisKBarDateRange(DEFAULT_CODE, false, TypePeriod::PERIOD_5M, date_rage_5m);
@@ -502,6 +509,11 @@ void TrainDlg::OnCloseAllUnfrozenPos()
     if( !ret_info.isEmpty() )
         SetStatusBar(ret_info);
     RefreshCapitalUi();
+}
+
+void TrainDlg::OnShowCfg()
+{
+    cfg_train_dlg_->showNormal();
 }
 
 //ps: auto ajust account_info_.capital
@@ -1123,6 +1135,25 @@ void TrainDlg::OnSell()
 
 void TrainDlg::SaveStopProfitLoss(std::vector<PositionAtom> &pos_atoms)
 {
+    auto append_stop_order = [this](PositionAtom &pos_atom, bool is_stop_loss)
+    {
+        OrderInfo order(is_stop_loss ? OrderType::STOPLOSS : OrderType::STOPPROFIT);
+        order.rel_position_id = pos_atom.trade_id;
+        order.action = OrderAction::CLOSE;
+        // target position type
+        order.position_type = pos_atom.is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
+        order.qty = pos_atom.qty_available;
+        if( is_stop_loss )
+        {
+            order.price = pos_atom.stop_loss_price; 
+            stop_loss_order_infos_.push_back(order);
+        }else // stop profit
+        {
+            order.price = pos_atom.stop_profit_price; 
+            stop_profit_order_infos_.push_back(order);
+        } 
+    };
+
     assert(!pos_atoms.empty());
     for( unsigned int i = 0; i < pos_atoms.size(); ++i )
     {
@@ -1135,10 +1166,14 @@ void TrainDlg::SaveStopProfitLoss(std::vector<PositionAtom> &pos_atoms)
        auto target_order_item = std::find_if(stop_profit_order_infos_.begin(), stop_profit_order_infos_.end(), [&](OrderInfo &order_info){ return order_info.rel_position_id == pos_atoms[i].trade_id; });
        if( target_order_item != stop_profit_order_infos_.end() )
            target_order_item->price = pos_atoms[i].stop_profit_price;
+       else
+           append_stop_order(pos_atoms[i], false);
 
        target_order_item = std::find_if(stop_loss_order_infos_.begin(), stop_loss_order_infos_.end(), [&](OrderInfo &order_info){ return order_info.rel_position_id == pos_atoms[i].trade_id; });
        if( target_order_item != stop_loss_order_infos_.end() )
            target_order_item->price = pos_atoms[i].stop_loss_price;
+       else
+           append_stop_order(pos_atoms[i], true);
     }
     UpdateOrders2KlineWalls(ORDER_TYPE_STOPPROFIT);
     UpdateOrders2KlineWalls(ORDER_TYPE_STOPLOSS);

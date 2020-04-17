@@ -68,7 +68,9 @@ void KLineWall::HandleAutoForcast()
             double highest_price = item_a.high_price;
             for( unsigned int i = 2; i < line_datas.size(); i += 2 )
             {
-                assert(line_datas[i]->type == LineType::DOWN);
+                //assert(line_datas[i]->type == LineType::DOWN);
+                if(line_datas[i]->type != LineType::DOWN)
+                    break;
                 T_StockHisDataItem &item_front_beg = k_datas[line_datas[i]->beg_index]->stk_item; 
                 T_StockHisDataItem &item_front_end = k_datas[line_datas[i]->end_index]->stk_item; 
                 if( item_front_end.low_price < item_b.low_price )
@@ -96,7 +98,9 @@ void KLineWall::HandleAutoForcast()
             double lowest_price = item_a.low_price;
             for( unsigned int i = 2; i < line_datas.size(); i += 2 )
             {
-                assert(line_datas[i]->type == LineType::UP);
+                //assert(line_datas[i]->type == LineType::UP);
+                if(line_datas[i]->type != LineType::UP)
+                    break;
                 T_StockHisDataItem &item_front_beg = k_datas[line_datas[i]->beg_index]->stk_item; 
                 T_StockHisDataItem &item_front_end = k_datas[line_datas[i]->end_index]->stk_item; 
                 if( item_front_end.high_price > item_b.high_price )

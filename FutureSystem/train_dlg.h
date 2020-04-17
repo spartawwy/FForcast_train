@@ -19,6 +19,7 @@
 #define ORDER_TYPE_CONDITION  4
 #define ORDER_TYPE_ALL  5
  
+class CfgTrainDlg;
 class CfgStopProfitLossDlg;
 class KLineWall;
 class MainWindow;
@@ -51,8 +52,9 @@ public slots:
     void OnNextStep();
      
     void OnBuy();
-    void OnSell();
+    void OnSell(); 
     void OnCloseAllUnfrozenPos();
+    void OnShowCfg();
 
     double cur_quote(){ return cur_kdata_item_.close_price; }
 
@@ -109,7 +111,8 @@ private:
     KLineWall *parent_;
     MainWindow *main_win_;
     CfgStopProfitLossDlg *cfg_stop_profitloss_dlg_;
-     
+    CfgTrainDlg *cfg_train_dlg_;
+
     AccountInfo  account_info_;
     double ori_capital_;
     double force_close_low_;
@@ -127,6 +130,9 @@ private:
     int scroll_bar_date_;
 
     // auto stop profit/loss related -----
+    //void auto_stop_profit(bool val){ auto_stop_profit_ = val; }
+    //void auto_stop_loss(bool val){ auto_stop_loss_ = val; }
+
     bool auto_stop_profit_;
     bool auto_stop_loss_;
     unsigned int auto_stop_profit_ticks_;
@@ -143,6 +149,8 @@ private:
     bool is_started_;
     bool is_running_;
     std::mutex stepping_mutex_;
+
+    friend class CfgTrainDlg;
 };
 
 #endif // TRAIN_DLG_SDFS23343543_H_

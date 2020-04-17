@@ -32,7 +32,7 @@ public:
     void SetSubKwallCurCycleType(TypePeriod type_period);
 
     void SetShowSubKwallBtn(bool checked);
-
+     
 protected:
 
     // 双击标题栏进行界面的最大化/还原
@@ -52,6 +52,7 @@ private slots:
     void onClickedShowSubKwallBtn();
     void onShowTrainModelWin();
     void onShowMockTradeWin();
+    void onShowAutoForcast(bool);
 
     void onShowSignal(bool);
 
@@ -77,6 +78,7 @@ private:
     QPushButton *sub_show_section_btn_;
 
     QPushButton *show_sub_kwall_btn_;
+    QPushButton *show_autoforcast_btn_;
 
     QComboBox   *main_cycle_comb_;
     QComboBox   *sub_cycle_comb_;

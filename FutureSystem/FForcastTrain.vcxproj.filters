@@ -203,6 +203,15 @@
     <ClCompile Include="kline_wall_autoforcast.cpp">
       <Filter>win</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_cfg_train_dlg.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_cfg_train_dlg.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="cfg_train_dlg.cpp">
+      <Filter>win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.ui">
@@ -269,6 +278,9 @@
       <Filter>Form</Filter>
     </CustomBuild>
     <CustomBuild Include="cfg_stop_profitloss_dlg.h">
+      <Filter>win</Filter>
+    </CustomBuild>
+    <CustomBuild Include="cfg_train_dlg.h">
       <Filter>win</Filter>
     </CustomBuild>
   </ItemGroup>
