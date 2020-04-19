@@ -704,6 +704,13 @@ double CalculateFee(int quantity, double price, bool is_close)
     return is_close ? quantity * cst_per_hand_close_fee : quantity * cst_per_hand_open_fee;
 }
 
+double CaculateOpenPositionFreezeCapital(double price, unsigned int quantity)
+{
+    double margin = cst_margin_capital * quantity;
+    double fee = CalculateFee(quantity, price, false);
+    return margin + fee;
+}
+
 int CalculateMaxQtyAllowOpen(double capital, double price)
 {
     assert(capital > 0.0);

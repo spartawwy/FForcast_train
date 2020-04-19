@@ -20,7 +20,13 @@
 
 #include "train_trade.h"
 
-static const int cst_step_timer_inter_val = 5000;
+static const int cst_detail_page_positions = 0;
+static const int cst_detail_page_trades = 1;
+static const int cst_detail_page_conditions = 2;
+
+static const int cst_min_step_delay_ms = 500;
+static const int cst_max_step_delay_ms = 10000;
+static const int cst_default_step_delay_ms = 5000;
  
 static const int cst_small_width = 60;
 
@@ -83,8 +89,11 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , auto_stop_profit_ticks_(10)
     , auto_stop_loss_ticks_(10)
     , condition_model_(nullptr)
+    , max_hangon_order_id_(0)
+    , max_condition_order_id_(0)
     , cur_train_step_(0)
     , step_timer_(nullptr)
+    , step_delay_ms_(cst_default_step_delay_ms)
     , is_started_(false)
     , is_running_(false)
 {
@@ -155,6 +164,13 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
 #endif
     scroll_bar_date_ = eldest_date;
     ret = connect(ui.hScrollBar_TrainTimeRange, SIGNAL(sliderMoved(int)), this, SLOT(OnScrollTrainTimeMoved(int)));
+    assert(ret);
+    //----------------------------------------- 
+    ui.vslider_step_speed->setMinimum(cst_min_step_delay_ms);
+    ui.vslider_step_speed->setMaximum(cst_max_step_delay_ms);
+    assert(cst_max_step_delay_ms > cst_default_step_delay_ms);
+    ui.vslider_step_speed->setValue(cst_max_step_delay_ms - cst_default_step_delay_ms); 
+    ret = connect(ui.vslider_step_speed, SIGNAL(sliderReleased()), this, SLOT(OnSliderStepSpeedChanged()));
     assert(ret);
     //-----------------------------------------
     ret = connect(ui.pbtn_market_price_c, SIGNAL(clicked()), this, SLOT(OnCloseAllUnfrozenPos()));
@@ -285,7 +301,6 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     ret = connect(step_timer_, SIGNAL(timeout()), this, SLOT(OnStepTimer()));
     assert(ret);
 
-    //
     OnStopTrain();
 
     account_info_.capital.avaliable = ori_capital_;
@@ -330,15 +345,18 @@ void TrainDlg::OnTblHangonOrdersRowDoubleClicked(const QModelIndex &index)
     QStandardItemModel * tbl_view_pos_model = static_cast<QStandardItemModel *>(ui.table_view_position->model());
     auto model = (QStandardItemModel*)ui.table_view_order_hangon->model();
     auto temp_order_id = model->item(index.row(), cst_tbview_hangonorder_id)->text().toInt();
-    //bool is_target_long = model->item(index.row(), cst_tbview_hangonorder_oc)->text() == QString::fromLocal8Bit("卖") ? true : false;
+    auto price = model->item(index.row(), cst_tbview_hangonorder_price)->text().toDouble();
+    // cancel related order
     for( auto iter = hangon_order_infos_.begin(); iter != hangon_order_infos_.end(); )
     {
         if( iter->fake_id == temp_order_id )
         {
             if( iter->action == OrderAction::OPEN )
             {
-                account_info_.capital.frozen -= cst_margin_capital * iter->qty;
-                account_info_.capital.avaliable += cst_margin_capital * iter->qty;
+                auto capital = CaculateOpenPositionFreezeCapital(price, iter->qty);
+                assert(!(account_info_.capital.frozen < capital));
+                account_info_.capital.frozen -= capital;
+                account_info_.capital.avaliable += capital;
                 RefreshCapitalUi(); 
             }else  // close
             {
@@ -392,6 +410,13 @@ void TrainDlg::OnScrollTrainTimeMoved(int val)
     int dis_trade_days = distance / ui.hScrollBar_TrainTimeRange->singleStep(); 
     scroll_bar_date_ = main_win_->app_->exchange_calendar()->NextTradeDate(ui.hScrollBar_TrainTimeRange->minimum(), dis_trade_days);
     ui.lab_start_date->setText(QString::number(scroll_bar_date_));
+}
+
+void TrainDlg::OnSliderStepSpeedChanged()
+{
+    step_timer_->stop();
+    step_delay_ms_ = cst_max_step_delay_ms - ui.vslider_step_speed->value();
+    step_timer_->start(step_delay_ms_);
 }
 
 void TrainDlg::closeEvent(QCloseEvent * event)
@@ -508,6 +533,8 @@ void TrainDlg::OnCloseAllUnfrozenPos()
     ClosePosition(cur_quote(), account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE), false, fake_item, &ret_info);
     if( !ret_info.isEmpty() )
         SetStatusBar(ret_info);
+    
+    ui.tab_detail->setCurrentIndex(cst_detail_page_trades);
     RefreshCapitalUi();
 }
 
@@ -599,7 +626,7 @@ void TrainDlg::OnControl()
     {
         is_running_ = true;
         ui.pbtnControl->setText(QString::fromLocal8Bit("暂停"));
-        step_timer_->start(cst_step_timer_inter_val);//step_timer_->start(500);
+        step_timer_->start(step_delay_ms_);//step_timer_->start(500);
     }else
     {
         is_running_ = false;
@@ -733,7 +760,7 @@ void TrainDlg::OnNextStep()
                    filled_price = (ori_cur_item.open_price < iter->price ? ori_cur_item.open_price : iter->price);
                else
                    filled_price = (ori_cur_item.open_price > iter->price ? ori_cur_item.open_price : iter->price);
-               OpenPosition(filled_price, iter->qty, iter->position_type == PositionType::POS_LONG);
+               OpenPosition(filled_price, iter->qty, iter->position_type == PositionType::POS_LONG, nullptr, nullptr, true);
                RemoveFromTblHangonOrderByFakeId(iter->fake_id);
                hangon_order_infos_.erase(iter++);
                continue;
@@ -823,8 +850,8 @@ void TrainDlg::OnNextStep()
     UpdateOrders2KlineWalls(ORDER_TYPE_CONDITION);
 
     //--------------------
-    double total_profit = RecaculatePosTableViewFloatProfit(ori_cur_item.close_price);
-    account_info_.capital.float_profit = ProcDecimal(total_profit, 0);
+    double float_profit = RecaculatePosTableViewFloatProfit(ori_cur_item.close_price);
+    account_info_.capital.float_profit = ProcDecimal(float_profit, 0);
 
     RefreshCapitalUi();
 
@@ -1104,6 +1131,7 @@ void TrainDlg::OnBuy()
         else
             AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), false);
     }
+    ui.tab_detail->setCurrentIndex(cst_detail_page_positions);
     RefreshCapitalUi();
 }
 
@@ -1130,6 +1158,7 @@ void TrainDlg::OnSell()
         else
             AddCloseOrder(ui.dbspb_price->value(), ui.spb_order_num->value(), true);
     }
+    ui.tab_detail->setCurrentIndex(cst_detail_page_positions);
     RefreshCapitalUi();
 }
 
@@ -1183,8 +1212,8 @@ void TrainDlg::OnAddConditionOrder()
 {
     condition_model_->insertRow(condition_model_->rowCount());
     const int row_index = condition_model_->rowCount() - 1;
-
-    auto item = new QStandardItem(QString::number(row_index));
+    const int condition_order_id = GenerateConditionOrderId();
+    auto item = new QStandardItem(QString::number(condition_order_id));
     condition_model_->setItem(row_index, cst_tbview_condition_id, item);
     
     const CompareType comp_type = ui.cmb_conditioin_compare_char->currentText() == ">=" ? CompareType::BIGEQUAL : CompareType::SMALLEQUAL;
@@ -1211,7 +1240,7 @@ void TrainDlg::OnAddConditionOrder()
 
     OrderInfo  order_info;
     order_info.type = OrderType::CONDITION;
-    order_info.fake_id = row_index;
+    order_info.fake_id = condition_order_id;
     order_info.price = condition_price;
     order_info.compare_type = comp_type;
     order_info.action = OrderAction::OPEN;
@@ -1223,20 +1252,26 @@ void TrainDlg::OnAddConditionOrder()
     UpdateOrders2KlineWalls(ORDER_TYPE_CONDITION);
 }
 
-void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, unsigned int *p_profit_stop_ticks, unsigned int *p_loss_stop_ticks)
+void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, unsigned int *p_profit_stop_ticks, unsigned int *p_loss_stop_ticks, bool is_proc_hangon_order)
 { 
     assert(qty > 0);
     double price = para_price; 
-    double capital_buy = cst_margin_capital * qty;
-    double fee = CalculateFee(qty, price, false);
-    if( capital_buy + fee > account_info_.capital.avaliable )
-    {
-        SetStatusBar(QString::fromLocal8Bit("可用资金不足!"));
-        return;
+    const double margin = cst_margin_capital * qty;
+    const double fee = CalculateFee(qty, price, false);
+    if( is_proc_hangon_order )
+    {  // margin and fee has already been frozen
+        assert(!(account_info_.capital.frozen < margin + fee)); 
+        account_info_.capital.frozen -= fee;
+    }else 
+    {   
+        if( margin + fee > account_info_.capital.avaliable )
+        {
+            SetStatusBar(QString::fromLocal8Bit("可用资金不足!"));
+            return;
+        }
+        account_info_.capital.avaliable -= margin + fee; 
+        account_info_.capital.frozen += margin;
     }
-    account_info_.capital.avaliable -= capital_buy + fee; 
-    account_info_.capital.frozen += capital_buy;
-
     auto pos_atom = std::make_shared<PositionAtom>();
     pos_atom->trade_id = account_info_.position.GenerateTradeId();
     pos_atom->is_long = is_long;
@@ -1253,7 +1288,7 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, u
     trade_item.pos_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     trade_item.quantity = qty;
     trade_item.price = pos_atom->price;
-    trade_item.fee = CalculateFee(trade_item.quantity, trade_item.price, trade_item.action);
+    trade_item.fee = fee;
     trade_records_.push_back(trade_item);
     Append2TblTrades(trade_item);
 
@@ -1480,18 +1515,19 @@ void TrainDlg::CloseInputSizePosition(double para_price, bool is_long, const T_S
 
 bool TrainDlg::AddOpenOrder(double price, unsigned int quantity, bool is_long)
 { 
-    double capital_buy = cst_margin_capital * quantity;
-    double fee = CalculateFee(quantity, price, false);
-    if( capital_buy + fee > account_info_.capital.avaliable )
+    /*double capital_buy = cst_margin_capital * quantity;
+    double fee = CalculateFee(quantity, price, false);*/
+    double capital_to_freeze = CaculateOpenPositionFreezeCapital(price, quantity);
+    if( capital_to_freeze > account_info_.capital.avaliable )
     {
         SetStatusBar(QString::fromLocal8Bit("可用资金不足!"));
         return false;
     }
-    account_info_.capital.avaliable -= capital_buy;
-    account_info_.capital.frozen += capital_buy ;
+    account_info_.capital.avaliable -= capital_to_freeze;
+    account_info_.capital.frozen += capital_to_freeze ;
 
     OrderInfo order(OrderType::HANGON);
-    order.fake_id = TblHangonOrdersRowCount();  
+    order.fake_id = GenerateHangonOrderId();  
     order.action = OrderAction::OPEN;
     order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     order.qty = quantity;
@@ -1513,12 +1549,12 @@ bool TrainDlg::AddCloseOrder(double price, unsigned int quantity, bool is_long)
 
     //---------------------------------------
     OrderInfo order(OrderType::HANGON);
-    order.fake_id = TblHangonOrdersRowCount();
+    order.fake_id = GenerateHangonOrderId();
     order.action = OrderAction::CLOSE;
     order.position_type = is_long ? PositionType::POS_LONG : PositionType::POS_SHORT;
     order.qty = quantity;
     order.price = price;
-    // froze avaliable position
+    // freeze avaliable position
     std::unordered_map<int, unsigned int> rel_ids_sizes = is_long ? account_info_.position.LongPosSizeInfo(POSITION_STATUS_AVAILABLE) : account_info_.position.ShortPosSizeInfo(POSITION_STATUS_AVAILABLE);
     unsigned int remain_qty = quantity;
 

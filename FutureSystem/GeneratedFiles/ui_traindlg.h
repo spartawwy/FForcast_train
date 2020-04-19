@@ -25,6 +25,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QRadioButton>
 #include <QtWidgets/QScrollBar>
+#include <QtWidgets/QSlider>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableView>
@@ -97,12 +98,13 @@ public:
     QLabel *label_close_profit;
     QLabel *label_13;
     QPushButton *pbtn_config;
+    QSlider *vslider_step_speed;
 
     void setupUi(QWidget *TrainDlgForm)
     {
         if (TrainDlgForm->objectName().isEmpty())
             TrainDlgForm->setObjectName(QStringLiteral("TrainDlgForm"));
-        TrainDlgForm->resize(621, 449);
+        TrainDlgForm->resize(621, 452);
         label_2 = new QLabel(TrainDlgForm);
         label_2->setObjectName(QStringLiteral("label_2"));
         label_2->setGeometry(QRect(0, 30, 61, 21));
@@ -343,6 +345,12 @@ public:
         pbtn_config->setObjectName(QStringLiteral("pbtn_config"));
         pbtn_config->setGeometry(QRect(300, 0, 75, 23));
         pbtn_config->setFont(font);
+        vslider_step_speed = new QSlider(TrainDlgForm);
+        vslider_step_speed->setObjectName(QStringLiteral("vslider_step_speed"));
+        vslider_step_speed->setGeometry(QRect(570, 10, 20, 51));
+        vslider_step_speed->setPageStep(100);
+        vslider_step_speed->setOrientation(Qt::Vertical);
+        vslider_step_speed->setTickInterval(100);
 
         retranslateUi(TrainDlgForm);
 

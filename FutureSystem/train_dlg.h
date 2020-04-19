@@ -44,6 +44,7 @@ public slots:
     void OnTblHangonOrdersRowDoubleClicked(const QModelIndex &);
     void OnTblConditionsRowDoubleClicked(const QModelIndex&);
     void OnScrollTrainTimeMoved(int);
+    void OnSliderStepSpeedChanged();
 
     void OnStartTrain();
     void OnStopTrain();
@@ -68,10 +69,12 @@ protected:
     //virtual void hideEvent(QHideEvent * event) override;
 private:
 
+    int GenerateConditionOrderId(){return ++max_condition_order_id_;}
+    int GenerateHangonOrderId(){ return ++max_hangon_order_id_;}
     void PrintTradeRecords();
     
     //void OpenPosition(double para_price, bool is_long);
-    void OpenPosition(double para_price, unsigned int qty, bool is_long, unsigned int *p_profit_stop_ticks=nullptr, unsigned int *p_loss_stop_ticks=nullptr);
+    void OpenPosition(double para_price, unsigned int qty, bool is_long, unsigned int *p_profit_stop_ticks=nullptr, unsigned int *p_loss_stop_ticks=nullptr, bool is_proc_hangon_order=false);
     void ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info=nullptr);
     void CloseInputSizePosition(double para_price, bool is_long, const T_StockHisDataItem &fake_k_item);
 
@@ -140,15 +143,19 @@ private:
 
     // condition open related -----
     QStandardItemModel *condition_model_;
-
+    int max_hangon_order_id_;
+    int max_condition_order_id_;
     unsigned int cur_train_step_;
     //double cur_quote_;
     T_StockHisDataItem cur_kdata_item_;
 
     QTimer *step_timer_;
+    int step_delay_ms_;
     bool is_started_;
     bool is_running_;
     std::mutex stepping_mutex_;
+
+    
 
     friend class CfgTrainDlg;
 };

@@ -236,6 +236,7 @@ std::string ToStr(OrderAction action);
 std::string ToStr(PositionType pos_tp);
 
 double CalculateFee(int quantity, double price, bool is_close);
+double CaculateOpenPositionFreezeCapital(double price, unsigned int quantity);
 int CalculateMaxQtyAllowOpen(double capital, double price);
 
 #endif // TRAIN_TRADE_DSFSDF_H_
