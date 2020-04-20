@@ -495,11 +495,11 @@ void MainWindow::onSubKwallCycleChange(int /*index*/)
             else
             {
                 T_StockHisDataItem* p_item = kline_wall_sub_->SetTrainStartDateTime(target_type_period, kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm());
-                T_StockHisDataItem* p_pre_item = kline_wall_sub_->TrainStockDataItem(kline_wall_ori_step_->k_rend_index_for_train() + 1);
+                T_StockHisDataItem* p_pre_item = kline_wall_sub_->TrainStockDataItem(kline_wall_sub_->k_rend_index_for_train() + 1);
                 if( p_item && p_pre_item )
                 {
                     std::tuple<double, double> high_low;
-                    bool ret = kline_wall_ori_step_->CaculateHighLowPriceForHighPeriod(p_item->date, p_item->hhmmss, p_pre_item->date, p_pre_item->hhmmss
+                    bool ret = kline_wall_ori_step_->CaculateHighLowPriceForHighPeriod(target_type_period, p_item->date, p_item->hhmmss, p_pre_item->date, p_pre_item->hhmmss
                                     , kline_wall_ori_step_->k_rend_index_for_train(), high_low);
                     if( ret )
                     {

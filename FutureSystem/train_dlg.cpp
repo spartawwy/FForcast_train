@@ -477,7 +477,7 @@ void TrainDlg::OnStartTrain()
     int end_date = std::get<2>(hisk_date_range_);
     int end_time = 1500;
     int start_date = ui.lab_start_date->text().toInt(); 
-    int start_time = 2340; //905; //
+    int start_time = 905; //2340; //
 
     // ori k wall ----------------
     auto p_ori_wall_item = main_win_->OriStepKlineWall()->SetTrainStartDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, start_date, start_time);
@@ -491,7 +491,7 @@ void TrainDlg::OnStartTrain()
         if( start_item && p_pre_item )
         {
             std::tuple<double, double> high_low;
-            bool ret = main_win_->OriStepKlineWall()->CaculateHighLowPriceForHighPeriod(start_item->date, start_item->hhmmss, p_pre_item->date, p_pre_item->hhmmss
+            bool ret = main_win_->OriStepKlineWall()->CaculateHighLowPriceForHighPeriod(main_type, start_item->date, start_item->hhmmss, p_pre_item->date, p_pre_item->hhmmss
                             , main_win_->OriStepKlineWall()->k_rend_index_for_train(), high_low);
             if( ret )
             {

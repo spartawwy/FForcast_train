@@ -326,19 +326,22 @@ void KLineWall::ClearForcastData()
 
 // calculate the Higher period type datas' high and low price from low period type data
 // ps: only allow to invoke by oristep k wall
-bool KLineWall::CaculateHighLowPriceForHighPeriod(int k_date, int hhmm, int pre_k_date, int pre_k_hhmm, int r_start, std::tuple<double, double> &re_high_low)
+bool KLineWall::CaculateHighLowPriceForHighPeriod(TypePeriod high_type, int k_date, int hhmm, int pre_k_date, int pre_k_hhmm, int r_start, std::tuple<double, double> &re_high_low)
 {
     assert(k_type_ == DEFAULT_ORI_STEP_TYPE_PERIOD);
-    int r_index = FindStartKRendIndexInLowContain(*p_hisdata_container_, k_date, hhmm, pre_k_date, pre_k_hhmm, r_start);
+    int r_index = FindStartKRendIndexInLowContain(high_type, *p_hisdata_container_, k_date, hhmm, pre_k_date, pre_k_hhmm, r_start);
     if( r_index == -1 )
         return false;
+    const int cur_hhmm = (*(p_hisdata_container_->rbegin() + r_start))->stk_item.hhmmss;
     bool ret = false;
     double high = MIN_PRICE;
     double low = MAX_PRICE;
     auto iter = p_hisdata_container_->rbegin() + r_index;
     for( ; r_index >= 0; --iter, --r_index ) // from left to right
     {
-        if( iter->get()->stk_item.date == k_date && iter->get()->stk_item.hhmmss > hhmm )
+        if( iter->get()->stk_item.date == k_date 
+            && (cur_hhmm != 0 && iter->get()->stk_item.hhmmss > cur_hhmm || cur_hhmm == 0 && iter->get()->stk_item.hhmmss == 0)
+          ) // cur_hhmm == 0 means overday point
             break;
 
         if( iter->get()->stk_item.high_price > high ) 
@@ -743,12 +746,12 @@ int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisData
 
 // find related start rend_index in low container(e.g. 1m container)
 // r_start is current k rend_index of low Contain
-int FindStartKRendIndexInLowContain(T_HisDataItemContainer &container
+int FindStartKRendIndexInLowContain(TypePeriod high_type, T_HisDataItemContainer &container
                                                , int k_date, int hhmm, int pre_k_date, int pre_k_hhmm, int r_start)
 {
     //e.g. input 30m  20200417 1345  find start rend index(rend index of 11:16) in 1m container
     //     return related index of 11:16 in 1m container 
-    //   pre_k_date: 0417 pre_k_hhmm : 1115 ;    30m:  |1115(pre_k_hhmm)|1345(hhmm)|1415;     1m : 1114|1115|1116(target)|1117
+    //   pre_k_date: 0417 1115;  0417 1145      30m:  |1115(pre_k_hhmm)|1345(hhmm)|1415;     1m : 1114|1115|1116(target)|1117
     //   pre_k_date: 0416 0230;  0417 0930;      1m:  |0230|0901(target)|0902
     //   pre_k_date: 0416 1500;  0416 2130;      1m:  |1500|2101(target)|2102
     //   pre_k_date: 0416 2330;  0417 0000       1m:  0416:2330(pre_k_hhmm)|0416:2331(target)|...|0417:0000 
@@ -767,30 +770,47 @@ int FindStartKRendIndexInLowContain(T_HisDataItemContainer &container
         T_StockHisDataItem &cur_item = iter->get()->stk_item;
         if( iter + 1 == container.rend() )
         {
-            if( cur_item.date == k_date && cur_item.hhmmss < hhmm || cur_item.date < k_date )
-                return j;
-            else 
-                return -1;
+            if( high_type >= TypePeriod::PERIOD_DAY)
+            {
+                if( cur_item.date == k_date )
+                    return j;
+                else 
+                    return -1;
+            }else
+            {
+                if( cur_item.date == k_date && cur_item.hhmmss < hhmm || cur_item.date < k_date )
+                    return j;
+                else 
+                    return -1;
+            }
         }
         T_StockHisDataItem &left_item = (iter + 1)->get()->stk_item;
-        
-        if( cur_item.date == k_date )
-        { 
-            if( left_item.hhmmss <= pre_k_hhmm /*&& cur_item.hhmmss > pre_k_hhmm*/ && cur_item.hhmmss < hhmm )
-            {
-                is_find = true;
-                break;
-            }
-        }
-        if( hhmm == 0 )// over day
+        if( high_type >= TypePeriod::PERIOD_DAY)
         {
-            if( left_item.date == pre_k_date && left_item.hhmmss <= pre_k_hhmm && cur_item.hhmmss > pre_k_hhmm )
+            if( left_item.date == pre_k_date && left_item.hhmmss == 1500 ) 
             {
                 is_find = true;
                 break;
             }
+        }else
+        {
+            if( hhmm == 0 )// over day
+            {
+                if( left_item.date == pre_k_date && left_item.hhmmss <= pre_k_hhmm && cur_item.hhmmss > pre_k_hhmm )
+                {
+                    is_find = true;
+                    break;
+                }
+            }else if( cur_item.date == k_date )
+            { 
+                if( left_item.hhmmss <= pre_k_hhmm /*&& cur_item.hhmmss > pre_k_hhmm*/ && cur_item.hhmmss < hhmm )
+                {
+                    is_find = true;
+                    break;
+                }
+            }
         }
-    }
+    }//for
     if( is_find )
         return j;
     else
