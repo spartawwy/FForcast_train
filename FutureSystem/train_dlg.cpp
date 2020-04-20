@@ -91,7 +91,6 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     , condition_model_(nullptr)
     , max_hangon_order_id_(0)
     , max_condition_order_id_(0)
-    , cur_train_step_(0)
     , step_timer_(nullptr)
     , step_delay_ms_(cst_default_step_delay_ms)
     , is_started_(false)
@@ -479,17 +478,34 @@ void TrainDlg::OnStartTrain()
     int end_time = 1500;
     int start_date = ui.lab_start_date->text().toInt(); 
     int start_time = 2340; //905; //
-    //cur_train_step_ = 0;
-    auto p_item = parent_->SetTrainStartDateTime(TypePeriod::PERIOD_5M, start_date, start_time);
-    parent_->SetTrainEndDateTime(TypePeriod::PERIOD_5M, end_date, end_time);
 
+    // ori k wall ----------------
     auto p_ori_wall_item = main_win_->OriStepKlineWall()->SetTrainStartDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, start_date, start_time);
     main_win_->OriStepKlineWall()->SetTrainEndDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, end_date, end_time);
+    // main k wall ----------------
+    TypePeriod main_type = TypePeriod(main_win_->tool_bar_->main_cycle_comb()->currentData().toInt());
+    T_StockHisDataItem *start_item = parent_->SetTrainStartDateTime(main_type, start_date, start_time);
+    if( start_item && main_type > DEFAULT_ORI_STEP_TYPE_PERIOD )
+    {
+        T_StockHisDataItem* p_pre_item = parent_->TrainStockDataItem(parent_->k_rend_index_for_train() + 1);
+        if( start_item && p_pre_item )
+        {
+            std::tuple<double, double> high_low;
+            bool ret = main_win_->OriStepKlineWall()->CaculateHighLowPriceForHighPeriod(start_item->date, start_item->hhmmss, p_pre_item->date, p_pre_item->hhmmss
+                            , main_win_->OriStepKlineWall()->k_rend_index_for_train(), high_low);
+            if( ret )
+            {
+            start_item->high_price = std::get<0>(high_low);
+            start_item->low_price = std::get<1>(high_low);
+            }
+        }
+    }
+    parent_->SetTrainEndDateTime(main_type, end_date, end_time);
 
-    main_win_->SubKlineWall()->SetTrainStartDateTime(TypePeriod(main_win_->tool_bar_->sub_cycle_comb()->currentData().toInt())
-                                                    , start_date, start_time);
-    main_win_->SubKlineWall()->SetTrainEndDateTime(TypePeriod(main_win_->tool_bar_->sub_cycle_comb()->currentData().toInt())
-                                                    , end_date, end_time);
+    // sub k wall ----------------
+    TypePeriod sub_type = TypePeriod(main_win_->tool_bar_->sub_cycle_comb()->currentData().toInt());
+    main_win_->SubKlineWall()->SetTrainStartDateTime(sub_type, start_date, start_time);
+    main_win_->SubKlineWall()->SetTrainEndDateTime(sub_type, end_date, end_time);
 
     main_win_->SubKlineWall()->setVisible(true);
     main_win_->tool_bar()->SetShowSubKwallBtn(true);
@@ -660,7 +676,6 @@ void TrainDlg::OnNextStep()
     };
     
     //double close_price = MAGIC_STOP_PRICE;
-    ++cur_train_step_;
     T_StockHisDataItem ori_cur_item = main_win_->OriStepKlineWall()->Train_NextStep();
     parent_->Train_NextStep(ori_cur_item);
     main_win_->SubKlineWall()->Train_NextStep(ori_cur_item);

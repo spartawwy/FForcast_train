@@ -145,7 +145,6 @@ private:
     QStandardItemModel *condition_model_;
     int max_hangon_order_id_;
     int max_condition_order_id_;
-    unsigned int cur_train_step_;
     //double cur_quote_;
     T_StockHisDataItem cur_kdata_item_;
 

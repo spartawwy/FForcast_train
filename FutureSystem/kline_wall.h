@@ -80,7 +80,7 @@ public:
     void ShowDurationKlines(int date, int hhmm);
 
     void UpdateIfNecessary(int target_date, int cur_hhmm);
-    // train mode ----------------------
+    // for train mode ----------------------
     TypePeriod train_step_type(){ return train_step_type_; } 
     int train_start_date(){ return train_start_date_;}
     int train_end_date(){ return train_end_date_; }
@@ -100,6 +100,7 @@ public:
 #endif
     //void MoveRightEndToPreDayK();
     const T_StockHisDataItem & CurTrainStockDataItem();
+    T_StockHisDataItem* TrainStockDataItem(int r_index);
     void right_clicked_k_date(int date) { right_clicked_k_date_ = date; }
     void right_clicked_k_hhmm(int hhmm){ right_clicked_k_hhmm_ = hhmm; }
     int k_cur_train_date() { return k_cur_train_date_; }
@@ -109,6 +110,7 @@ public:
     { 
         k_rend_index_for_train_ = val; 
     }
+    bool CaculateHighLowPriceForHighPeriod(int k_date, int hhmm, int pre_k_date, int pre_k_hhmm, int r_start, std::tuple<double, double> &re_high_low);
 
     //------------------
     void Set_Cursor(Qt::CursorShape sp);
@@ -308,4 +310,8 @@ int FindKRendIndex(T_HisDataItemContainer *p_hisdata_container, int date_val, in
 
 int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm);
 int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm, int r_start);
+
+int FindStartKRendIndexInLowContain(T_HisDataItemContainer &container
+                                               , int k_date, int hhmm, int pre_k_date, int pre_k_hhmm, int r_start);
+
 #endif // K_LINE_WALL_SDF32DSF_

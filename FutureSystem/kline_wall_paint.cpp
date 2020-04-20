@@ -2030,6 +2030,7 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
         k_rend_index_ = target_r_end_index; 
         k_rend_index_for_train(target_r_end_index);
         ret_item = std::addressof((*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item);
+
     }else
     { 
         //QDate qdate_obj(date/10000, (date%10000)/100, date%100);
@@ -2137,26 +2138,7 @@ T_StockHisDataItem KLineWall::Train_NextStep()
 }
 
 void KLineWall::Train_NextStep(T_StockHisDataItem & input_item)
-{ 
-    //auto do_move_train_to_next = [this](T_StockHisDataItem & input_item, bool is_to_cover) // ps: not allow static auto
-    //{
-    //    k_rend_index_for_train(k_rend_index_for_train_ - 1 > -1 ? k_rend_index_for_train_ - 1 : 0);
-    //    T_HisDataItemContainer::reference target_item = *(p_hisdata_container_->rbegin() + k_rend_index_for_train_);
-
-    //    k_cur_train_date_ = target_item->stk_item.date; //ndchk
-    //    k_cur_train_hhmm_ = target_item->stk_item.hhmmss; //ndchk
-    //    if( is_to_cover )
-    //    {
-    //        target_item->stk_item.open_price = input_item.open_price;
-    //        target_item->stk_item.close_price = input_item.close_price;
-    //        target_item->stk_item.high_price = input_item.high_price;
-    //        target_item->stk_item.low_price = input_item.low_price;
-    //        target_item->stk_item.vol = input_item.vol;
-    //    }
-
-    //    k_rend_index_ = k_rend_index_for_train_;
-    //};
-
+{  
     if( p_hisdata_container_->empty() || k_rend_index_for_train_ <= 0 )
         return; 
      
@@ -2383,6 +2365,15 @@ const T_StockHisDataItem & KLineWall::CurTrainStockDataItem()
         return no_use_item;
      
     return p_hisdata_container_->at(p_hisdata_container_->size() - 1 - k_rend_index_for_train_)->stk_item;
+}
+
+T_StockHisDataItem* KLineWall::TrainStockDataItem(int r_index)
+{
+    if( p_hisdata_container_->size() <= 0 || p_hisdata_container_->size() - 1 < r_index 
+        || r_index < 0 )
+        return nullptr;
+     
+    return std::addressof(p_hisdata_container_->at(p_hisdata_container_->size() - 1 - r_index)->stk_item);
 }
 
 void KLineWall::Set_Cursor(Qt::CursorShape sp)
