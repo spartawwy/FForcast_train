@@ -16,7 +16,9 @@ from pypinyin import pinyin, lazy_pinyin
 ROOT_DIR = './' 
 DB_FILE_PATH = '../build/Win32/Debug/hqhis.kd'
 #DB_FILE_PATH = './ExchBase.kd'
-DATA_FILE_PATH = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2018/SQSC13.csv'
+DATA_FILE_0 = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2018/SQSC13.csv'
+DATA_FILE_1 = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2018/SQSC14.csv'
+DATA_FILE_2 = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2019/SQSC13.csv'
     
 class FUTUREBASIC:  
     def __init__(self):  
@@ -104,13 +106,13 @@ class FUTUREBASIC:
         print("has insert or replace {} records".format(num))
         return "ok"
         
-    def proc_file(self):
+    def proc_file(self, file_full_path):
         self.open_db()
         self.cur = self.g_db_conn.cursor()
         sql = '''INSERT OR REPLACE INTO SCL9_1M (longdate, time, open, close, high, low, vol) values (?,?,?,?,?,?,?)'''
         reobj = re.compile("^(\\d{4})-(\\d{1,2})-(\\d{1,2}),(\\d{2}):(\\d{2}),(\\d+\\.\\d+|\\d+),(\\d+\\.\\d+|\\d+),(\\d+\\.\\d+|\\d+),(\\d+\\.\\d+|\\d+),(\\d+),(\\d+)(.*)$")
         re.compile(reobj)
-        fh = open(DATA_FILE_PATH)
+        fh = open(file_full_path)
         is_firt_line = True
         is_last_line = False
         pre_hhmm = 0
@@ -205,6 +207,6 @@ if __name__ == "__main__":
     #next_hm = GetNextHHMM(year, month, day, hour, minute)
     #print(next_hm)
     obj = FUTUREBASIC() 
-    obj.proc_file()
+    obj.proc_file(DATA_FILE_0)
         
         

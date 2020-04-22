@@ -11,6 +11,8 @@ CfgTrainDlg::CfgTrainDlg(TrainDlg *parent)
     assert(ret);
     ret = connect(ui.pbtn_cancel, SIGNAL(clicked()), this, SLOT(OnClose()));
     assert(ret);
+
+    ui.dbspbBegCapital->setValue(cst_default_ori_capital);
 }
 
 void CfgTrainDlg::showEvent(QShowEvent *)
@@ -23,7 +25,16 @@ void CfgTrainDlg::showEvent(QShowEvent *)
 }
 
 void CfgTrainDlg::OnSave()
-{
+{ 
+    if( ui.dbspbBegCapital->isEnabled() )
+    {
+    parent_->ori_capital_ = ui.dbspbBegCapital->value(); 
+    parent_->account_info_.capital.avaliable = parent_->ori_capital_;
+    parent_->account_info_.capital.frozen = 0.0;
+    parent_->account_info_.capital.float_profit = 0.0;
+    parent_->RefreshCapitalUi();
+    }
+
     parent_->auto_stop_loss_ = ui.chbox_auto_stop_loss->isChecked();
     parent_->auto_stop_loss_ticks_ = ui.spb_stop_loss->value();
 

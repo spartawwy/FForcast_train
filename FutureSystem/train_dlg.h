@@ -46,7 +46,9 @@ public slots:
     void OnScrollTrainTimeMoved(int);
     void OnSliderStepSpeedChanged();
 
+    void OnRandomStartTrain();
     void OnStartTrain();
+    void _OnStartTrain(bool);
     void OnStopTrain();
     
     void OnControl();

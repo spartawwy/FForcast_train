@@ -866,7 +866,7 @@
   <widget class="QPushButton" name="pbtn_config">
    <property name="geometry">
     <rect>
-     <x>300</x>
+     <x>0</x>
      <y>0</y>
      <width>75</width>
      <height>23</height>
@@ -898,6 +898,24 @@
    </property>
    <property name="tickInterval">
     <number>100</number>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pbtnRandomStart">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>0</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>随机开始</string>
    </property>
   </widget>
  </widget>

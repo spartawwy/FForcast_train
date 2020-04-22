@@ -99,6 +99,7 @@ public:
     QLabel *label_13;
     QPushButton *pbtn_config;
     QSlider *vslider_step_speed;
+    QPushButton *pbtnRandomStart;
 
     void setupUi(QWidget *TrainDlgForm)
     {
@@ -343,7 +344,7 @@ public:
         label_13->setGeometry(QRect(250, 10, 51, 16));
         pbtn_config = new QPushButton(TrainDlgForm);
         pbtn_config->setObjectName(QStringLiteral("pbtn_config"));
-        pbtn_config->setGeometry(QRect(300, 0, 75, 23));
+        pbtn_config->setGeometry(QRect(0, 0, 75, 23));
         pbtn_config->setFont(font);
         vslider_step_speed = new QSlider(TrainDlgForm);
         vslider_step_speed->setObjectName(QStringLiteral("vslider_step_speed"));
@@ -351,6 +352,10 @@ public:
         vslider_step_speed->setPageStep(100);
         vslider_step_speed->setOrientation(Qt::Vertical);
         vslider_step_speed->setTickInterval(100);
+        pbtnRandomStart = new QPushButton(TrainDlgForm);
+        pbtnRandomStart->setObjectName(QStringLiteral("pbtnRandomStart"));
+        pbtnRandomStart->setGeometry(QRect(370, 0, 75, 23));
+        pbtnRandomStart->setFont(font);
 
         retranslateUi(TrainDlgForm);
 
@@ -406,6 +411,7 @@ public:
         label_close_profit->setText(QApplication::translate("TrainDlgForm", "0", 0));
         label_13->setText(QApplication::translate("TrainDlgForm", "\347\233\210\344\272\217:", 0));
         pbtn_config->setText(QApplication::translate("TrainDlgForm", "\350\256\276\347\275\256", 0));
+        pbtnRandomStart->setText(QApplication::translate("TrainDlgForm", "\351\232\217\346\234\272\345\274\200\345\247\213", 0));
     } // retranslateUi
 
 };

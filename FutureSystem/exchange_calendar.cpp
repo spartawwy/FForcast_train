@@ -66,7 +66,7 @@ int ExchangeCalendar::FloorTradeDate(int date)
     return 0;
 }
 
-// pre n trade date 
+// pre n trade date . ps: each day of n is trading day
 int ExchangeCalendar::PreTradeDate(int date, unsigned int n)
 {   
     assert(trade_dates_->size() > 0);
@@ -88,6 +88,7 @@ int ExchangeCalendar::PreTradeDate(int date, unsigned int n)
     return a;
 }
 
+// each day of n is trading day
 int ExchangeCalendar::NextTradeDate(int date, unsigned int n)
 {   
     assert(trade_dates_->size() > 0);

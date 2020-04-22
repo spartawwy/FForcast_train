@@ -108,8 +108,11 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
 
     bool ret = false;
     ret = connect(ui.pbtnStart, SIGNAL(clicked()), this, SLOT(OnStartTrain()));
+    assert(ret);
+    ret = connect(ui.pbtnRandomStart, SIGNAL(clicked()), this, SLOT(OnRandomStartTrain()));
+    assert(ret);
     ret = connect(ui.pbtnStop, SIGNAL(clicked()), this, SLOT(OnStopTrain()));
-
+    assert(ret);
     ret = connect(ui.pbtnControl, SIGNAL(clicked()), this, SLOT(OnControl()));
     assert(ret);
     ret = connect(ui.pbtn_buy, SIGNAL(clicked()), this, SLOT(OnBuy()));
@@ -306,6 +309,7 @@ TrainDlg::TrainDlg(KLineWall *parent,  MainWindow *main_win)
     account_info_.capital.frozen = 0.0;
     account_info_.capital.float_profit = 0.0;
     RefreshCapitalUi();
+    SetStatusBar("");
 }
 
 const T_StockHisDataItem & TrainDlg::CurHisStockDataItem()
@@ -439,7 +443,17 @@ void TrainDlg::closeEvent(QCloseEvent * event)
     OnStopTrain();
 }
  
+void TrainDlg::OnRandomStartTrain()
+{
+    _OnStartTrain(true);
+}
+
 void TrainDlg::OnStartTrain()
+{
+    _OnStartTrain(false);
+}
+
+void TrainDlg::_OnStartTrain(bool is_random_start)
 { 
     is_started_ = true;
     ui.pbtnStart->setEnabled(false);
@@ -447,9 +461,11 @@ void TrainDlg::OnStartTrain()
      
     ui.pbtnStart->setText(QString::fromLocal8Bit("数据加载中..."));
 #if 1 
-    trade_records_.clear();
+    trade_records_.clear(); 
 
-    account_info_.capital.avaliable = cst_default_ori_capital;
+    cfg_train_dlg_->EnableBegCapitalCfg(false);
+    //ori_capital_ = cfg_train_dlg_->ori_capital_value();
+    account_info_.capital.avaliable = ori_capital_;
     account_info_.capital.frozen = 0.0;
     account_info_.capital.float_profit = 0.0;
     RefreshCapitalUi();
@@ -477,6 +493,14 @@ void TrainDlg::OnStartTrain()
     int end_date = std::get<2>(hisk_date_range_);
     int end_time = 1500;
     int start_date = ui.lab_start_date->text().toInt(); 
+    if( is_random_start )
+    {
+        std::srand(time(nullptr));
+        int day_span = main_win_->app_->exchange_calendar()->DateTradingSpan(std::get<0>(hisk_date_range_), std::get<2>(hisk_date_range_));
+
+        start_date = main_win_->app_->exchange_calendar()->NextTradeDate(std::get<0>(hisk_date_range_), std::rand() % day_span);
+        //start_date = 20190711;
+    }
     int start_time = 905; //2340; //
 
     // ori k wall ----------------
@@ -522,6 +546,8 @@ void TrainDlg::OnStopTrain()
 {
     assert(step_timer_);
     is_started_ = false;
+
+    cfg_train_dlg_->EnableBegCapitalCfg(true);
 
     step_timer_->stop();
     is_running_ = false;

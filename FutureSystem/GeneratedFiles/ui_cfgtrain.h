@@ -55,15 +55,17 @@ public:
         dbspbBegCapital = new QDoubleSpinBox(CfgTrainForm);
         dbspbBegCapital->setObjectName(QStringLiteral("dbspbBegCapital"));
         dbspbBegCapital->setGeometry(QRect(100, 10, 111, 31));
-        dbspbBegCapital->setMaximum(12000);
-        dbspbBegCapital->setValue(12000);
+        dbspbBegCapital->setMinimum(40000);
+        dbspbBegCapital->setMaximum(1e+07);
+        dbspbBegCapital->setValue(50000);
         dbspbFeeOpen = new QDoubleSpinBox(CfgTrainForm);
         dbspbFeeOpen->setObjectName(QStringLiteral("dbspbFeeOpen"));
+        dbspbFeeOpen->setEnabled(false);
         dbspbFeeOpen->setGeometry(QRect(100, 60, 81, 31));
-        dbspbFeeOpen->setDecimals(4);
+        dbspbFeeOpen->setDecimals(2);
         dbspbFeeOpen->setMaximum(500);
-        dbspbFeeOpen->setSingleStep(100);
-        dbspbFeeOpen->setValue(100);
+        dbspbFeeOpen->setSingleStep(1);
+        dbspbFeeOpen->setValue(25);
         label_9 = new QLabel(CfgTrainForm);
         label_9->setObjectName(QStringLiteral("label_9"));
         label_9->setGeometry(QRect(210, 60, 71, 21));
@@ -74,11 +76,12 @@ public:
         label_3->setFont(font);
         dbspbFeeOpen_2 = new QDoubleSpinBox(CfgTrainForm);
         dbspbFeeOpen_2->setObjectName(QStringLiteral("dbspbFeeOpen_2"));
+        dbspbFeeOpen_2->setEnabled(false);
         dbspbFeeOpen_2->setGeometry(QRect(290, 60, 81, 31));
-        dbspbFeeOpen_2->setDecimals(4);
+        dbspbFeeOpen_2->setDecimals(2);
         dbspbFeeOpen_2->setMaximum(500);
-        dbspbFeeOpen_2->setSingleStep(100);
-        dbspbFeeOpen_2->setValue(300);
+        dbspbFeeOpen_2->setSingleStep(1);
+        dbspbFeeOpen_2->setValue(0);
         groupBox = new QGroupBox(CfgTrainForm);
         groupBox->setObjectName(QStringLiteral("groupBox"));
         groupBox->setGeometry(QRect(10, 170, 371, 101));
@@ -105,7 +108,6 @@ public:
         pbtn_cancel->setObjectName(QStringLiteral("pbtn_cancel"));
         pbtn_cancel->setGeometry(QRect(300, 290, 75, 23));
         label->raise();
-        dbspbBegCapital->raise();
         dbspbFeeOpen->raise();
         label_9->raise();
         label_3->raise();
@@ -113,6 +115,7 @@ public:
         groupBox->raise();
         pbtn_cancel->raise();
         pbtn_save->raise();
+        dbspbBegCapital->raise();
 
         retranslateUi(CfgTrainForm);
 

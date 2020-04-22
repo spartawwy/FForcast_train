@@ -22,6 +22,11 @@ class CfgTrainDlg : public QWidget
 public:
 
     CfgTrainDlg(TrainDlg *parent);
+    double ori_capital_value()
+    {
+        return ui.dbspbBegCapital->value();
+    }
+    void EnableBegCapitalCfg(bool val){ ui.dbspbBegCapital->setEnabled(val);}
 
 private slots:
 

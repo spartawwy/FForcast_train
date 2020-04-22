@@ -963,7 +963,8 @@ void KLineWall::paintEvent(QPaintEvent*)
      
     // vertical' price scale ------------
     int old_pen_width = pen.width();
-    pen.setColor(Qt::red);
+    //pen.setColor(Qt::red);
+    pen.setColor(Qt::gray);
     pen.setStyle(Qt::DotLine); // ............
     painter.setPen(pen); 
     const float price_per_len = (highestMaxPrice_ - lowestMinPrice_) / float(k_mm_h);
@@ -1037,8 +1038,8 @@ void KLineWall::paintEvent(QPaintEvent*)
             brush.setColor(QColor(255,0,0));
         }else
         { 
-            pen.setColor(QColor(0,255,0)); 
-            brush.setColor(QColor(0,255,0));
+            pen.setColor(Qt::darkGreen); //QColor(0,255,0)
+            brush.setColor(Qt::darkGreen); //QColor(0,255,0)
         }
         painter.setPen(pen);  
         painter.setBrush(brush);   
