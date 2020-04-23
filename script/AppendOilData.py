@@ -1,5 +1,6 @@
 # coding=utf-8
  
+import sys
 import os
 import time
 import re
@@ -17,16 +18,15 @@ ROOT_DIR = './'
 DB_FILE_PATH = '../build/Win32/Debug/hqhis.kd'
 #DB_FILE_PATH = './ExchBase.kd'
 DATA_FILE_0 = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2018/SQSC13.csv'
-DATA_FILE_1 = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2018/SQSC14.csv'
-DATA_FILE_2 = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2019/SQSC13.csv'
+DATA_FILE_1 = 'D:/ProgramFilesBase/StockData/FutureData/SCL9/2019/SQSC13.csv'
     
 class FUTUREBASIC:  
     def __init__(self):  
         self.cal_dates = ts.trade_cal() #return calendar of exchange center, DataFrame, calendarDate,isOpen  
-        self.data_dir = "C:/"
-        if "STK_DATA_DIR" in os.environ:
-            self.data_dir = os.environ["STK_DATA_DIR"] 
-        
+        #self.data_dir = "C:/"
+        #if "STK_DATA_DIR" in os.environ:
+        #    self.data_dir = os.environ["STK_DATA_DIR"] 
+        self.data_dir = "."
         self.file_ok_ext = ".ok"    
         log_dir = self.data_dir + "\\log\\"
         if not os.path.exists(log_dir):
@@ -138,16 +138,27 @@ class FUTUREBASIC:
                 hold = match1.group(11)
                 if is_firt_line:
                     is_firt_line = False
-                    #pre_hhmm = hour*100 + minute
-                    next_hhmm = GetNextHHMM(int(year), int(month), int(day), int(hour), int(minute))
                     self.cur.execute(sql, (longdate, hhmm, price_o, price_c, price_h, price_l, vol))
                     pre_record = (longdate, hhmm, price_o, price_c, price_h, price_l, 0)
-                else:
-                    if next_hhmm != int(hour)*100 + int(minute):
-                        print("lack %s" % (next_hhmm))
-                        #break
                     next_hhmm = GetNextHHMM(int(year), int(month), int(day), int(hour), int(minute))
-                    self.cur.execute(sql, (longdate, hhmm, price_o, price_c, price_h, price_l, vol))
+                else:
+                    if year == 2018 and month == 4 and day == 9 and next_hhmm == 2101:
+                        print("20180409 {0}:{1}".format(hour, minute))
+                        break
+                    if next_hhmm != int(hour)*100 + int(minute):
+                        while True:
+                            #print("lack to fake {0}-{1}-{2}:{3} {4}".format(int(year), int(month), int(day), int(int(next_hhmm)/100), int(next_hhmm)%100))
+                            self.write_log("lack to fake {0} {1} {2}--{3}:{4}".format(int(year), int(month), int(day), int(int(next_hhmm)/100), int(next_hhmm)%100))
+                            via = list(pre_record)
+                            via[1]= next_hhmm
+                            pre_record = tuple(via)
+                            self.cur.execute(sql, pre_record)
+                            next_hhmm = GetNextHHMM(int(year), int(month), int(day), int(int(next_hhmm)/100), int(next_hhmm)%100)
+                            if next_hhmm == int(hour)*100 + int(minute):
+                                break 
+                    self.cur.execute(sql, (longdate, hhmm, price_o, price_c, price_h, price_l, vol)) 
+                    next_hhmm = GetNextHHMM(int(year), int(month), int(day), int(hour), int(minute))
+                    #print(sys._getframe().f_lineno)
                     pre_record = (longdate, hhmm, price_o, price_c, price_h, price_l, 0)
                 #print("next hhmm %s" % next_hhmm)     
             except Exception as e:
@@ -155,12 +166,19 @@ class FUTUREBASIC:
                 break
         self.g_db_conn.commit()
         print("out proc")   
-        
+
+
+#def sprintf(s, fs, *args):
+#    global s
+#    s = fs % args
+    
 def GetNextHHMM(year, month, day, hour, minute):
     d = datetime(year,month,day, hour,minute)
     #time_val = year*10000 + month*100 + day
     hm = hour*100 + minute
     next_hm = 0
+    if year == 2019 and month == 12 and day == 25 and hour == 15 and minute == 0:
+        next_hm = 2230
     if hm < 229:
         e = d + timedelta(minutes=1)
         next_hm = e.hour * 100 + e.minute
@@ -208,5 +226,5 @@ if __name__ == "__main__":
     #print(next_hm)
     obj = FUTUREBASIC() 
     obj.proc_file(DATA_FILE_0)
-        
+    obj.proc_file(DATA_FILE_1)  
         
