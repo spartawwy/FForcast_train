@@ -28,6 +28,7 @@ public:
     QLabel *lab_information;
     QComboBox *cmb_k_type;
     QPushButton *btnGetRecentHisData;
+    QPushButton *btnGetDataFromFile;
 
     void setupUi(QWidget *TlsAquireDataClass)
     {
@@ -49,6 +50,9 @@ public:
         btnGetRecentHisData = new QPushButton(TlsAquireDataClass);
         btnGetRecentHisData->setObjectName(QStringLiteral("btnGetRecentHisData"));
         btnGetRecentHisData->setGeometry(QRect(370, 80, 101, 23));
+        btnGetDataFromFile = new QPushButton(TlsAquireDataClass);
+        btnGetDataFromFile->setObjectName(QStringLiteral("btnGetDataFromFile"));
+        btnGetDataFromFile->setGeometry(QRect(370, 160, 101, 23));
 
         retranslateUi(TlsAquireDataClass);
 
@@ -61,6 +65,7 @@ public:
         btnGetHisData->setText(QApplication::translate("TlsAquireDataClass", "GetAllHisData", 0));
         lab_information->setText(QApplication::translate("TlsAquireDataClass", "TextLabel", 0));
         btnGetRecentHisData->setText(QApplication::translate("TlsAquireDataClass", "GeRecentHisData", 0));
+        btnGetDataFromFile->setText(QApplication::translate("TlsAquireDataClass", "GetDataFromFile", 0));
     } // retranslateUi
 
 };

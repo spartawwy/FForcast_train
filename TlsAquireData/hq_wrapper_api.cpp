@@ -482,10 +482,9 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                         ++index;  
                         int minute = boost::lexical_cast<int>(match_result[index]);
                         k_data->hhmmss = hour * 100 + minute;
-                        // debug----------
-                        if( k_data->date == 20191211 && k_data->hhmmss == 30 )
-                            k_data->date = k_data->date;
-                        // end-----------
+                         
+                        if( k_data->date < TDX_OIL_MIN_DATE )
+                            continue; 
 #if 1
                         if( k_data->hhmmss > 2100 )
                         {
@@ -555,10 +554,10 @@ int HqWrapperConcrete::__GetHisKBars(const char* code, bool is_index, int nmarke
                             ++index;  
                             int minute = boost::lexical_cast<int>(match_result[index]);
                             k_data->hhmmss = hour * 100 + minute;
-                            // debug----------
-                            if( k_data->date == 20191211 && k_data->hhmmss == 30 )
-                                k_data->date = k_data->date;
-                            // end-----------
+
+                            if( k_data->date < TDX_OIL_MIN_DATE )
+                                continue; 
+
                             if( k_data->hhmmss > 2100 )
                             {
                                 k_data->date = exchange_calendar_->PreTradeDate(k_data->date, 1);

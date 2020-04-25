@@ -11,6 +11,8 @@
 
 #define  IMEXPORT
 
+#define TDX_OIL_MIN_DATE 20200101
+
 typedef std::list<std::unique_ptr<T_KbarData> >   T_KDataContainer;
 //#ifdef __cplusplus
 //extern "C" {
