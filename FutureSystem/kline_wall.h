@@ -87,6 +87,7 @@ public:
 
     void ResetTypePeriodTrain(TypePeriod  type, int start_date, int end_date);
     T_StockHisDataItem* SetTrainStartDateTime(TypePeriod tp_period, int date, int hhmm);
+    T_StockHisDataItem* SetTrainStartEnd(TypePeriod tp_period, int start_date, int star_hhmm, int end_date, int end_hhmm);
     T_StockHisDataItem* SetTrainEndDateTime(TypePeriod tp_period, int date, int hhmm);
 
     T_StockHisDataItem* SetTrainByDateTime(int date, int hhmm);
@@ -154,6 +155,7 @@ private:
     bool Reset_Stock_Train(const QString& stock, TypePeriod type_period, bool is_index, int nmarket, int start_date, int end_date);
     void AppendData();
     T_HisDataItemContainer* AppendPreData(int date, int hhmm);
+    T_HisDataItemContainer* AppendDataForTrain(int start_date, int end_date);
     T_HisDataItemContainer* AppendData(int date, int hhmm);
     
      

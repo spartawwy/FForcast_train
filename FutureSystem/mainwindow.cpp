@@ -494,7 +494,9 @@ void MainWindow::onSubKwallCycleChange(int /*index*/)
                 kline_wall_sub_->SetTrainByRendIndex(kline_wall_ori_step_->k_rend_index_for_train());
             else
             {
-                T_StockHisDataItem* p_item = kline_wall_sub_->SetTrainStartDateTime(target_type_period, kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm());
+                T_StockHisDataItem* p_item = kline_wall_sub_->SetTrainStartEnd(target_type_period
+                    , kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm()
+                    , kline_wall_ori_step_->train_end_date(), 1500);
                 T_StockHisDataItem* p_pre_item = kline_wall_sub_->TrainStockDataItem(kline_wall_sub_->k_rend_index_for_train() + 1);
                 if( p_item && p_pre_item )
                 {
@@ -506,17 +508,17 @@ void MainWindow::onSubKwallCycleChange(int /*index*/)
                     p_item->high_price = std::get<0>(high_low);
                     p_item->low_price = std::get<1>(high_low);
                     }
-                }
-                kline_wall_sub_->SetTrainEndDateTime(target_type_period, kline_wall_ori_step_->train_end_date(), 1500);
+                } 
             }
         }
 
-    }else
+    }else // not train mode 
     {
         kline_wall_sub_->ResetTypePeriod(target_type_period);
         if( kline_wall_main_->k_cur_train_date() > 0 )
         {
             kline_wall_sub_->ShowDurationKlines(kline_wall_main_->k_cur_train_date(), kline_wall_main_->k_cur_train_hhmm());
+            // ndchk:
             kline_wall_sub_->SetTrainStartDateTime(TypePeriod(tool_bar_->sub_cycle_comb()->currentData().toInt())
                 , kline_wall_main_->k_cur_train_date(), kline_wall_main_->k_cur_train_hhmm());
         }

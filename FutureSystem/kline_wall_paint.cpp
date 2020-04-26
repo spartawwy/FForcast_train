@@ -2045,8 +2045,10 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
             date_span = 5;
         else if( tp_period <= TypePeriod::PERIOD_5M )
             date_span = 3;
-
+         
         start_date = app_->exchange_calendar()->PreTradeDate(date, date_span);
+        if( start_date < 1980 )
+            start_date = date;
         auto p_container = AppendPreData(start_date, hhmm); 
         if( !p_container->empty() )
         {
@@ -2069,6 +2071,66 @@ T_StockHisDataItem* KLineWall::SetTrainStartDateTime(TypePeriod tp_period, int d
     }
     if( ret_item ) train_start_date_ = ret_item->date;
     else train_start_date_ = date;
+    return ret_item;
+}
+
+// return start item
+T_StockHisDataItem* KLineWall::SetTrainStartEnd(TypePeriod tp_period, int start_date, int star_hhmm, int end_date, int end_hhmm)
+{
+    T_StockHisDataItem* ret_item = nullptr;
+
+    const int old_rend_index = k_rend_index_;
+    const int old_k_num = k_num_;
+    //int target_r_end_index = FindKRendIndex(p_hisdata_container_, date, hhmm);
+    int target_r_end_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), start_date, star_hhmm);
+    int end_date_r_index = FindKRendIndexInHighPeriodContain(tp_period, *p_hisdata_container_, *app_->exchange_calendar(), end_date, end_hhmm);
+    if( target_r_end_index > -1 && end_date_r_index > -1 )
+    {
+        k_rend_index_ = target_r_end_index; 
+        k_rend_index_for_train(target_r_end_index);
+        ret_item = std::addressof((*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item);
+
+    }else
+    { 
+        //QDate qdate_obj(date/10000, (date%10000)/100, date%100);
+        int date_span = 1;
+        if( tp_period >= TypePeriod::PERIOD_DAY ) 
+            date_span = 4 * 30; 
+        else if( tp_period == TypePeriod::PERIOD_HOUR ) 
+            date_span = 10; 
+        else if( tp_period >= TypePeriod::PERIOD_15M && tp_period <= TypePeriod::PERIOD_30M )
+            date_span = 5;
+        else if( tp_period <= TypePeriod::PERIOD_5M )
+            date_span = 3;
+
+        int tart_start_date = start_date;
+        int temp_val = app_->exchange_calendar()->PreTradeDate(start_date, date_span);
+        if( temp_val > 1980 && temp_val < start_date )
+            tart_start_date = temp_val;
+        auto p_container = AppendDataForTrain(tart_start_date, end_date); 
+        if( !p_container->empty() )
+        {
+            ret_item = SetTrainByDateTime(start_date, star_hhmm);
+            assert(ret_item);
+            app_->stock_data_man().TraverseSetFeatureData(stock_code_, ToPeriodType(k_type_), is_index_, k_rend_index_for_train_);
+            HandleAutoForcast();
+        }
+    }
+    if( !p_hisdata_container_->empty() )
+    {
+        k_cur_train_date_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.date;
+        k_cur_train_hhmm_ = (*(p_hisdata_container_->rbegin() + k_rend_index_for_train_))->stk_item.hhmmss;
+    }
+    if( old_rend_index != k_rend_index_ || old_k_num != k_num_ )
+    {
+        UpdateKwallMinMaxPrice();
+        UpdatePosDatas();
+        update();
+    }
+    if( ret_item ) train_start_date_ = ret_item->date;
+    else train_start_date_ = start_date;
+    train_end_date_ = end_date;
+     
     return ret_item;
 }
 

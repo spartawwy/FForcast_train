@@ -31,6 +31,8 @@ static void append_forcast_c(const std::string &code, TypePeriod k_type, const T
 
 void KLineWall::HandleAutoForcast()
 { 
+    if( !main_win_->is_show_autoforcast() )
+        return;
     auto_forcast_man_.RemoveForcastItems(stock_code_, k_type_);
 
     double max_spread = 100.0;

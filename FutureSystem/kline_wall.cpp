@@ -47,7 +47,7 @@ void KLineWall::AppendData()
     }
 }
 
-T_HisDataItemContainer* KLineWall::AppendPreData(int date, int hhmm)
+T_HisDataItemContainer* KLineWall::AppendPreData(int date, int /*hhmm*/)
 {
     assert( date > 19800000 && date < 20500000 );
 
@@ -64,6 +64,19 @@ T_HisDataItemContainer* KLineWall::AppendPreData(int date, int hhmm)
     return p_container;
 }
  
+T_HisDataItemContainer* KLineWall::AppendDataForTrain(int start_date, int end_date)
+{
+    assert( start_date > 19800000 && start_date < 20500000 );
+    assert( end_date > 19800000 && end_date < 20500000 );
+    assert(start_date <= end_date);
+
+    int cur_day = QDateTime::currentDateTime().toString("yyyyMMdd").toInt(); //default 
+    if( end_date > cur_day ) end_date = cur_day;
+     
+    auto p_container = app_->stock_data_man().AppendStockData(ToPeriodType(k_type_), nmarket_, stock_code_, start_date, end_date, is_index_); 
+    return p_container;
+}
+
 T_HisDataItemContainer* KLineWall::AppendData(int date, int hhmm)
 {
     assert( date > 19800000 && date < 20500000 );
@@ -646,6 +659,10 @@ int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContain
         if( pre_item_exist )
         {
             my_pre_iter = iter + 1; 
+        }else if( hhmm <= iter->get()->stk_item.hhmmss ) // first k 
+        {
+            is_find = true;
+            break;
         }
         if( iter->get()->stk_item.hhmmss == hhmm )
         {
@@ -680,7 +697,7 @@ int FindKRendIndexInHighPeriodContain(TypePeriod tp_period, T_HisDataItemContain
 }
 
 
-// ps: from p_hisdata_container  front + r_start to back
+// ps: from p_hisdata_container  front + (p_hisdata_container.size() - 1 - r_start) to right forward
 int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisDataItemContainer &p_hisdata_container, ExchangeCalendar &calender, int date_val, int hhmm, int r_start)
 {  
     assert(r_start >= 0);
@@ -706,6 +723,11 @@ int FindKRendIndexInHighContain_FromRStart2Right(TypePeriod tp_period, T_HisData
         bool pre_item_exist = iter != p_hisdata_container.begin();
         if( pre_item_exist )
             pre_iter = iter - 1;
+        else if( hhmm <= iter->get()->stk_item.hhmmss ) // first k 
+        {
+            is_find = true;
+            break;
+        }
         auto next_iter = iter; 
         bool next_item_exist = (iter + 1) != p_hisdata_container.end();
         if( next_item_exist )

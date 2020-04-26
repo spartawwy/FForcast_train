@@ -419,8 +419,10 @@ void SoundFilled(bool is_o_filled);
 
 #define  DEFAULT_MAINKWALL_TYPE_PERIOD TypePeriod::PERIOD_5M //TypePeriod::PERIOD_1M 
 #define  DEFAULT_SUBKWALL_TYPE_PERIOD  TypePeriod::PERIOD_1M
+// train mode related
 #define  DEFAULT_ORI_STEP_TYPE_PERIOD  TypePeriod::PERIOD_1M
-
+#define  DEFAULT_TRAIN_DAYS            30
+//-------------------
 #define COMBO_PERIOD_1M_INDEX    0
 #define COMBO_PERIOD_5M_INDEX    1
 #define COMBO_PERIOD_15M_INDEX   2

@@ -490,9 +490,10 @@ void TrainDlg::_OnStartTrain(bool is_random_start)
     assert(main_win_->OriStepKlineWall());
     assert(main_win_->SubKlineWall());
 
-    int end_date = std::get<2>(hisk_date_range_);
-    int end_time = 1500;
+    const int max_end_date = std::get<2>(hisk_date_range_);
+    
     int start_date = ui.lab_start_date->text().toInt(); 
+    
     if( is_random_start )
     {
         std::srand(time(nullptr));
@@ -502,13 +503,16 @@ void TrainDlg::_OnStartTrain(bool is_random_start)
         //start_date = 20190711;
     }
     int start_time = 905; //2340; //
-
+    int end_date = main_win_->app_->exchange_calendar()->NextTradeDate(start_date, DEFAULT_TRAIN_DAYS);
+    if( end_date > max_end_date )
+        end_date = max_end_date;
+    int end_time = 1500;
     // ori k wall ----------------
-    auto p_ori_wall_item = main_win_->OriStepKlineWall()->SetTrainStartDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, start_date, start_time);
-    main_win_->OriStepKlineWall()->SetTrainEndDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, end_date, end_time);
+    auto p_ori_wall_item = main_win_->OriStepKlineWall()->SetTrainStartEnd(DEFAULT_ORI_STEP_TYPE_PERIOD, start_date, start_time, end_date, end_time);
+    //main_win_->OriStepKlineWall()->SetTrainEndDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, end_date, end_time);
     // main k wall ----------------
     TypePeriod main_type = TypePeriod(main_win_->tool_bar_->main_cycle_comb()->currentData().toInt());
-    T_StockHisDataItem *start_item = parent_->SetTrainStartDateTime(main_type, start_date, start_time);
+    T_StockHisDataItem *start_item = parent_->SetTrainStartEnd(main_type, start_date, start_time, end_date, end_time);
     if( start_item && main_type > DEFAULT_ORI_STEP_TYPE_PERIOD )
     {
         T_StockHisDataItem* p_pre_item = parent_->TrainStockDataItem(parent_->k_rend_index_for_train() + 1);
@@ -523,13 +527,11 @@ void TrainDlg::_OnStartTrain(bool is_random_start)
             start_item->low_price = std::get<1>(high_low);
             }
         }
-    }
-    parent_->SetTrainEndDateTime(main_type, end_date, end_time);
+    } 
 
     // sub k wall ----------------
     TypePeriod sub_type = TypePeriod(main_win_->tool_bar_->sub_cycle_comb()->currentData().toInt());
-    main_win_->SubKlineWall()->SetTrainStartDateTime(sub_type, start_date, start_time);
-    main_win_->SubKlineWall()->SetTrainEndDateTime(sub_type, end_date, end_time);
+    main_win_->SubKlineWall()->SetTrainStartEnd(sub_type, start_date, start_time, end_date, end_time);
 
     main_win_->SubKlineWall()->setVisible(true);
     main_win_->tool_bar()->SetShowSubKwallBtn(true);
