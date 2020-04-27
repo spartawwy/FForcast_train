@@ -496,7 +496,7 @@ void MainWindow::onSubKwallCycleChange(int /*index*/)
             {
                 T_StockHisDataItem* p_item = kline_wall_sub_->SetTrainStartEnd(target_type_period
                     , kline_wall_ori_step_->k_cur_train_date(), kline_wall_ori_step_->k_cur_train_hhmm()
-                    , kline_wall_ori_step_->train_end_date(), 1500);
+                    , kline_wall_ori_step_->train_end_date(), DEFAULT_TRAIN_END_HHMM);
                 T_StockHisDataItem* p_pre_item = kline_wall_sub_->TrainStockDataItem(kline_wall_sub_->k_rend_index_for_train() + 1);
                 if( p_item && p_pre_item )
                 {

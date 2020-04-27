@@ -100,7 +100,7 @@ enum class PeriodType : unsigned char
     PERIOD_DAY,
     PERIOD_WEEK,
     PERIOD_MON,
-    PERIOD_YEAR,
+    //PERIOD_YEAR,
 };
 
 enum class FqType : unsigned char

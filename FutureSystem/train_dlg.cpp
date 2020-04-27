@@ -457,6 +457,7 @@ void TrainDlg::_OnStartTrain(bool is_random_start)
 { 
     is_started_ = true;
     ui.pbtnStart->setEnabled(false);
+    ui.pbtnRandomStart->setEnabled(false);
     ui.pbtnStop->setEnabled(true);
      
     ui.pbtnStart->setText(QString::fromLocal8Bit("数据加载中..."));
@@ -489,24 +490,28 @@ void TrainDlg::_OnStartTrain(bool is_random_start)
 #endif 
     assert(main_win_->OriStepKlineWall());
     assert(main_win_->SubKlineWall());
+    
+    main_win_->app_->ClearStockHisDatas(parent_->stock_code());
+    main_win_->OriStepKlineWall()->Reset_Stock_Train();
+    parent_->Reset_Stock_Train();
+    main_win_->SubKlineWall()->Reset_Stock_Train();
 
     const int max_end_date = std::get<2>(hisk_date_range_);
-    
     int start_date = ui.lab_start_date->text().toInt(); 
     
     if( is_random_start )
     {
         std::srand(time(nullptr));
         int day_span = main_win_->app_->exchange_calendar()->DateTradingSpan(std::get<0>(hisk_date_range_), std::get<2>(hisk_date_range_));
-
         start_date = main_win_->app_->exchange_calendar()->NextTradeDate(std::get<0>(hisk_date_range_), std::rand() % day_span);
         //start_date = 20190711;
     }
     int start_time = 905; //2340; //
     int end_date = main_win_->app_->exchange_calendar()->NextTradeDate(start_date, DEFAULT_TRAIN_DAYS);
+    assert(end_date > MIN_TRADE_DATE);
     if( end_date > max_end_date )
         end_date = max_end_date;
-    int end_time = 1500;
+    int end_time = DEFAULT_TRAIN_END_HHMM;
     // ori k wall ----------------
     auto p_ori_wall_item = main_win_->OriStepKlineWall()->SetTrainStartEnd(DEFAULT_ORI_STEP_TYPE_PERIOD, start_date, start_time, end_date, end_time);
     //main_win_->OriStepKlineWall()->SetTrainEndDateTime(DEFAULT_ORI_STEP_TYPE_PERIOD, end_date, end_time);
@@ -558,6 +563,7 @@ void TrainDlg::OnStopTrain()
 
     ui.pbtnStart->setText(QString::fromLocal8Bit("开始"));
     ui.pbtnStart->setEnabled(true);
+    ui.pbtnRandomStart->setEnabled(true);
     ui.pbtnStop->setEnabled(false);
 
     force_close_low_ = MAX_PRICE;

@@ -186,6 +186,24 @@ void FuturesForecastApp::UpdateStockData(int target_date, int cur_hhmm, const st
     }
 }
 
+void FuturesForecastApp::ClearStockHisDatas(const std::string &code)
+{
+    PeriodType  type_array[] = { PeriodType::PERIOD_1M, PeriodType::PERIOD_5M, PeriodType::PERIOD_15M, PeriodType::PERIOD_30M, PeriodType::PERIOD_HOUR, PeriodType::PERIOD_DAY, PeriodType::PERIOD_WEEK, PeriodType::PERIOD_MON };
+    for( unsigned int i = 0; i < sizeof(type_array)/sizeof(type_array[0]); ++i )
+    {
+        T_HisDataItemContainer * p_container = stock_data_man().FindHisDataContainer(type_array[i], code);
+        if( p_container )
+            p_container->clear();
+    }
+}
+
+void FuturesForecastApp::ClearStockHisDatas(const std::string &code, TypePeriod type_period)
+{
+    T_HisDataItemContainer * p_container = stock_data_man().FindHisDataContainer(ToPeriodType(type_period), code);
+    if( p_container )
+        p_container->clear();
+}
+
 void FuturesForecastApp::UpdateStockQuote()
 {
     main_window()->UpdateStockQuote();

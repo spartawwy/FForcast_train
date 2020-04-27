@@ -72,6 +72,7 @@ public:
         return GetHisDataContainer(ToPeriodType(type_period), code);
     }
 
+    T_HisDataItemContainer *FindHisDataContainer(PeriodType period_type, const std::string& code);
     T_HisDataItemContainer &GetHisDataContainer(PeriodType period_type, const std::string& code);
     T_BiContainer &GetBiContainer(PeriodType period_type, const std::string& code);
     T_StructLineContainer &GetStructLineContainer(PeriodType period_type, const std::string& code);

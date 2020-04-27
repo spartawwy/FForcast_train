@@ -41,6 +41,9 @@ public:
      
     void UpdateStockQuote();
 
+    void ClearStockHisDatas(const std::string &code);
+    void ClearStockHisDatas(const std::string &code, TypePeriod type_period);
+
 protected:
 
     virtual void HandleNodeHandShake(TSystem::communication::Connection* , const TSystem::Message& ) override {};

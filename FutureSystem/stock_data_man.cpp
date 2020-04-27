@@ -123,7 +123,7 @@ T_HisDataItemContainer* StockDataMan::FindStockData(PeriodType period_type, cons
     int start_hhmm = 0;
     switch(period_type)
     {
-        case PeriodType::PERIOD_YEAR:
+        //case PeriodType::PERIOD_YEAR:
         case PeriodType::PERIOD_MON:
         case PeriodType::PERIOD_WEEK:
         case PeriodType::PERIOD_DAY:
@@ -412,6 +412,27 @@ void StockDataMan::CaculateZhibiao(T_HisDataItemContainer &data_items_in_contain
         default: break;
         }
     }
+}
+
+T_HisDataItemContainer *StockDataMan::FindHisDataContainer(PeriodType period_type, const std::string& code)
+{
+    T_CodeMapHisDataItemContainer *p_code_map_container = nullptr;
+    switch(period_type)
+    {
+    case PeriodType::PERIOD_1M:   p_code_map_container = &m1_stock_his_items_; break;
+    case PeriodType::PERIOD_5M:   p_code_map_container = &m5_stock_his_items_; break;
+    case PeriodType::PERIOD_15M:  p_code_map_container = &m15_stock_his_items_; break;
+    case PeriodType::PERIOD_30M:  p_code_map_container = &m30_stock_his_items_; break;
+    case PeriodType::PERIOD_HOUR: p_code_map_container = &hour_stock_his_items_; break;
+    case PeriodType::PERIOD_DAY:  p_code_map_container = &day_stock_his_items_; break; 
+    case PeriodType::PERIOD_WEEK: p_code_map_container = &week_stock_his_items_; break;
+    case PeriodType::PERIOD_MON:  p_code_map_container = &mon_stock_his_items_; break;
+    default: assert(false);
+    }
+    auto container_iter = p_code_map_container->find(code);
+    if( container_iter != p_code_map_container->end() )
+        return std::addressof(container_iter->second);
+    return nullptr;
 }
 
 T_HisDataItemContainer & StockDataMan::GetHisDataContainer(PeriodType period_type, const std::string& code)

@@ -422,6 +422,7 @@ void SoundFilled(bool is_o_filled);
 // train mode related
 #define  DEFAULT_ORI_STEP_TYPE_PERIOD  TypePeriod::PERIOD_1M
 #define  DEFAULT_TRAIN_DAYS            30
+#define  DEFAULT_TRAIN_END_HHMM        1500
 //-------------------
 #define COMBO_PERIOD_1M_INDEX    0
 #define COMBO_PERIOD_5M_INDEX    1
@@ -433,6 +434,9 @@ void SoundFilled(bool is_o_filled);
 #define MARKET_SH_FUTURES  30
 
 #define DEFAULT_CODE  "SCL9"
+
+#define  MIN_TRADE_DATE 19800000
+#define  MAX_TRADE_DATE 20500000
 
 // ----------------------------
 #define SOUND_QDO 262 

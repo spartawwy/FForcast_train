@@ -972,7 +972,7 @@ void KLineWall::paintEvent(QPaintEvent*)
     {
         int pos_y = (-1) * scale_part_h * i; 
         painter.drawText(mm_w - right_w_, pos_y, QString("%1").arg(lowestMinPrice_ + (price_per_len * scale_part_h * i) ));
-        painter.drawLine(0, pos_y, mm_w - right_w_, pos_y);
+        ///painter.drawLine(0, pos_y, mm_w - right_w_, pos_y);
     }
         
     //-----orders line -------0330
@@ -1859,6 +1859,36 @@ bool KLineWall::Reset_Stock_Train(const QString& stock, TypePeriod type_period, 
 
     is_resetting_stock_ = false;
     return ret;
+}
+
+void KLineWall::Reset_Stock_Train()
+{
+    app_->ClearStockHisDatas(stock_code_, k_type_);
+    is_resetting_stock_ = true;
+
+    k_rend_index_ = 0;
+    k_rend_index_for_train_ = 0;
+    pre_k_rend_index_ = 0;
+    k_move_temp_index_ = 0;
+
+    //stock_code_ = stock.toLocal8Bit().data(); 
+    //k_type_ = type_period;
+    //nmarket_ = nmarket;
+    //k_num_ = WOKRPLACE_DEFUALT_K_NUM;
+    cur_select_forcast_ = nullptr; 
+    auto_forcast_man_.RemoveForcastItems(stock_code_, k_type_);
+    forcast_man_.RemoveForcastItems(stock_code_, k_type_);
+    ResetDrawState(DrawAction::NO_ACTION);
+        
+    this->highestMaxPrice_ = 99.9;
+    this->lowestMinPrice_ = 0.0;
+             
+    lowest_price_date_ = 0;
+    lowest_price_hhmm_ = 0;
+    highest_price_date_ = 0;
+    highest_price_hhmm_ = 0;
+
+    is_resetting_stock_ = false; 
 }
 
 // ps: for sub kline wall

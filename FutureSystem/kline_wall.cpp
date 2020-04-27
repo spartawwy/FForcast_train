@@ -66,8 +66,8 @@ T_HisDataItemContainer* KLineWall::AppendPreData(int date, int /*hhmm*/)
  
 T_HisDataItemContainer* KLineWall::AppendDataForTrain(int start_date, int end_date)
 {
-    assert( start_date > 19800000 && start_date < 20500000 );
-    assert( end_date > 19800000 && end_date < 20500000 );
+    assert( start_date > MIN_TRADE_DATE && start_date < MAX_TRADE_DATE );
+    assert( end_date > MIN_TRADE_DATE && end_date < MAX_TRADE_DATE );
     assert(start_date <= end_date);
 
     int cur_day = QDateTime::currentDateTime().toString("yyyyMMdd").toInt(); //default 
@@ -350,7 +350,7 @@ bool KLineWall::CaculateHighLowPriceForHighPeriod(TypePeriod high_type, int k_da
     double high = MIN_PRICE;
     double low = MAX_PRICE;
     auto iter = p_hisdata_container_->rbegin() + r_index;
-    for( ; r_index >= 0; --iter, --r_index ) // from left to right
+    for( ; r_index >= 0; --r_index ) // from left to right
     {
         if( iter->get()->stk_item.date == k_date 
             && (cur_hhmm != 0 && iter->get()->stk_item.hhmmss > cur_hhmm || cur_hhmm == 0 && iter->get()->stk_item.hhmmss == 0)
@@ -362,6 +362,10 @@ bool KLineWall::CaculateHighLowPriceForHighPeriod(TypePeriod high_type, int k_da
         if( iter->get()->stk_item.low_price < low )
             low = iter->get()->stk_item.low_price;
         ret = true;
+        if( iter != p_hisdata_container_->rbegin())
+            --iter;
+        else
+            break;
     }
     re_high_low = std::make_tuple(high, low);
     return ret;
