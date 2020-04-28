@@ -261,6 +261,13 @@ class FUTUREBASIC:
             return False 
         return True
     
+    def Del5mDataBeforeDate(self, end_date):
+        sql = "Delete FROM SCL9_5M WHERE longdate <= {0}".format(end_date)
+        self.g_db_conn.execute(sql)
+        print(sql)
+        write_log(sql)
+        self.g_db_conn.commit()
+        
     def Save5mDataFrom1mData(self, start_date, start_hhmm, end_date, end_hhmm):
         sql = "SELECT longdate, time, open, close, high, low, vol FROM SCL9_1M WHERE longdate >= {0} AND longdate <= {1} ORDER BY longdate, time".format(start_date, end_date)
         cursor = self.cur.execute(sql)
@@ -276,8 +283,7 @@ class FUTUREBASIC:
         vol = 0
         for it in cursor:
             count = count + 1
-            #print(it)
-            self.write_log(str(it)) 
+            #self.write_log(str(it)) 
             it_date = it[0]
             it_time = it[1]
             it_open = it[2]
@@ -322,11 +328,13 @@ class FUTUREBASIC:
             #print("count {0} {1}".format(count, count % 3))
             if count != 1:
                 if next_stamp != it_time:
-                    erro_str = "error VALUES count:{0} {1} hhmm {2} != next_stamp{3}".format(count, it_date, it_time, next_stamp)
+                    erro_str = "CheckBeforeSave15mDataFrom5mData: error VALUES count:{0} {1} hhmm {2} != next_stamp:{3}".format(count, it_date, it_time, next_stamp)
+                    print(erro_str)
                     self.write_log(erro_str) 
                     return False
             if it_time == 1500 and count % 3 != 0:
-                erro_str = "error VALUES count:{0} {1} hhmm {2} != next_stamp{3}".format(count, it_date, it_time, next_stamp)
+                erro_str = "CheckBeforeSave15mDataFrom5mData:error VALUES count:{0} {1} hhmm {2} != next_stamp:{3}".format(count, it_date, it_time, next_stamp)
+                print(erro_str)
                 self.write_log(erro_str) 
                 return False
             next_stamp = Next15m(it_date, it_time)
@@ -399,7 +407,7 @@ class FUTUREBASIC:
         vol = 0
         for it in cursor:
             count = count + 1
-            self.write_log(str(it)) 
+            #self.write_log(str(it)) 
             it_date = it[0]
             it_time = it[1]
             it_open = it[2]
@@ -545,6 +553,7 @@ if __name__ == "__main__":
     if 0:
         ret2 = obj.CheckBeforSave5mDataFrom1mData(start_date, stat_time, end_date, end_time)
         if ret2:
+            obj.Del5mDataBeforeDate(end_date)
             obj.Save5mDataFrom1mData(start_date, stat_time, end_date, end_time)
     if 0:
         ret3 = obj.CheckBeforeSave15mDataFrom5mData(start_date, stat_time, end_date, end_time)

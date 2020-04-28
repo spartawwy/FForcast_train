@@ -8,6 +8,7 @@
 #include <Tlib/core/tsystem_core_paths.h>
 #include <TLib/tool/tsystem_exe_frame.h>
  
+#include "write_log.h"
 
 #define APP_CODE_TEXT "GBK"
 //
@@ -32,21 +33,23 @@ class TheFrame : public TSystem::ExecutableFrame
 public:
     int main(int argc, char* argv[])
     {
+        WriteLog("%s %d", __FUNCTION__, __LINE__);
         TSystem::utility::ProjectTag("WZF");
 #ifdef PUBLISH
         if( !ValidSerial() )
             return -1;
 #else
+        WriteLog("%s %d", __FUNCTION__, __LINE__);
         QCoreApplication::addLibraryPath("D:\\Qt\\qt5.2.1_win32\\bin\\plugins");
 #endif
         QCoreApplication::addLibraryPath(".");
         QCoreApplication::addLibraryPath("./plugins");
         QTextCodec::setCodecForLocale(QTextCodec::codecForName(APP_CODE_TEXT));
-
+        WriteLog("%s %d", __FUNCTION__, __LINE__);
         AquireDataApp aquire_data_app(argc, argv); 
         int ret = 0; 
         PrintAppInfo(aquire_data_app);
-
+        WriteLog("%s %d", __FUNCTION__, __LINE__);
         if( aquire_data_app.Init() )
         { 
             PrintLaunchDone();

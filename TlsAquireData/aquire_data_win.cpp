@@ -78,10 +78,38 @@ void AquireDataWin::DoGetRecentHisData()
     auto val = ui.cmb_k_type->currentData();
     auto k_type = val.toInt();
     int count = MAX_K_COUNT;
-    if( k_type == KTYPE_PERIOD_1M )
-        count = 3600*12;
-    else
-        count = 12*12*5;
+    // normal include night trading is 9 hours( day: 4 hours + night 5 hours)
+    switch(k_type)
+    {
+        case KTYPE_PERIOD_1M:
+            count = 60 * 9 * 20; 
+            break;
+        case KTYPE_PERIOD_5M:
+            count = 60 * 9 * 20 / 5; 
+            break;
+        case KTYPE_PERIOD_15M:
+            count = 60 * 9 * 20 / 15; 
+            break;
+        case KTYPE_PERIOD_30M:
+            count = 60 * 9 * 20 / 30; 
+            break;
+        case KTYPE_PERIOD_HOUR:
+            count = 9 * 20;
+            break;
+        case KTYPE_PERIOD_DAY:
+            count = 3 * 20;
+            break;
+        case KTYPE_PERIOD_WEEK:
+            count = 4 * 6;
+            break;
+        case KTYPE_PERIOD_MON:
+            count = 12;
+            break;
+        /*case KTYPE_PERIOD_YEAR:
+            count = 2;
+            break;*/
+    }
+      
     bool result = HqWrapperApi_GetRecentHisKBars("SCL9", true, MARKET_SH_FUTURES, k_type, count, SaveKbarDataCallback, app_);
     if( result )
     {

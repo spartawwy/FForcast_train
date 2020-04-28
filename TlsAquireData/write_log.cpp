@@ -24,7 +24,7 @@ void WriteLog(const char *fmt, ...)
 	timeinfo = localtime( &rawtime );
 
 	char szFileName[512] = {0};
-	sprintf_s( szFileName, sizeof(szFileName), "debug_%4d-%02d-%02d.log",  1900+timeinfo->tm_year, 1+timeinfo->tm_mon, timeinfo->tm_mday );
+	sprintf_s( szFileName, sizeof(szFileName), "TlsAquireData_%4d-%02d-%02d.log",  1900+timeinfo->tm_year, 1+timeinfo->tm_mon, timeinfo->tm_mday );
 	FILE *fp = fopen( szFileName, "a+" );
 	if( !fp ) 
 		return;
