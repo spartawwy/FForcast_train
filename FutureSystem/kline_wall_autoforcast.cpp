@@ -8,6 +8,9 @@
 #include "stkfo_common.h"
 #include "futures_forecast_app.h"
 
+// (c1, c2, c3) or (d1, d2, d3)
+typedef std::tuple<double, double, double> T_TargetPrices;
+
 static void append_forcast_c(const std::string &code, TypePeriod k_type, const T_StockHisDataItem &item_a, const T_StockHisDataItem &item_b, bool is_ab_down, ForcastMan &forcast_man)
 {
     T_Data2pForcast data_2pdown_fcst(is_ab_down);
@@ -28,6 +31,15 @@ static void append_forcast_c(const std::string &code, TypePeriod k_type, const T
     forcast_man.Append(k_type, code, is_ab_down, data_2pdown_fcst);
 }
 
+static T_TargetPrices forcast_2p(const T_StockHisDataItem &item_a, const T_StockHisDataItem &item_b, bool is_ab_down)
+{
+    auto c1_c2_c3 = std::make_tuple(0.0, 0.0, 0.0);
+    if( is_ab_down )
+        c1_c2_c3 = ForcastC_ABDown(item_a.high_price, item_b.low_price);
+    else
+        c1_c2_c3 = ForcastC_ABUp(item_a.low_price, item_b.high_price);
+    return c1_c2_c3;
+}
 
 void KLineWall::HandleAutoForcast()
 { 
@@ -54,15 +66,25 @@ void KLineWall::HandleAutoForcast()
     T_StructLineContainer &line_datas = app_->stock_data_man().GetStructLineContainer(ToPeriodType(k_type_), stock_code_); 
     if( line_datas.empty() )
         return;
+
     T_HisDataItemContainer &k_datas = app_->stock_data_man().GetHisDataContainer(k_type_, stock_code_);
+    const double cur_price = k_datas[k_rend_index_]->stk_item.close_price;
+
     T_StockHisDataItem &item_a = k_datas[line_datas[0]->beg_index]->stk_item;
     T_StockHisDataItem &item_b = k_datas[line_datas[0]->end_index]->stk_item;
     bool is_ab_down = line_datas[0]->type == LineType::DOWN;
     if( line_datas[0]->type == LineType::DOWN )
     {  
-        if( line_datas.size() < 3 )
+        if( line_datas.size() == 1 )
         {
-            append_forcast_c(stock_code_, k_type_, item_a, item_b, is_ab_down, auto_forcast_man_);
+            //auto c_prices = forcast_2p(item_a, item_b, true);
+            if( cur_price > item_a.high_price )
+            {
+                T_StockHisDataItem &item_cur = k_datas[k_rend_index_]->stk_item;
+                append_forcast_c(stock_code_, k_type_, item_a, item_cur, is_ab_down, auto_forcast_man_);
+            }else
+                append_forcast_c(stock_code_, k_type_, item_a, item_b, is_ab_down, auto_forcast_man_);
+
         }else
         {
             // find target line-------------
@@ -71,7 +93,7 @@ void KLineWall::HandleAutoForcast()
             for( unsigned int i = 2; i < line_datas.size(); i += 2 )
             {
                 //assert(line_datas[i]->type == LineType::DOWN);
-                if(line_datas[i]->type != LineType::DOWN)
+                if( line_datas[i]->type != LineType::DOWN )
                     break;
                 T_StockHisDataItem &item_front_beg = k_datas[line_datas[i]->beg_index]->stk_item; 
                 T_StockHisDataItem &item_front_end = k_datas[line_datas[i]->end_index]->stk_item; 
@@ -101,7 +123,7 @@ void KLineWall::HandleAutoForcast()
             for( unsigned int i = 2; i < line_datas.size(); i += 2 )
             {
                 //assert(line_datas[i]->type == LineType::UP);
-                if(line_datas[i]->type != LineType::UP)
+                if( line_datas[i]->type != LineType::UP )
                     break;
                 T_StockHisDataItem &item_front_beg = k_datas[line_datas[i]->beg_index]->stk_item; 
                 T_StockHisDataItem &item_front_end = k_datas[line_datas[i]->end_index]->stk_item; 
