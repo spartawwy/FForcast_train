@@ -400,10 +400,13 @@ void KLineWall::DrawStructLine(QPainter &painter, const int /*mm_h*/)
     painter.setPen(pen);
     
     T_HisDataItemContainer & his_data = *p_hisdata_container_;
-    const int start_index = his_data.size() - k_rend_index_  - k_num_;
+    
     const int end_index = his_data.size() - k_rend_index_ - 1;
-    if( start_index < 0 || end_index < 0 )
+    if( end_index < 0 )
         return;
+    int start_index = his_data.size() - k_rend_index_  - k_num_;
+    if( start_index < 0 )
+        start_index = 0;
     for( unsigned int i = 0; i < container.size(); ++i )
     { 
         if( container[i]->beg_index < start_index || container[i]->end_index > end_index )
@@ -736,7 +739,7 @@ void KLineWall::mousePressEvent(QMouseEvent * event )
         }
         auto item_c = GetKLineDataItemByXpos(event->pos().x());
         if( !item_c || item_c->stk_item.date < item_b->stk_item.date 
-            || (item_c->stk_item.date == item_b->stk_item.date && item_c->stk_item.hhmmss <= item_b->stk_item.hhmmss) )
+            || (item_c->stk_item.date == item_b->stk_item.date && item_c->stk_item.hhmmss < item_b->stk_item.hhmmss) )
         {   // todo: show warning msg
             return;
         }
@@ -900,7 +903,7 @@ void KLineWall::paintEvent(QPaintEvent*)
     QFontMetricsF fontMetrics(font);  
     qreal wid = fontMetrics.width(scale_val_str);      qreal height = fontMetrics.height();  
     */ 
-    //painter.translate(30, 400);  //坐标 向下 向右 平移 
+    //painter.translate(30, 400);  //坐标 向下 向右 移 
     
     const int price_scale_num = 8;
     const int scale_part_h = k_mm_h / price_scale_num; 
@@ -1173,7 +1176,7 @@ void KLineWall::paintEvent(QPaintEvent*)
    
     //k line view bottom border horizontal line (----------)
     painter.setPen(lit_border_pen); 
-    painter.drawLine(0, 0, mm_w, 0); 
+    ///painter.drawLine(0, 0, mm_w, 0); //tmp nouse it
  
     // draw zibiao----------------------- 
     //const double item_w = double(mm_w - empty_right_w_ - right_w_) / double(k_num_ + 1) ;
@@ -1184,11 +1187,10 @@ void KLineWall::paintEvent(QPaintEvent*)
             const int zb_h = zb_windows_[i]->Height();
             painter.translate(0, zb_h + lit_border_pen.width());
             trans_y_totoal += zb_h + lit_border_pen.width();
-
-            // horizental line -----
+            // zibiao horizontal line -----
             painter.setPen(lit_border_pen);
-            painter.drawLine(0, 0, mm_w, 0);
- 
+            painter.drawLine(0, 0, mm_w, 0); // zibiao bottom line 
+            painter.drawLine(0, -1*zb_h, mm_w, -1*zb_h); // zibiao head line 
             zb_windows_[i]->DrawWindow(painter, mm_w);
         }
     }
@@ -1203,6 +1205,7 @@ void KLineWall::paintEvent(QPaintEvent*)
      
     // draw left top k bar detail ------
     painter.translate(0, -1 * trans_y_totoal); // translate axis back
+    trans_y_totoal = 0;
     pen.setColor(Qt::white);
     pen.setStyle(Qt::SolidLine); 
     painter.setPen(pen);  

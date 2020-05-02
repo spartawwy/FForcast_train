@@ -46,11 +46,12 @@ void VolZhibiaoWin::DrawWindow(QPainter &painter, int mm_w)
 
 void MomentumZhibiaoWin::DrawWindow(QPainter &painter, int mm_w)
 {
-    const double half_h = Height() / 2;
+    //const double hight_v = Height();
     const double item_w = double(mm_w - parent_->empty_right_w_ -  parent_->right_w_) / double( parent_->k_num_ + 1) ;
     const double k_bar_w = item_w * 3 / 4;
     const int right_end = double(mm_w -  parent_->empty_right_w_ -  parent_->right_w_) - k_bar_w;
-
+    if( parent_->k_num_ < 1)
+        return;
     QPen red_pen; red_pen.setColor(Qt::red); red_pen.setStyle(Qt::SolidLine); red_pen.setWidth(1);
      
     QPen magenta_pen; magenta_pen.setColor(Qt::magenta); magenta_pen.setStyle(Qt::SolidLine); magenta_pen.setWidth(0.5);
@@ -59,13 +60,6 @@ void MomentumZhibiaoWin::DrawWindow(QPainter &painter, int mm_w)
     QBrush yin_brush(Qt::cyan);  
 
     const double line_size = 0.5;
-
-    QPen pen;
-    pen.setColor(Qt::red);
-    pen.setWidth(line_size);
-    pen.setStyle(Qt::DotLine); // ............
-    painter.setPen(pen); 
-    painter.drawLine(0, 0, right_end, 0);
 
     QPen curve_pen;
     curve_pen.setColor(Qt::white);
@@ -77,28 +71,48 @@ void MomentumZhibiaoWin::DrawWindow(QPainter &painter, int mm_w)
     dea_curve_pen.setWidth(line_size*2);
     dea_curve_pen.setStyle(Qt::SolidLine);
 
-    // find max value 
-    double min_negat_val = 99999.99;
-    double max_posit_val = 0.0;
+    // find max min value 
+    double min_negat_val = MAX_PRICE;
+    double max_posit_val = MIN_PRICE;
     int k = parent_->k_num_;
     for( auto iter = parent_->p_hisdata_container_->rbegin() + parent_->k_rend_index_;
         iter != parent_->p_hisdata_container_->rend() && k > 0; 
         ++iter, --k)
     {
-        auto val_macd = (*iter)->zhibiao_atoms[MOMENTUM_POS]->val3();
-        auto val_dif = 3.12 * ((*iter)->zhibiao_atoms[MOMENTUM_POS]->val0() - (*iter)->zhibiao_atoms[MOMENTUM_POS]->val1());
-        auto maxv = std::max(val_macd, val_dif);
-        auto minv = std::min(val_macd, val_dif);
+        double val_macd = (*iter)->zhibiao_atoms[MOMENTUM_POS]->val3();
+        double val_dif = 3.12 * ((*iter)->zhibiao_atoms[MOMENTUM_POS]->val0() - (*iter)->zhibiao_atoms[MOMENTUM_POS]->val1());
+        double dea_curve_val = 3.12 * (*iter)->zhibiao_atoms[MOMENTUM_POS]->val2();
+        double maxv = std::max(val_macd, val_dif);
+        maxv = std::max(maxv, dea_curve_val);
+        double minv = std::min(val_macd, val_dif);
+        minv = std::min(minv, dea_curve_val);
         if( maxv > max_posit_val )
             max_posit_val = maxv;
-        else if( minv < min_negat_val )
+        if( minv < min_negat_val )
             min_negat_val = minv;
     }
-    // will be positive 
-    const double total_val = max_posit_val - min_negat_val;
-    double zero_y = fabs(min_negat_val) * Height() / total_val;
-    //painter.drawLine(0, -1 * zero_y, right_end, -1 * zero_y);
-    //-----------draw vertical lines-------  
+    // calculate total val
+    double total_val = 0.0;
+    double zero_y = 0.0;
+    if( max_posit_val * min_negat_val > 0.0 )
+    {
+        total_val = std::max(fabs(max_posit_val), fabs(min_negat_val));
+    }else
+    {
+        total_val = fabs(max_posit_val - min_negat_val);
+        zero_y = fabs(min_negat_val) * Height() / total_val;// will not be negative 
+    }
+    assert(total_val > 0.0);
+
+    //for debug------------
+    //pen.setColor(Qt::darkGray);
+    //pen.setWidth(line_size); 
+    //pen.setStyle(Qt::DashDotLine); // ............
+    //painter.setPen(pen);  
+    //painter.drawLine(0, int(-1 * zero_y), right_end, int(-1 * zero_y));  
+    //-----------------------
+
+    //-----------draw vertical bars -------  
     bool is_sign_change = false;
     double total_zb_val = 0.0;
     double tag_x_pos_end = right_end;

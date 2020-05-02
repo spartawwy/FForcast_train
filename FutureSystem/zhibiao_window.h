@@ -17,7 +17,7 @@ public:
 
     /* zhibiao window heiht = parent.height * high_percent_
     *  ps: high_percent < 1.0  */
-    void high_percent(double ver ) { high_percent_ = ver; }
+    //void high_percent(double ver ) { high_percent_ = ver; }
     double high_percent() { return high_percent_; }
     //ZhibiaoType zhibiao_type() {return zhibiao_type_;}
     int Height();

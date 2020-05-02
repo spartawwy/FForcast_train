@@ -8,8 +8,11 @@
 #include "stkfo_common.h"
 #include "futures_forecast_app.h"
 
+const static std::string cst_logf_pretag = "autoforcast";
 // (c1, c2, c3) or (d1, d2, d3)
 typedef std::tuple<double, double, double> T_TargetPrices;
+
+using namespace TSystem;
 
 static void append_forcast_c(const std::string &code, TypePeriod k_type, const T_StockHisDataItem &item_a, const T_StockHisDataItem &item_b, bool is_ab_down, ForcastMan &forcast_man)
 {
@@ -43,6 +46,29 @@ static T_TargetPrices forcast_2p(const T_StockHisDataItem &item_a, const T_Stock
 
 void KLineWall::HandleAutoForcast()
 { 
+    static auto find_price_min_max_index = [](const T_HisDataItemContainer &k_datas, int beg_index, int end_index)
+    {
+        int min_price_index = beg_index;
+        int max_price_index = beg_index;
+        double min_price = MAX_PRICE;
+        double max_price = MIN_PRICE;
+        int i = beg_index;
+        for( ; i <= end_index; ++i )
+        {
+            if( k_datas[i]->stk_item.low_price < min_price )
+            {
+                min_price = k_datas[i]->stk_item.low_price;
+                min_price_index = i;
+            }
+            if( k_datas[i]->stk_item.high_price > max_price )
+            {
+                max_price = k_datas[i]->stk_item.high_price;
+                max_price_index = i;
+            }
+        }
+        return std::make_tuple(min_price_index, max_price_index);
+    };
+
     if( !main_win_->is_show_autoforcast() )
         return;
     auto_forcast_man_.RemoveForcastItems(stock_code_, k_type_);
@@ -68,7 +94,10 @@ void KLineWall::HandleAutoForcast()
         return;
 
     T_HisDataItemContainer &k_datas = app_->stock_data_man().GetHisDataContainer(k_type_, stock_code_);
-    const double cur_price = k_datas[k_rend_index_]->stk_item.close_price;
+    assert(k_datas.size() > k_rend_index_for_train_);
+    const int k_end_index_for_train = k_datas.size() - 1 - k_rend_index_for_train_;
+    T_StockHisDataItem &item_cur = k_datas[k_end_index_for_train]->stk_item;
+    //const double cur_price = item_cur.close_price;
 
     T_StockHisDataItem &item_a = k_datas[line_datas[0]->beg_index]->stk_item;
     T_StockHisDataItem &item_b = k_datas[line_datas[0]->end_index]->stk_item;
@@ -77,14 +106,18 @@ void KLineWall::HandleAutoForcast()
     {  
         if( line_datas.size() == 1 )
         {
-            //auto c_prices = forcast_2p(item_a, item_b, true);
-            if( cur_price > item_a.high_price )
+            auto min_max_price_indexs = find_price_min_max_index(k_datas, line_datas[0]->end_index + 1, k_end_index_for_train);
+            double max_price = k_datas[std::get<1>(min_max_price_indexs)]->stk_item.high_price;
+            if( max_price > item_a.high_price )
             {
-                T_StockHisDataItem &item_cur = k_datas[k_rend_index_]->stk_item;
-                append_forcast_c(stock_code_, k_type_, item_a, item_cur, is_ab_down, auto_forcast_man_);
+                T_StockHisDataItem &item_max_price = k_datas[std::get<1>(min_max_price_indexs)]->stk_item;
+                append_forcast_c(stock_code_, k_type_, item_a, item_max_price, false, auto_forcast_man_);
             }else
                 append_forcast_c(stock_code_, k_type_, item_a, item_b, is_ab_down, auto_forcast_man_);
 
+        }else if( line_datas.size() == 2 )
+        {
+            app_->local_logger().LogLocal(cst_logf_pretag, utility::FormatStr("LineType::DOWN lines 2"));
         }else
         {
             // find target line-------------
@@ -112,7 +145,22 @@ void KLineWall::HandleAutoForcast()
 
     }else // LineType::UP
     {  
-        if( line_datas.size() < 3 )
+        if( line_datas.size() == 1 )
+        {
+            auto min_max_price_indexs = find_price_min_max_index(k_datas, line_datas[0]->end_index + 1, k_end_index_for_train);
+            double min_price = k_datas[std::get<0>(min_max_price_indexs)]->stk_item.low_price;
+            if( min_price < item_a.low_price )
+            { 
+                T_StockHisDataItem &item_min_price = k_datas[std::get<0>(min_max_price_indexs)]->stk_item;
+                append_forcast_c(stock_code_, k_type_, item_b, item_min_price, true, auto_forcast_man_);
+            }else
+                append_forcast_c(stock_code_, k_type_, item_a, item_b, is_ab_down, auto_forcast_man_);
+
+        }else if( line_datas.size() == 2 )
+        {
+            app_->local_logger().LogLocal(cst_logf_pretag, utility::FormatStr("LineType::UP lines 2"));
+
+        }else if( line_datas.size() == 3 )
         {
             append_forcast_c(stock_code_, k_type_, item_a, item_b, is_ab_down, auto_forcast_man_);
         }else

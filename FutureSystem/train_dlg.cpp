@@ -575,17 +575,39 @@ void TrainDlg::OnStopTrain()
  
 void TrainDlg::OnCloseAllUnfrozenPos()
 {
+    int total_closed = 0;
     QString ret_info;
     T_StockHisDataItem fake_item = cur_kdata_item_;
-    ClosePosition(cur_quote(), account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE), true, fake_item, &ret_info);
+    const unsigned int long_avaliable = account_info_.position.LongPosQty(POSITION_STATUS_AVAILABLE);
+    const unsigned int tblview_long_avaliable = GetTableViewPositionAvailable(true);
+    if( long_avaliable != tblview_long_avaliable )
+    {
+        SetStatusBar(QString::fromLocal8Bit("多头可用仓位异常:视图仓位与后台仓位不符!"));
+        return;
+    }
+    const unsigned int short_avaliable = account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE);
+    const unsigned int tblview_short_avaliable = GetTableViewPositionAvailable(false);
+    if( short_avaliable != tblview_short_avaliable )
+    {
+        SetStatusBar(QString::fromLocal8Bit("空头可用仓位异常:视图仓位与后台仓位不符!"));
+        return;
+    }
+    int ret = ClosePosition(cur_quote(), long_avaliable, true, fake_item, &ret_info);
     if( !ret_info.isEmpty() )
         SetStatusBar(ret_info);
-    ClosePosition(cur_quote(), account_info_.position.ShortPosQty(POSITION_STATUS_AVAILABLE), false, fake_item, &ret_info);
-    if( !ret_info.isEmpty() )
-        SetStatusBar(ret_info);
+    if( ret > 0 )
+        total_closed += long_avaliable;
     
-    ui.tab_detail->setCurrentIndex(cst_detail_page_trades);
-    RefreshCapitalUi();
+    int ret1 = ClosePosition(cur_quote(), short_avaliable, false, fake_item, &ret_info);
+    if( !ret_info.isEmpty() )
+        SetStatusBar(ret_info);
+    if( ret1 > 0 )
+        total_closed += short_avaliable;
+    if( total_closed > 0 )
+    {
+        ui.tab_detail->setCurrentIndex(cst_detail_page_trades);
+        RefreshCapitalUi();
+    }
 }
 
 void TrainDlg::OnShowCfg()
@@ -1469,10 +1491,10 @@ void TrainDlg::OpenPosition(double para_price, unsigned int qty, bool is_long, u
     }
 }
 
-void TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info)
+int TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info)
 {
     if( qty == 0 )
-        return;
+        return 0;
     //int date = 0;
     //int hhmm = 0;//ndedt
     QTableView &tbv = *ui.table_view_position;
@@ -1481,7 +1503,7 @@ void TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, 
     if( row_index < 0 ) 
     { 
         if( p_ret_info ) *p_ret_info = (is_long ? QString::fromLocal8Bit("无多头仓位可平!") : QString::fromLocal8Bit("无空头仓位可平!"));
-        return;
+        return -1;
     }
     
     QVector<int> ids = model->item(row_index, cst_tbview_position_id)->data().value<QVector<int>>();
@@ -1499,7 +1521,7 @@ void TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, 
     if( trade_record_atoms.empty() )
     {
         if( p_ret_info ) *p_ret_info = QString::fromLocal8Bit("此平仓失效!");
-        return;
+        return -1;
     }
     remove_container_items_by_pos_ids(stop_profit_order_infos_, (is_long ? &position_ids : nullptr), (is_long ? nullptr : &position_ids));
     remove_container_items_by_pos_ids(stop_loss_order_infos_, (is_long ? &position_ids : nullptr), (is_long ? nullptr : &position_ids));
@@ -1536,6 +1558,7 @@ void TrainDlg::ClosePosition(double para_price, unsigned int qty, bool is_long, 
     {
         Append2TblTrades(trade_atom);
     });
+    return trade_record_atoms.size();
 }
 
 void TrainDlg::CloseInputSizePosition(double para_price, bool is_long, const T_StockHisDataItem &fake_k_item)
@@ -1641,6 +1664,21 @@ bool TrainDlg::AddCloseOrder(double price, unsigned int quantity, bool is_long)
      
     UpdateOrders2KlineWalls(ORDER_TYPE_HANGON);
     return true;
+}
+
+unsigned int TrainDlg::GetTableViewPositionAvailable(bool is_long)
+{
+    unsigned int total = 0;
+    QTableView &tbv = *ui.table_view_position;
+    QStandardItemModel * model = static_cast<QStandardItemModel *>(tbv.model());
+    for( unsigned int i = 0; i < model->rowCount(); ++i )
+    {
+        if( model->item(i, cst_tbview_position_bs)->data().toBool() == is_long )
+        {
+           total += model->item(i, cst_tbview_position_avaliable)->text().toInt();
+        }
+    }
+    return total;
 }
 
 unsigned int TrainDlg::GetItemPositionAllQty(QStandardItemModel& model, int row_index)

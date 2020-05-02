@@ -77,13 +77,14 @@ private:
     
     //void OpenPosition(double para_price, bool is_long);
     void OpenPosition(double para_price, unsigned int qty, bool is_long, unsigned int *p_profit_stop_ticks=nullptr, unsigned int *p_loss_stop_ticks=nullptr, bool is_proc_hangon_order=false);
-    void ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info=nullptr);
+    int ClosePosition(double para_price, unsigned int qty, bool is_long, const T_StockHisDataItem &fake_k_item, QString *p_ret_info=nullptr);
     void CloseInputSizePosition(double para_price, bool is_long, const T_StockHisDataItem &fake_k_item);
 
     bool AddOpenOrder(double price, unsigned int quantity, bool is_long);
     bool AddCloseOrder(double price, unsigned int quantity, bool is_long);
 
     std::vector<TradeRecordAtom> DoIfStopProfitLoss(const T_StockHisDataItem &k_item, std::vector<int> &ret_pos_ids, double &ret_profit);
+    unsigned int GetTableViewPositionAvailable(bool is_long);
     unsigned int GetItemPositionAllQty(QStandardItemModel& model, int row_index);
 
     void UpdateOrders2KlineWalls(int type);
