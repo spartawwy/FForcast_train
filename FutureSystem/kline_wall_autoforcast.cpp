@@ -62,7 +62,9 @@ static void append_forcast_d(const std::string &code, TypePeriod k_type, const T
     data_3pdown_fcst.d2 = std::get<1>(d1_d2_d3);
     data_3pdown_fcst.d3 = std::get<2>(d1_d2_d3);
     forcast_man.Append(k_type, code, is_ab_down, data_3pdown_fcst);
-}void KLineWall::HandleAutoForcast()
+}
+
+void KLineWall::HandleAutoForcast()
 { 
     static auto find_price_min_max_index = [](const T_HisDataItemContainer &k_datas, int beg_index, int end_index)
     {
@@ -107,6 +109,7 @@ static void append_forcast_d(const std::string &code, TypePeriod k_type, const T
     default: break;
     }
 
+    // begin_index on left; end_index on right
     T_StructLineContainer &line_datas = app_->stock_data_man().GetStructLineContainer(ToPeriodType(k_type_), stock_code_); 
     if( line_datas.empty() )
         return;
@@ -117,9 +120,14 @@ static void append_forcast_d(const std::string &code, TypePeriod k_type, const T
     T_StockHisDataItem &item_cur = k_datas[k_end_index_for_train]->stk_item;
     //const double cur_price = item_cur.close_price;
 
-    T_StockHisDataItem &item_a = k_datas[line_datas[0]->beg_index]->stk_item;
-    T_StockHisDataItem &item_b = k_datas[line_datas[0]->end_index]->stk_item;
+    T_StockHisDataItem &item_a = k_datas[line_datas[0]->beg_index]->stk_item; // struct_line0_left_item
+    T_StockHisDataItem &item_b = k_datas[line_datas[0]->end_index]->stk_item; // struct_line0_right_item
+
     bool is_ab_down = line_datas[0]->type == LineType::DOWN;
+
+    /*  /a\
+           \b
+    */
     if( line_datas[0]->type == LineType::DOWN )
     {  
         if( line_datas.size() == 1 )
@@ -149,21 +157,21 @@ static void append_forcast_d(const std::string &code, TypePeriod k_type, const T
             // find target line-------------
             unsigned int target_line_index = 0;
             double highest_price = item_a.high_price;
-            for( unsigned int i = 2; i < line_datas.size(); i += 2 )
+            for( unsigned int i = 2; i < line_datas.size(); i += 2 ) // toward left
             {
                 //assert(line_datas[i]->type == LineType::DOWN);
                 if( line_datas[i]->type != LineType::DOWN )
                     break;
-                T_StockHisDataItem &item_front_beg = k_datas[line_datas[i]->beg_index]->stk_item; 
-                T_StockHisDataItem &item_front_end = k_datas[line_datas[i]->end_index]->stk_item; 
-                if( item_front_end.low_price < item_b.low_price )
+                T_StockHisDataItem &item_left = k_datas[line_datas[i]->beg_index]->stk_item; 
+                T_StockHisDataItem &item_right = k_datas[line_datas[i]->end_index]->stk_item; 
+                if( item_right.low_price < item_b.low_price )
                     break;
-                if( item_front_beg.high_price < highest_price )
+                if( item_left.high_price < highest_price )
                     break;
-                if( item_front_beg.high_price - item_b.high_price > max_spread )
+                if( item_left.high_price - item_b.high_price > max_spread )
                     break;
-                if( item_front_beg.high_price > highest_price )
-                    highest_price = item_front_beg.high_price;
+                if( item_left.high_price > highest_price )
+                    highest_price = item_left.high_price;
                 target_line_index = i;
             }
             append_forcast_c(stock_code_, k_type_, k_datas[line_datas[target_line_index]->beg_index]->stk_item, item_b, is_ab_down, auto_forcast_man_);
@@ -171,6 +179,9 @@ static void append_forcast_d(const std::string &code, TypePeriod k_type, const T
 
     }else // [0] is LineType::UP
     {  
+        /*     /b
+            \a/
+        */
         if( line_datas.size() == 1 )
         {
             auto min_max_price_indexs = find_price_min_max_index(k_datas, line_datas[0]->end_index + 1, k_end_index_for_train);
@@ -198,28 +209,29 @@ static void append_forcast_d(const std::string &code, TypePeriod k_type, const T
         }else if( line_datas.size() == 3 )
         {
             append_forcast_c(stock_code_, k_type_, item_a, item_b, is_ab_down, auto_forcast_man_);
-        }else
+        }else // > 3
         {
             // find target line-------------
             unsigned int target_line_index = 0;
             double lowest_price = item_a.low_price;
-            for( unsigned int i = 2; i < line_datas.size(); i += 2 )
+            for( unsigned int i = 2; i < line_datas.size(); i += 2 ) // leftward /../
             {
                 //assert(line_datas[i]->type == LineType::UP);
                 if( line_datas[i]->type != LineType::UP )
                     break;
-                T_StockHisDataItem &item_front_beg = k_datas[line_datas[i]->beg_index]->stk_item; 
-                T_StockHisDataItem &item_front_end = k_datas[line_datas[i]->end_index]->stk_item; 
-                if( item_front_end.high_price > item_b.high_price )
+                T_StockHisDataItem &item_left = k_datas[line_datas[i]->beg_index]->stk_item; 
+                T_StockHisDataItem &item_right = k_datas[line_datas[i]->end_index]->stk_item; 
+                if( item_right.high_price > item_b.high_price )
                     break;
-                if( item_front_beg.low_price > lowest_price )
+                if( item_left.low_price > lowest_price )
                     break;
-                if( item_b.high_price - item_front_beg.low_price > max_spread )
+                if( item_b.high_price - item_left.low_price > max_spread )
                     break;
-                if( item_front_beg.low_price < lowest_price )
-                    lowest_price = item_front_beg.low_price;
+                if( item_left.low_price < lowest_price )
+                    lowest_price = item_left.low_price;
                 target_line_index = i;
-            }//for
+                 
+            } // for
             append_forcast_c(stock_code_, k_type_, k_datas[line_datas[target_line_index]->beg_index]->stk_item, item_b, is_ab_down, auto_forcast_man_);
         }
     }// LineType::UP
